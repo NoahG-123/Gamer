@@ -1,0 +1,7 @@
+{
+  "_comment": "USD per 1M tokens. Used only to estimate spend against LLM_BUDGET_USD. Update when DeepSeek changes pricing.",
+  "models": {
+    "deepseek-reasoner": { "inputCacheHit": 0.07, "inputCacheMiss": 0.56, "output": 1.68 },
+    "deepseek-chat": { "inputCacheHit": 0.07, "inputCacheMiss": 0.56, "output": 1.68 }
+  }
+}

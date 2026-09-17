@@ -1,0 +1,44 @@
+{
+  "_comment": "PLACEHOLDER contacts. `character` links to characters/<id>.json for LLM-driven replies. `presence`: online | offline | lastSeen (uses lastSeen ISO). `hidden` contacts appear after a trigger `unlock_contact` effect.",
+  "contacts": [
+    {
+      "id": "placeholder-a",
+      "name": "Placeholder A",
+      "phone": "+1 (312) 555-0142",
+      "about": "PLACEHOLDER about text",
+      "avatar": { "initials": "PA", "color": "#6b8e9f" },
+      "presence": "online",
+      "character": "placeholder-a",
+      "pinned": false
+    },
+    {
+      "id": "placeholder-b",
+      "name": "Placeholder B",
+      "phone": "+1 (773) 555-0199",
+      "about": "PLACEHOLDER",
+      "avatar": { "initials": "PB", "color": "#a3766f" },
+      "presence": "lastSeen",
+      "lastSeen": "2026-09-16T23:41:00Z",
+      "character": null,
+      "pinned": false
+    },
+    {
+      "id": "placeholder-unlock",
+      "name": "Placeholder Unlock",
+      "phone": "+1 (872) 555-0107",
+      "about": "PLACEHOLDER — unlocked by a trigger",
+      "avatar": { "initials": "PU", "color": "#7d8f6b" },
+      "presence": "online",
+      "character": "placeholder-a",
+      "hidden": true
+    },
+    {
+      "id": "placeholder-group",
+      "name": "placeholder group chat",
+      "isGroup": true,
+      "participants": ["placeholder-a", "placeholder-b", "me"],
+      "avatar": { "initials": "G", "color": "#8a8a8a" },
+      "character": null
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_comment": "PLACEHOLDER Chrome bookmarks bar. `folder` entries hold `children`. `hidden`/`requires` supported.",
+  "bar": [
+    { "id": "bm-gmail", "title": "Gmail", "url": "https://mail.google.com/" },
+    { "id": "bm-yt", "title": "YouTube", "url": "https://www.youtube.com/" },
+    { "id": "bm-maps", "title": "Maps", "url": "https://www.google.com/maps" },
+    { "id": "bm-ph1", "title": "Placeholder One", "url": "https://placeholder-one.example/" },
+    { "id": "bm-folder-recipes", "title": "recipes", "folder": true, "children": [
+      { "id": "bm-r1", "title": "Budget Bytes", "url": "https://www.budgetbytes.com/" },
+      { "id": "bm-r2", "title": "Serious Eats", "url": "https://www.seriouseats.com/" }
+    ] },
+    { "id": "bm-amazon", "title": "Amazon.com", "url": "https://www.amazon.com/" },
+    { "id": "bm-weather", "title": "Weather", "url": "https://weather.com/" }
+  ]
+}

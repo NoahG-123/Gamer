@@ -1,0 +1,31 @@
+{
+  "_comment": "PLACEHOLDER triggers. Each trigger fires once (unless `repeat`: true) when `when` is satisfied. Conditions: {event, subject?} (event has been recorded at least once; subject may end with * for prefix match), {flag, value?} (flag is set / equals value), {count, event, subject?, min}. `all`/`any` may nest. Effects: reveal (a hidden file path / contact id / bookmark id), set_flag {key, value}, deliver_message {chat, from, text, delayMs?}, unlock_contact {id}, log {text}.",
+  "triggers": [
+    {
+      "id": "reveal-notes-after-readme",
+      "when": { "all": [ { "event": "file.opened", "subject": "C:/Users/{user}/Desktop/read me first.txt" } ] },
+      "then": [
+        { "reveal": "C:/Users/{user}/Documents/placeholder notes.txt" },
+        { "set_flag": { "key": "read_readme", "value": true } }
+      ]
+    },
+    {
+      "id": "unlock-contact-after-notes",
+      "when": { "all": [ { "event": "file.opened", "subject": "C:/Users/{user}/Documents/placeholder notes.txt" } ] },
+      "then": [
+        { "unlock_contact": { "id": "placeholder-unlock" } },
+        { "deliver_message": { "chat": "placeholder-unlock", "from": "placeholder-unlock", "text": "[placeholder] hey. you opened the notes file, so I showed up.", "delayMs": 4000 } }
+      ]
+    },
+    {
+      "id": "visited-both-placeholder-sites",
+      "when": { "all": [ { "event": "site.visited", "subject": "placeholder-one.example*" }, { "event": "site.visited", "subject": "placeholder-two.example*" } ] },
+      "then": [ { "set_flag": { "key": "visited_both_sites", "value": true } }, { "log": { "text": "[placeholder] both sites visited" } } ]
+    },
+    {
+      "id": "three-messages-to-a",
+      "when": { "all": [ { "count": { "event": "message.sent", "subject": "placeholder-a", "min": 3 } } ] },
+      "then": [ { "set_flag": { "key": "talked_to_a", "value": 3 } } ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "PLACEHOLDER. Identity of the computer's owner. Everything here is safe to change; paths in other content files use the {user} token so the username is defined once.",
+  "username": "mtorres",
+  "displayName": "Marisol",
+  "machineName": "DESKTOP-4K1Q7RV",
+  "timezone": "America/Chicago",
+  "locale": "en-US",
+  "accountEmail": "PLACEHOLDER@outlook.com",
+  "wallpaper": "bloom-dark",
+  "accentColor": "#0067C0",
+  "taskbarPins": ["explorer", "chrome", "whatsapp"],
+  "desktopIcons": ["recycle-bin"],
+  "recycleBinEmpty": false
+}

@@ -1,0 +1,8 @@
+{
+  "_comment": "PLACEHOLDER story hosts. Any request to these hosts (any scheme, with or without www.) is served from content/sites/<host>/ instead of the internet. Everything else loads the live web untouched.",
+  "hosts": [
+    { "host": "placeholder-one.example", "title": "Placeholder One" },
+    { "host": "placeholder-two.example", "title": "Placeholder Two", "aliases": ["www.placeholder-two.example"] },
+    { "host": "placeholder-three.example", "title": "Placeholder Three" }
+  ]
+}

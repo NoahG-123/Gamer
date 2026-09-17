@@ -1,0 +1,11 @@
+node_modules/
+dist/
+release/
+web/.next/
+web/out/
+*.log
+.env
+.env.local
+data/
+.DS_Store
+tests/e2e/output/

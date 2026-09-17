@@ -1,0 +1,24 @@
+{
+  "_comment": "PLACEHOLDER pre-existing history. Keyed by chat id (contact id). `from`: 'me' or a contact id. Status applies to my messages: sent | delivered | read.",
+  "chats": {
+    "placeholder-a": [
+      { "from": "placeholder-a", "at": "2026-09-14T18:02:11Z", "text": "[placeholder] hey are you around later" },
+      { "from": "me", "at": "2026-09-14T18:05:40Z", "text": "[placeholder] yeah after 7 probably", "status": "read" },
+      { "from": "placeholder-a", "at": "2026-09-14T18:06:02Z", "text": "[placeholder] ok cool" },
+      { "from": "placeholder-a", "at": "2026-09-16T22:10:55Z", "text": "[placeholder] did you ever find that thing" }
+    ],
+    "placeholder-b": [
+      { "from": "me", "at": "2026-08-30T15:20:00Z", "text": "[placeholder] sent you the pdf", "status": "read" },
+      { "from": "placeholder-b", "at": "2026-08-30T15:31:12Z", "text": "[placeholder] got it thanks" },
+      { "from": "placeholder-b", "at": "2026-08-30T15:31:20Z", "text": "👍" }
+    ],
+    "placeholder-unlock": [
+      { "from": "placeholder-unlock", "at": "2026-09-17T01:12:03Z", "text": "[placeholder] this contact appeared because a trigger unlocked it" }
+    ],
+    "placeholder-group": [
+      { "from": "placeholder-b", "at": "2026-07-04T19:00:00Z", "text": "[placeholder] happy 4th everyone" },
+      { "from": "placeholder-a", "at": "2026-07-04T19:03:10Z", "text": "🎆" },
+      { "from": "me", "at": "2026-07-04T19:10:45Z", "text": "[placeholder] 🎉", "status": "read" }
+    ]
+  }
+}

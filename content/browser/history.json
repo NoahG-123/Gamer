@@ -1,0 +1,11 @@
+{
+  "_comment": "PLACEHOLDER omnibox history: what shows when typing in the address bar. Real live visits are also recorded at runtime.",
+  "entries": [
+    { "url": "https://www.youtube.com/", "title": "YouTube", "visits": 412 },
+    { "url": "https://mail.google.com/mail/u/0/#inbox", "title": "Inbox - PLACEHOLDER@outlook.com - Gmail", "visits": 230 },
+    { "url": "https://www.reddit.com/", "title": "Reddit - Dive into anything", "visits": 88 },
+    { "url": "https://placeholder-one.example/", "title": "Placeholder One", "visits": 9 },
+    { "url": "https://www.amazon.com/", "title": "Amazon.com", "visits": 61 },
+    { "url": "https://weather.com/", "title": "Weather Forecast & Reports", "visits": 33 }
+  ]
+}
