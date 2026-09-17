@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     "/*": ["../content/**/*"],
   },
   reactStrictMode: true,
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   // Fake sites decide their own trailing-slash behaviour, like a real server would.
   skipTrailingSlashRedirect: true,
   devIndicators: false,

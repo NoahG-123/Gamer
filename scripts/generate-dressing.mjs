@@ -13,8 +13,10 @@ const chance = (p) => rnd() < p;
 const pad = (n, w = 2) => String(n).padStart(w, "0");
 
 // Dates: cluster activity into "eras" so timestamps look like a real machine.
+// Nothing on this machine is dated after the "current day" of the story.
+const NOW = Date.UTC(2026, 8, 16, 23, 30);
 function dateBetween(y0, y1) {
-  const t0 = Date.UTC(y0, 0, 1), t1 = Date.UTC(y1, 11, 31);
+  const t0 = Math.min(Date.UTC(y0, 0, 1), NOW - 86400000), t1 = Math.min(Date.UTC(y1, 11, 31), NOW);
   const d = new Date(t0 + rnd() * (t1 - t0));
   // Skew to waking hours, local-ish
   d.setUTCHours(int(7, 23), int(0, 59), int(0, 59), 0);
@@ -25,7 +27,7 @@ function createdModified(y0, y1) {
   const c = dateBetween(y0, y1);
   // modified is usually the same or later; sometimes earlier (copied file keeps mtime)
   let m = new Date(c);
-  if (chance(0.55)) m = new Date(c.getTime() + rnd() * 1000 * 3600 * 24 * int(0, 400));
+  if (chance(0.55)) m = new Date(Math.min(NOW, c.getTime() + rnd() * 1000 * 3600 * 24 * int(0, 400)));
   if (chance(0.12)) m = new Date(c.getTime() - rnd() * 1000 * 3600 * 24 * int(1, 900));
   return { created: iso(c), modified: iso(m) };
 }
@@ -259,7 +261,6 @@ const pf = {
   "VideoLAN/VLC": ["vlc.exe", "vlc-cache-gen.exe", "libvlc.dll", "libvlccore.dll", "uninstall.exe", "AUTHORS.txt", "COPYING.txt", "NEWS.txt", "README.txt", "THANKS.txt", "axvlc.dll", "npvlc.dll"],
   "Notepad++": ["notepad++.exe", "SciLexer.dll", "change.log", "license.txt", "readme.txt", "uninstall.exe", "config.model.xml", "langs.model.xml", "stylers.model.xml", "shortcuts.xml", "contextMenu.xml", "doLocalConf.xml", "NppShell.dll"],
   "Common Files": [], "Common Files/microsoft shared": [], "Common Files/System": [], "Common Files/Adobe": [],
-  "Microsoft Office": [], "Microsoft Office/root": [], "Microsoft Office/root/Office16": ["WINWORD.EXE", "EXCEL.EXE", "POWERPNT.EXE", "OUTLOOK.EXE", "ONENOTE.EXE", "MSACCESS.EXE", "lync.exe", "OSPPREARM.EXE", "SETLANG.EXE", "GRAPH.EXE", "MSOSYNC.EXE", "CLVIEW.EXE"],
   "Microsoft Update Health Tools": ["uhssvc.exe", "MicrosoftUpdateHealthTools.exe"],
   "Windows Defender": ["MsMpEng.exe", "MpCmdRun.exe", "MSASCui.exe", "ConfigSecurityPolicy.exe", "NisSrv.exe"],
   "Windows Mail": [], "Windows Media Player": ["wmplayer.exe", "wmpnscfg.exe", "wmpshare.exe", "setup_wm.exe"], "Windows NT": [], "Windows NT/Accessories": ["wordpad.exe"], "Windows Photo Viewer": ["PhotoViewer.dll", "ImagingDevices.exe"],
@@ -308,7 +309,7 @@ add("C:/BOOTNXT", 1, [2021, 2021], { hidden: true, system: true });
 add("C:/hp.log", kb(1, 3), [2021, 2021]);
 for (const f of ["Microsoft", "Microsoft/Windows", "Microsoft/Windows Defender", "Microsoft/Windows/Start Menu", "Microsoft/Windows/Start Menu/Programs", "Package Cache", "Packages", "USOPrivate", "USOShared", "regid.1991-06.com.microsoft", "ssh", "SoftwareDistribution", "Adobe", "NVIDIA Corporation", "Intel", "HP", "Google", "Epic", "Steam", "VideoLAN", "Zoom"]) folder(`C:/ProgramData/${f}`, [2021, 2025]);
 folder("C:/ProgramData/Microsoft/Windows/Start Menu/Programs/Accessories", [2021, 2021]);
-for (const n of ["Google Chrome.lnk", "VLC media player.lnk", "7-Zip File Manager.lnk", "Notepad++.lnk", "Steam.lnk", "Zoom.lnk", "Adobe Acrobat.lnk", "Discord Inc.lnk", "Firefox.lnk", "Word.lnk", "Excel.lnk", "PowerPoint.lnk", "Outlook.lnk", "OneNote.lnk", "Access.lnk", "Publisher.lnk"]) add(`C:/ProgramData/Microsoft/Windows/Start Menu/Programs/${n}`, kb(1, 3), [2021, 2025]);
+for (const n of ["Google Chrome.lnk", "VLC media player.lnk", "7-Zip File Manager.lnk", "Notepad++.lnk", "Steam.lnk", "Zoom.lnk", "Adobe Acrobat.lnk", "Discord Inc.lnk", "Firefox.lnk", "Firefox Private Browsing.lnk"]) add(`C:/ProgramData/Microsoft/Windows/Start Menu/Programs/${n}`, kb(1, 3), [2021, 2025]);
 
 // ---------- Second drive ----------
 folder("D:", [2019, 2019]);

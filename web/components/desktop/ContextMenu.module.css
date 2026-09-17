@@ -1,0 +1,51 @@
+.menu {
+  position: fixed;
+  min-width: 200px;
+  padding: 4px 0;
+  border-radius: 8px;
+  background: rgba(249, 249, 249, 0.92);
+  backdrop-filter: blur(40px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.4);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14), 0 0 2px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: #1a1a1a;
+  animation: menu-in 90ms ease-out;
+  user-select: none;
+}
+@keyframes menu-in { from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; } }
+.item { position: relative; display: flex; align-items: center; height: 32px; margin: 1px 4px; padding: 0 12px 0 10px; border-radius: 4px; white-space: nowrap; }
+.item:hover, .itemOpen { background: rgba(0, 0, 0, 0.0578); }
+.item:active { background: rgba(0, 0, 0, 0.0419); color: rgba(0,0,0,.62); }
+.disabled { color: rgba(0, 0, 0, 0.36); }
+.disabled:hover { background: none; }
+.iconCol { width: 16px; height: 16px; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: #1a1a1a; flex-shrink: 0; }
+.iconCol svg { width: 16px; height: 16px; }
+.label { flex: 1; }
+.shortcut { margin-left: 28px; color: rgba(0, 0, 0, 0.45); font-size: 12px; }
+.arrow { margin-left: 24px; color: rgba(0, 0, 0, 0.6); display: flex; }
+.sep { height: 1px; margin: 3px 1px; background: rgba(0, 0, 0, 0.0803); }
+.iconRow { display: flex; justify-content: space-around; padding: 2px 8px 4px; }
+.iconBtn { width: 40px; height: 36px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #1a1a1a; }
+.iconBtn:hover { background: rgba(0, 0, 0, 0.0578); }
+.iconBtn:disabled { color: rgba(0,0,0,.3); }
+.iconBtn svg { width: 20px; height: 20px; }
+
+/* Chrome's menus: white, 8px radius, 13px Segoe UI, 32px rows, subtle shadow */
+.chrome { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.15); border-radius: 8px; padding: 8px 0; font-size: 13px; color: #1f1f1f; min-width: 240px; animation: none; }
+.chrome .item { height: 32px; margin: 0; padding: 0 16px 0 14px; border-radius: 0; }
+.chrome .item:hover, .chrome .itemOpen { background: #f0f0f0; }
+.chrome .iconCol { width: 20px; height: 20px; margin-right: 12px; color: #474747; }
+.chrome .iconCol svg { width: 20px; height: 20px; }
+.chrome .shortcut { color: #5f6368; font-size: 13px; }
+.chrome .sep { margin: 8px 0; background: #e3e3e3; }
+.chrome .arrow { color: #5f6368; }
+.chrome .disabled { color: #9aa0a6; }
+
+/* WhatsApp menus */
+.wa { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; border: none; border-radius: 6px; box-shadow: 0 2px 5px rgba(11,20,26,.26), 0 2px 10px rgba(11,20,26,.16); padding: 9px 0; font-size: 14.5px; color: #3b4a54; min-width: 200px; animation: none; }
+.wa .item { height: 40px; margin: 0; padding: 0 24px; border-radius: 0; }
+.wa .item:hover { background: #f5f6f6; }
+.wa .iconCol { display: none; }
+.wa .sep { margin: 6px 0; background: #e9edef; }
