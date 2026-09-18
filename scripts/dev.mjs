@@ -6,7 +6,15 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const PORT = process.env.PORT || "4127";
 const env = { ...process.env };
+// First run: make the .env for them. It is gitignored, so it never leaves this machine.
+if (!fs.existsSync(".env") && fs.existsSync(".env.example")) {
+  fs.copyFileSync(".env.example", ".env");
+  console.log("\n  Created .env from .env.example.");
+  console.log("  Paste your API key after DEEPSEEK_API_KEY= to make the characters reply.");
+  console.log("  Without it everything else still works; messages just never get answered.\n");
+}
 if (fs.existsSync(".env")) for (const line of fs.readFileSync(".env", "utf8").split(/\r?\n/)) { const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/); if (m && !line.trim().startsWith("#") && env[m[1]] === undefined) env[m[1]] = m[2].replace(/^["']|["']$/g, ""); }
+if (!env.DEEPSEEK_API_KEY && env.LLM_PROVIDER !== "mock") console.log("  (no DEEPSEEK_API_KEY in .env — characters will stay silent)\n");
 env.DATA_DIR = env.DATA_DIR || path.resolve("data");
 const next = spawn(process.platform === "win32" ? "npx.cmd" : "npx", ["next", "dev", "web", "-p", PORT], { stdio: "inherit", env, shell: process.platform === "win32" });
 const { execSync } = await import("node:child_process");

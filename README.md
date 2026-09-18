@@ -55,11 +55,14 @@ you arrive: new mail and messages land on a clock and in response to what you re
 
 ```bash
 npm install
-cp .env.example .env        # add your LLM key + PEXELS_API_KEY (both optional)
-npm run make:audio           # generate the story WAVs (committed, but regenerable)
 npm run fetch:people         # profile photos for the cast (randomuser.me, no key needed)
 npm run dev                  # Next dev server + Electron pointed at it
 ```
+
+`npm run dev` creates `.env` for you on first run (copied from `.env.example`) and
+tells you so. Paste your API key after `DEEPSEEK_API_KEY=` in it and restart to
+give the characters a voice — without it everything else still works, messages just
+never get answered. That file is gitignored, so your key stays on your machine.
 
 `fetch:people` makes one request per character and writes
 `content/assets/people/*.jpg`; the manifest already points at those paths, so the
