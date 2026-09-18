@@ -10,3 +10,7 @@ data/
 .DS_Store
 tests/e2e/output/
 tsconfig.tsbuildinfo
+
+# Third-party portraits fetched per-install by `npm run fetch:people`; still packaged from your
+# working tree. Delete these two lines if you want one fixed cast committed for every build.
+content/assets/people/*.jpg

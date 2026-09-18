@@ -57,8 +57,17 @@ you arrive: new mail and messages land on a clock and in response to what you re
 npm install
 cp .env.example .env        # add your LLM key + PEXELS_API_KEY (both optional)
 npm run make:audio           # generate the story WAVs (committed, but regenerable)
+npm run fetch:people         # profile photos for the cast (randomuser.me, no key needed)
 npm run dev                  # Next dev server + Electron pointed at it
 ```
+
+`fetch:people` makes one request per character and writes
+`content/assets/people/*.jpg`; the manifest already points at those paths, so the
+faces appear the moment the files exist and fall back to neutral silhouettes until
+then. The casting is random per install. Those photos are gitignored so the repo
+never redistributes them, but they *are* copied into packaged builds from your
+working tree — so run it before `npm run package`. (Drop the two `.gitignore` lines
+if you'd rather commit one fixed cast for every build.)
 
 Useful while developing:
 
@@ -77,12 +86,18 @@ consultant and the victim's daughter.
 1. Put a key in `.env` next to the executable (or in the app's data folder):
    `DEEPSEEK_API_KEY=sk-...` (default provider). Any OpenAI-compatible endpoint
    works via `DEEPSEEK_API_BASE` + `LLM_DEFAULT_MODEL`, so you can point it at
-   another model later.
+   another model later. For **OpenRouter**, set `DEEPSEEK_API_BASE=https://openrouter.ai/api/v1`,
+   put your OpenRouter key in `DEEPSEEK_API_KEY`, and use OpenRouter's slugs
+   (`deepseek/deepseek-r1`, `deepseek/deepseek-chat`) as the `model` in
+   `content/characters/*.json`. Unknown slugs just fall back to the default row in
+   `content/llm/pricing.json`, so the spend estimate goes approximate — the hard cap
+   still works.
 2. `LLM_BUDGET_USD` (default 10) is a hard spend cap for the whole install; when
    reached, characters simply stop reading messages. `deepseek-chat` is much cheaper
    than `deepseek-reasoner` and is the default for these characters.
 3. `PEXELS_API_KEY` (optional) fills in stock imagery (wallpaper, backgrounds) on
-   first run. Photos of the story's *people* are intentionally left blank.
+   first run. Character portraits come from `npm run fetch:people` instead and need
+   no key.
 
 So: add the key, download/run, and it starts as a stray file on your machine.
 

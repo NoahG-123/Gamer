@@ -12,7 +12,7 @@ afterPack: scripts/after-pack.cjs
 extraResources:
   - from: content
     to: content
-    filter: ["**/*", "!assets/people/*.png"]
+    filter: ["**/*"]
 asar: true
 executableName: recovered_00417
 win:

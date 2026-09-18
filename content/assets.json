@@ -1,25 +1,124 @@
 {
-  "_comment": "Central image manifest. Every image the UI shows is looked up here by key. `kind`: stock (fetched from Pexels on first run when PEXELS_API_KEY is set; `pexels.index` picks the Nth result), generated (built by a script), person (LEFT BLANK on purpose — a neutral silhouette shows until a file is dropped at that path), text. `fallback` shows while `file` is missing. Person photos of the story's people are intentionally absent per the design.",
+  "_comment": "Central image manifest. Every image the UI shows is looked up here by key. `kind`: stock (fetched from Pexels on first run when PEXELS_API_KEY is set), generated (built by a script), person (portraits fetched by `npm run fetch:people` from randomuser.me; a neutral silhouette shows until the file exists), text. `fallback` shows while `file` is missing.",
   "assets": {
-    "wallpaper.desktop": { "kind": "stock", "file": "stock/wallpaper-desktop.jpg", "fallback": "generated/bloom-dark.jpg", "pexels": { "query": "foggy harbour at night long exposure", "orientation": "landscape", "size": "original" } },
-    "taskbar.searchHighlight": { "kind": "stock", "file": "stock/search-highlight.jpg", "optional": true, "pexels": { "query": "halifax nova scotia waterfront", "orientation": "landscape", "size": "small" } },
-    "chrome.ntpBackground": { "kind": "stock", "file": "stock/ntp-background.jpg", "optional": true, "pexels": { "query": "atlantic coast fog rocks", "orientation": "landscape", "size": "large2x" } },
-    "chrome.ntpBackgroundCredit": { "kind": "text", "value": "" },
-    "start.phoneLinkIllustration": { "kind": "stock", "file": "stock/phone-link.jpg", "optional": true, "pexels": { "query": "field recorder microphone", "orientation": "landscape", "size": "medium" } },
-    "pic.family": { "kind": "stock", "file": "stock/family-kitchen.jpg", "optional": true, "pexels": { "query": "empty kitchen morning light", "orientation": "landscape", "size": "large" } },
-
-    "people.owner": { "kind": "person", "file": "people/owner.png", "placeholder": "silhouette" },
-    "people.contact.priya": { "kind": "person", "file": "people/priya.png", "placeholder": "silhouette" },
-    "people.contact.mateo": { "kind": "person", "file": "people/mateo.png", "placeholder": "silhouette" },
-    "people.contact.mama": { "kind": "person", "file": "people/mama.png", "placeholder": "silhouette" },
-    "people.contact.jonah": { "kind": "person", "file": "people/jonah.png", "placeholder": "silhouette" },
-    "people.contact.nadia": { "kind": "person", "file": "people/nadia.png", "placeholder": "silhouette" },
-    "people.contact.colin": { "kind": "person", "file": "people/colin.png", "placeholder": "silhouette" },
-    "people.contact.ilse": { "kind": "person", "file": "people/ilse.png", "placeholder": "silhouette" },
-    "people.contact.liam": { "kind": "person", "file": "people/liam.png", "placeholder": "silhouette" },
-    "people.contact.landlord": { "kind": "person", "file": "people/landlord.png", "placeholder": "silhouette" },
-    "people.contact.wren": { "kind": "person", "file": "people/wren.png", "placeholder": "silhouette" },
-    "people.contact.slowrooms": { "kind": "person", "file": "people/slowrooms.png", "placeholder": "group" },
-    "people.contact.castellanos": { "kind": "person", "file": "people/castellanos.png", "placeholder": "group" }
+    "wallpaper.desktop": {
+      "kind": "stock",
+      "file": "stock/wallpaper-desktop.jpg",
+      "fallback": "generated/bloom-dark.jpg",
+      "pexels": {
+        "query": "foggy harbour at night long exposure",
+        "orientation": "landscape",
+        "size": "original"
+      }
+    },
+    "taskbar.searchHighlight": {
+      "kind": "stock",
+      "file": "stock/search-highlight.jpg",
+      "optional": true,
+      "pexels": {
+        "query": "halifax nova scotia waterfront",
+        "orientation": "landscape",
+        "size": "small"
+      }
+    },
+    "chrome.ntpBackground": {
+      "kind": "stock",
+      "file": "stock/ntp-background.jpg",
+      "optional": true,
+      "pexels": {
+        "query": "atlantic coast fog rocks",
+        "orientation": "landscape",
+        "size": "large2x"
+      }
+    },
+    "chrome.ntpBackgroundCredit": {
+      "kind": "text",
+      "value": ""
+    },
+    "start.phoneLinkIllustration": {
+      "kind": "stock",
+      "file": "stock/phone-link.jpg",
+      "optional": true,
+      "pexels": {
+        "query": "field recorder microphone",
+        "orientation": "landscape",
+        "size": "medium"
+      }
+    },
+    "pic.family": {
+      "kind": "stock",
+      "file": "stock/family-kitchen.jpg",
+      "optional": true,
+      "pexels": {
+        "query": "empty kitchen morning light",
+        "orientation": "landscape",
+        "size": "large"
+      }
+    },
+    "people.owner": {
+      "kind": "person",
+      "file": "people/owner.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.priya": {
+      "kind": "person",
+      "file": "people/priya.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.mateo": {
+      "kind": "person",
+      "file": "people/mateo.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.mama": {
+      "kind": "person",
+      "file": "people/mama.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.jonah": {
+      "kind": "person",
+      "file": "people/jonah.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.nadia": {
+      "kind": "person",
+      "file": "people/nadia.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.colin": {
+      "kind": "person",
+      "file": "people/colin.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.ilse": {
+      "kind": "person",
+      "file": "people/ilse.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.liam": {
+      "kind": "person",
+      "file": "people/liam.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.landlord": {
+      "kind": "person",
+      "file": "people/landlord.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.wren": {
+      "kind": "person",
+      "file": "people/owner.jpg",
+      "placeholder": "silhouette"
+    },
+    "people.contact.slowrooms": {
+      "kind": "person",
+      "file": "people/slowrooms.png",
+      "placeholder": "group"
+    },
+    "people.contact.castellanos": {
+      "kind": "person",
+      "file": "people/castellanos.png",
+      "placeholder": "group"
+    }
   }
 }
