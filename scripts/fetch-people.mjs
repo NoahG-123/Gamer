@@ -12,8 +12,9 @@
 // them; they are still copied into packaged builds from your working tree.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(new URL(".", import.meta.url).pathname, "..");
+const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const peopleDir = path.join(root, "content/assets/people");
 const manifestPath = path.join(root, "content/assets.json");
 const force = process.argv.includes("--force");

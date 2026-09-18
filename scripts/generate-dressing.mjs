@@ -3,6 +3,7 @@
 // output is stable and can be hand-edited afterwards.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const SEED = Number(process.argv[2] ?? 4171);
 let s = SEED >>> 0;
@@ -338,6 +339,6 @@ folder("D:/$RECYCLE.BIN", [2019, 2019], { hidden: true, system: true });
 folder("D:/System Volume Information", [2019, 2019], { hidden: true, system: true });
 
 const out = { _comment: "GENERATED PLACEHOLDER DRESSING. Regenerate with `npm run generate:dressing [seed]` or hand-edit. Every entry here is unopenable window dressing unless a story file in story.json overrides the same path.", seed: SEED, entries };
-const outPath = path.join(path.dirname(new URL(import.meta.url).pathname), "..", "content", "filesystem", "dressing.json");
+const outPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "content", "filesystem", "dressing.json");
 fs.writeFileSync(outPath, JSON.stringify(out, null, 1));
 console.log(`wrote ${entries.length} entries (${entries.filter((e) => !e.dir).length} files, ${entries.filter((e) => e.dir).length} folders) to ${outPath}`);

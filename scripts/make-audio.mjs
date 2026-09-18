@@ -3,8 +3,9 @@
 // audio player has something to play. Deterministic, no dependencies. Small files.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(new URL(".", import.meta.url).pathname, "..");
+const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const outDir = path.join(root, "content/filesystem/assets/audio");
 fs.mkdirSync(outDir, { recursive: true });
 
