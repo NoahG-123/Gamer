@@ -33,3 +33,14 @@
 .flyoutButtons .btnAccent { background: var(--accent-button); color: var(--accent-text); border-color: transparent; }
 .flyoutButtons .btnAccent:hover { background: var(--accent-button-hover); }
 .flyoutButtons .btnAccent:disabled { background: var(--text-disabled); color: var(--text-2); }
+
+.propTabs { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.propTab { padding: 5px 12px; font-size: 12px; opacity: .6; border: 1px solid transparent; border-radius: 4px 4px 0 0; }
+.propTabOn { opacity: 1; background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.1); border-bottom-color: transparent; }
+.propBody { padding: 14px 18px; flex: 1; overflow: auto; font-size: 12px; }
+.propHead { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 12px; font-size: 13px; word-break: break-all; }
+.propRows { display: grid; grid-template-columns: 112px 1fr; gap: 7px 12px; }
+.propRows div { display: contents; }
+.propRows b { font-weight: 400; opacity: .68; }
+.propRows span { word-break: break-word; }
+.propSep { grid-column: 1 / -1; height: 1px; background: rgba(255,255,255,.08); margin: 6px 0; }

@@ -7,3 +7,7 @@
 .iconLabel { margin-top: 4px; max-width: 72px; font-size: 12px; line-height: 15px; color: #fff; text-align: center; text-shadow: 0 0 2px rgba(0,0,0,.9), 0 1px 3px rgba(0,0,0,.8); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
 .windows { position: absolute; inset: 0; bottom: 48px; pointer-events: none; }
 .windows > * { pointer-events: auto; }
+
+/* Screen brightness and night light are drawn over everything but the cursor. */
+.screenTint { position: fixed; inset: 0; background: #000; pointer-events: none; z-index: 1400; transition: opacity .12s linear; }
+.nightLight { position: fixed; inset: 0; background: #ff9a2e; opacity: .16; mix-blend-mode: multiply; pointer-events: none; z-index: 1401; }

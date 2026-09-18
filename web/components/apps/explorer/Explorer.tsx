@@ -5,7 +5,7 @@ import { WinState, useWM } from "@/components/desktop/wm";
 import { Window, CaptionButtons } from "@/components/desktop/Window";
 import { useOS } from "@/components/desktop/os";
 import { useMenu, MenuItem } from "@/components/desktop/ContextMenu";
-import { api, VfsNode, Drive, formatSizeCol, formatDateTime, formatBytes, toWindowsPath } from "@/lib/client/api";
+import { api, VfsNode, Drive, BinItem, formatSizeCol, formatDateTime, formatBytes, toWindowsPath } from "@/lib/client/api";
 import * as F from "@/components/icons/fluent";
 import * as A from "@/components/icons/apps";
 
@@ -67,6 +67,7 @@ export function Explorer({ win }: { win: WinState }) {
   const [items, setItems] = useState<VfsNode[]>([]);
   const [drives, setDrives] = useState<Drive[]>([]);
   const [recent, setRecent] = useState<VfsNode[]>([]);
+  const [bin, setBin] = useState<BinItem[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [anchor, setAnchor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,10 +100,14 @@ export function Explorer({ win }: { win: WinState }) {
     let cancelled = false;
     setLoading(true);
     if (path === SPECIAL.bin) {
-      // The bin lists what was deleted: the per-user folder under C:\$Recycle.Bin, shown with original names.
-      api.list("C:/$Recycle.Bin", { hidden: true, record: false })
-        .then((d) => { const user = d.children.find((c) => c.dir); return user ? api.list(user.path, { hidden: true }) : null; })
-        .then((d) => { if (!cancelled) { setItems(d ? d.children : []); setLoading(false); } })
+      // Everything deleted on this machine, plus what was in the bin before.
+      api.bin()
+        .then((d) => {
+          if (cancelled) return;
+          setBin(d.items);
+          setItems(d.items.map((b) => ({ name: b.name, path: b.path, dir: b.dir, size: b.size, created: b.modified, modified: b.modified, hidden: false, system: false, openable: !b.dir, ext: b.ext })));
+          setLoading(false);
+        })
         .catch(() => { if (!cancelled) { setItems([]); setLoading(false); } });
       return () => { cancelled = true; };
     }
@@ -146,9 +151,11 @@ export function Explorer({ win }: { win: WinState }) {
   }, [items, searchResults, tab.sort, tab.asc]);
 
   const open = useCallback((n: VfsNode) => {
+    // Items in the Recycle Bin are not openable in Windows either: you look at them, or restore them.
+    if (path === SPECIAL.bin) { wm.open("dialog", { props: { kind: "properties", name: n.name, ext: n.ext, path: n.path, node: n }, w: 400, h: 520, resizable: false }); return; }
     if (n.dir) navigate(n.path);
     else os.openFile(n);
-  }, [navigate, os]);
+  }, [navigate, os, path, wm]);
   // Recycle Bin and Gallery are special locations that still show a plain file list.
   const listLike = !isSpecial(path) || path === SPECIAL.bin || path === SPECIAL.gallery;
 
@@ -181,17 +188,47 @@ export function Explorer({ win }: { win: WinState }) {
     else if (e.key === "F5") { e.preventDefault(); refresh(); }
   };
 
-  const refresh = () => { updateTab((t) => ({ ...t })); api.list(path).then((d) => setItems(d.children)).catch(() => {}); };
+  const refresh = () => { updateTab((t) => ({ ...t })); os.fs.refresh(); };
 
   const setSort = (k: SortKey) => updateTab((t) => ({ ...t, sort: k, asc: t.sort === k ? !t.asc : k === "modified" ? false : true }));
+
+  const inBin = path === SPECIAL.bin;
+  const pick = (n?: VfsNode) => (n && !selected.has(n.path) ? [n.path] : [...selected]);
+  const doDelete = (n?: VfsNode, permanent = false) => { const ps = pick(n); if (ps.length) void os.fs.remove(ps, permanent || inBin); setSelected(new Set()); };
+  const doCopy = (n?: VfsNode, move = false) => { const ps = pick(n); if (ps.length) os.fs.copy(ps, move); };
+  const doPaste = () => { if (!isSpecial(path)) void os.fs.paste(path); };
+  const doNew = (kind: "text" | "folder") => { if (!isSpecial(path)) void os.fs.create(path, kind); };
+  const doRestore = async () => {
+    const restorable = [...selected].filter((p) => bin.find((b) => b.path === p)?.deletedHere);
+    if (restorable.length) { await api.restore(restorable); refresh(); }
+    setSelected(new Set());
+  };
+  const doEmptyBin = () => os.fs.confirm({ title: "Delete Multiple Items", text: `Are you sure you want to permanently delete these ${items.length} items?`, ok: "Yes", onOk: async () => { await api.emptyBin(); refresh(); } });
+  const showProperties = (n: VfsNode) => wm.open("dialog", { props: { kind: "properties", name: n.name, ext: n.ext, path: n.path, node: n }, w: 400, h: 520, resizable: false });
 
   // ---- context menus ----
   const fileMenu = (e: React.MouseEvent, n: VfsNode) => {
     e.preventDefault(); e.stopPropagation();
     if (!selected.has(n.path)) { setSelected(new Set([n.path])); setAnchor(n.path); }
     const iconRow: MenuItem = { type: "iconRow", buttons: [
-      { icon: <F.Cut />, label: "Cut" }, { icon: <F.Copy />, label: "Copy" }, { icon: <F.Rename />, label: "Rename" }, { icon: <F.Share />, label: "Share" }, { icon: <F.Delete />, label: "Delete" },
+      { icon: <F.Cut />, label: "Cut", onClick: () => doCopy(n, true) },
+      { icon: <F.Copy />, label: "Copy", onClick: () => doCopy(n) },
+      { icon: <F.Rename />, label: "Rename", onClick: () => os.fs.rename(n) },
+      { icon: <F.Share />, label: "Share" },
+      { icon: <F.Delete />, label: "Delete", onClick: () => doDelete(n) },
     ] };
+    if (inBin) {
+      const b = bin.find((x) => x.path === n.path);
+      menu.open({ x: e.clientX, y: e.clientY, items: [
+        { label: "Restore", icon: <F.RestoreIcon />, disabled: !b?.deletedHere, onClick: () => void doRestore() },
+        { type: "sep" },
+        { label: "Cut", icon: <F.Cut />, disabled: true },
+        { label: "Delete", icon: <F.Delete />, onClick: () => doDelete(n, true) },
+        { type: "sep" },
+        { label: "Properties", icon: <F.Properties />, onClick: () => showProperties(n) },
+      ] });
+      return;
+    }
     const items: MenuItem[] = n.dir ? [
       iconRow, { type: "sep" },
       { label: "Open", icon: <F.Folder />, onClick: () => open(n), shortcut: "Enter" },
@@ -201,19 +238,26 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
       { label: "Compress to...", icon: <F.Zip />, children: [{ label: "ZIP File" }, { label: "7z File" }, { label: "TAR File" }, { type: "sep" }, { label: "Additional options" }] },
-      { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C" },
-      { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter" },
+      { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
+      { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: n.path }) },
+      { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
       { type: "sep" },
       { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ] : [
       iconRow, { type: "sep" },
       { label: "Open", icon: <F.OpenWith />, onClick: () => open(n), shortcut: "Enter" },
-      { label: "Open with", icon: <span />, children: [{ label: "Choose another app" }] },
+      { label: "Open with", icon: <span />, children: [
+        { label: "Notepad", onClick: () => void os.openWith(n.path, "notepad") },
+        { label: "Google Chrome", onClick: () => void os.openWith(n.path, "chrome") },
+        { label: "VLC media player", onClick: () => void os.openWith(n.path, "player") },
+        { label: "Photos", onClick: () => void os.openWith(n.path, "image") },
+      ] },
+      ...(/^(jpg|jpeg|png|bmp|webp|heic)$/.test(n.ext) ? [{ label: "Set as desktop background", icon: <F.ImageIcon />, onClick: () => os.fs.setWallpaper(n.path) } as MenuItem] : []),
       { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
       { label: "Compress to...", icon: <F.Zip />, children: [{ label: "ZIP File" }, { label: "7z File" }, { label: "TAR File" }, { type: "sep" }, { label: "Additional options" }] },
-      { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C" },
-      { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter" },
+      { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
+      { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
       { type: "sep" },
       { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ];
@@ -229,7 +273,14 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "Group by", icon: <span />, children: [{ label: "(None)", checked: true }, { label: "Name" }, { label: "Date modified" }, { label: "Type" }, { label: "Size" }] },
       { label: "Refresh", icon: <F.Refresh />, onClick: refresh },
       { type: "sep" },
-      { label: "New", icon: <F.NewIcon />, children: [{ label: "Folder" }, { label: "Shortcut" }, { type: "sep" }, { label: "Bitmap image" }, { label: "Text Document" }, { label: "Compressed (zipped) Folder" }] },
+      { label: "New", icon: <F.NewIcon />, children: [
+        { label: "Folder", onClick: () => doNew("folder") },
+        { label: "Shortcut", disabled: true },
+        { type: "sep" },
+        { label: "Text Document", onClick: () => doNew("text") },
+      ] },
+      ...(os.fs.clipboard ? [{ label: "Paste", icon: <F.Paste />, shortcut: "Ctrl+V", onClick: doPaste } as MenuItem] : []),
+      ...(inBin ? [{ label: "Empty Recycle Bin", icon: <F.Delete />, onClick: doEmptyBin } as MenuItem] : []),
       { type: "sep" },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter" },
       { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: path }) },
@@ -292,14 +343,17 @@ export function Explorer({ win }: { win: WinState }) {
 
         {/* Command bar */}
         <div className={styles.commandBar}>
-          <button className={styles.cmdText}><F.Plus size={16} /><span>New</span><F.ChevronDown size={10} /></button>
+          <button className={styles.cmdText} disabled={isSpecial(path)} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [{ label: "Folder", icon: <F.FolderAdd />, onClick: () => doNew("folder") }, { label: "Text Document", icon: <F.DocumentAdd />, onClick: () => doNew("text") }] }); }}><F.Plus size={16} /><span>New</span><F.ChevronDown size={10} /></button>
           <div className={styles.vsep} />
-          <button className={styles.cmdIcon} title="Cut (Ctrl+X)" disabled={!selected.size}><F.Cut size={18} /></button>
-          <button className={styles.cmdIcon} title="Copy (Ctrl+C)" disabled={!selected.size}><F.Copy size={18} /></button>
-          <button className={styles.cmdIcon} title="Paste (Ctrl+V)" disabled><F.Paste size={18} /></button>
-          <button className={styles.cmdIcon} title="Rename (F2)" disabled={selected.size !== 1}><F.Rename size={18} /></button>
-          <button className={styles.cmdIcon} title="Share" disabled={!selected.size}><F.Share size={18} /></button>
-          <button className={styles.cmdIcon} title="Delete (Delete)" disabled={!selected.size}><F.Delete size={18} /></button>
+          <button className={styles.cmdIcon} title="Cut (Ctrl+X)" disabled={!selected.size || inBin} onClick={() => doCopy(undefined, true)}><F.Cut size={18} /></button>
+          <button className={styles.cmdIcon} title="Copy (Ctrl+C)" disabled={!selected.size || inBin} onClick={() => doCopy()}><F.Copy size={18} /></button>
+          <button className={styles.cmdIcon} title="Paste (Ctrl+V)" disabled={!os.fs.clipboard || isSpecial(path)} onClick={doPaste}><F.Paste size={18} /></button>
+          <button className={styles.cmdIcon} title="Rename (F2)" disabled={selected.size !== 1 || inBin} onClick={() => { const n = sorted.find((x) => selected.has(x.path)); if (n) os.fs.rename(n); }}><F.Rename size={18} /></button>
+          {inBin
+            ? <button className={styles.cmdText} disabled={!selected.size} onClick={() => void doRestore()}><F.RestoreIcon size={16} /><span>Restore</span></button>
+            : <button className={styles.cmdIcon} title="Share" disabled={!selected.size}><F.Share size={18} /></button>}
+          <button className={styles.cmdIcon} title="Delete (Delete)" disabled={!selected.size} onClick={() => doDelete()}><F.Delete size={18} /></button>
+          {inBin && <button className={styles.cmdText} disabled={!items.length} onClick={doEmptyBin}><F.Delete size={16} /><span>Empty Recycle Bin</span></button>}
           <div className={styles.vsep} />
           <button className={styles.cmdText}><F.Sort size={16} /><span>Sort</span><F.ChevronDown size={10} /></button>
           <button className={styles.cmdText} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [{ label: "Extra large icons" }, { label: "Large icons", checked: tab.view === "large", onClick: () => updateTab((t) => ({ ...t, view: "large" })) }, { label: "Medium icons" }, { label: "Small icons" }, { label: "List" }, { label: "Details", checked: tab.view === "details", onClick: () => updateTab((t) => ({ ...t, view: "details" })) }, { label: "Tiles" }, { label: "Content" }, { type: "sep" }, { label: "Compact view" }, { label: "Show", children: [{ label: "Navigation pane", checked: true }, { label: "Details pane" }, { label: "Preview pane" }, { type: "sep" }, { label: "Item check boxes" }, { label: "File name extensions", checked: true }, { label: "Hidden items" }] }] }); }}><F.ViewIcon size={16} /><span>View</span><F.ChevronDown size={10} /></button>
@@ -361,7 +415,8 @@ export function Explorer({ win }: { win: WinState }) {
             {listLike && tab.view === "details" && (
               <div className={styles.details}>
                 <div className={styles.header}>
-                  <HeaderCell label="Name" k="name" sort={tab} onClick={setSort} style={{ flex: "0 0 auto", width: searchResults ? 300 : 360 }} />
+                  <HeaderCell label="Name" k="name" sort={tab} onClick={setSort} style={{ flex: "0 0 auto", width: searchResults ? 300 : inBin ? 300 : 360 }} />
+                  {inBin && <span className={styles.headerCell} style={{ width: 240 }}>Original location</span>}
                   <HeaderCell label="Date modified" k="modified" sort={tab} onClick={setSort} style={{ width: 150 }} />
                   <HeaderCell label="Type" k="type" sort={tab} onClick={setSort} style={{ width: 170 }} />
                   <HeaderCell label="Size" k="size" sort={tab} onClick={setSort} style={{ width: 90, textAlign: "right", justifyContent: "flex-end" }} />
@@ -370,7 +425,8 @@ export function Explorer({ win }: { win: WinState }) {
                 <div className={styles.rows}>
                   {sorted.map((n) => (
                     <div key={n.path} data-row className={`${styles.row} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
-                      <span className={styles.cellName} style={{ width: searchResults ? 300 : 360 }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} /></span><span className={styles.rowText}>{n.name}</span></span>
+                      <span className={styles.cellName} style={{ width: searchResults ? 300 : inBin ? 300 : 360 }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} /></span><span className={styles.rowText}>{n.name}</span></span>
+                      {inBin && <span className={styles.cell} style={{ width: 240 }}>{bin.find((b) => b.path === n.path)?.origin ?? ""}</span>}
                       <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale, os.profile.dateFormat)}</span>
                       <span className={styles.cell} style={{ width: 170 }}>{A.typeLabel(n.ext, n.dir)}</span>
                       <span className={`${styles.cell} ${styles.cellSize}`} style={{ width: 90 }}>{n.dir ? "" : formatSizeCol(n.size)}</span>

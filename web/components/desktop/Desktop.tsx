@@ -8,21 +8,26 @@ import { StartMenu } from "./StartMenu";
 import { OSProvider, OS } from "./os";
 import { APP_COMPONENTS } from "./registry";
 import { dialogForFile } from "./Dialogs";
-import { SearchPanel, TaskViewPanel, NotificationPanel, WidgetsPanel, AppEntry } from "./Panels";
+import { SearchPanel, TaskViewPanel, NotificationPanel, WidgetsPanel, QuickSettingsPanel, AppEntry } from "./Panels";
 import { api, Profile, VfsNode, OpenResult, OpenWith, useLiveEvents, LiveEvent } from "@/lib/client/api";
 import { RecycleBinIcon, FileTypeIcon, ChromeIcon, WhatsAppIcon, TerminalAppIcon } from "@/components/icons/apps";
 import { Toasts, Toast } from "./Toasts";
-import { AssetsProvider, useAsset } from "@/lib/client/assets";
+import { AssetsProvider, useAssets } from "@/lib/client/assets";
+import { host } from "@/lib/client/host";
+import { SystemProvider, useSystem } from "@/lib/client/system";
+import { RenameDialog, ConfirmDialog } from "./Prompts";
 import { ViewIcon, Sort, Refresh, NewIcon, Display, Personalize, Terminal, ChevronRight } from "@/components/icons/fluent";
 
 export default function Desktop() {
   return (
     <AssetsProvider>
-      <WMProvider>
-        <MenuProvider>
-          <DesktopInner />
-        </MenuProvider>
-      </WMProvider>
+      <SystemProvider>
+        <WMProvider>
+          <MenuProvider>
+            <DesktopInner />
+          </MenuProvider>
+        </WMProvider>
+      </SystemProvider>
     </AssetsProvider>
   );
 }
@@ -40,9 +45,17 @@ function DesktopInner() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [history, setHistory] = useState<Toast[]>([]);
   const [seenNotif, setSeenNotif] = useState(0);
-  const wallpaper = useAsset(profile?.wallpaper ?? "wallpaper.desktop");
+  const [renaming, setRenaming] = useState<VfsNode | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; text: string; ok: string; onOk: () => void } | null>(null);
+  const [clipboard, setClipboard] = useState<{ paths: string[]; move: boolean } | null>(null);
+  const sys = useSystem();
+  const assets = useAssets();
+  const wallpaperKey = sys.settings.wallpaper ?? profile?.wallpaper ?? "wallpaper.desktop";
+  const wallpaper = /^[A-Za-z]:\//.test(wallpaperKey) ? `/lf/${encodeURIComponent(wallpaperKey).replace(/%2F/g, "/")}` : assets[wallpaperKey]?.url ?? null;
 
   useEffect(() => { api.profile().then((d) => { setProfile(d.profile); setHome(d.home); }).catch(() => {}); }, []);
+  // The shell blocks or allows network traffic to match this computer's Wi-Fi setting.
+  useEffect(() => { host().setNetwork?.(sys.online); }, [sys.online]);
   useEffect(() => {
     if (!home) return;
     api.list(`${home}/Desktop`, { record: false }).then((d) => setDesktopItems(d.children.filter((c) => !c.hidden))).catch(() => {});
@@ -64,8 +77,9 @@ function DesktopInner() {
       const t: Toast = { id: Date.now() + Math.random(), app: String(ev.app), title: String(ev.title), text: String(ev.text), props: (ev.props as Record<string, unknown>) ?? {}, at: Date.now() };
       setToasts((x) => [...x, t]);
       setHistory((x) => [...x.slice(-49), t]);
+      sys.play(t.app === "whatsapp" ? "message" : "notify");
     }
-  }, [launch]);
+  }, [launch, sys]);
   useLiveEvents(onLive);
 
   const openToast = useCallback((t: Toast) => {
@@ -106,16 +120,34 @@ function DesktopInner() {
   }, [showOpen]);
 
   const openFolder = useCallback((path: string) => { wm.open("explorer", { props: { path } }); }, [wm]);
+  const refresh = useCallback(() => setRefreshTick((t) => t + 1), []);
+  const fsOps = useMemo(() => ({
+    create: async (parent: string, kind: "text" | "folder") => { const r = await api.create(parent, kind); refresh(); return r.node; },
+    rename: (node: VfsNode) => setRenaming(node),
+    remove: async (paths: string[], permanent = false) => {
+      if (permanent) {
+        setConfirm({ title: "Delete File", text: `Are you sure you want to permanently delete ${paths.length === 1 ? `this file? ${paths[0].split("/").pop()}` : `these ${paths.length} items?`}`, ok: "Yes", onOk: async () => { await api.remove(paths, true); sys.play("empty-bin"); refresh(); } });
+        return;
+      }
+      await api.remove(paths, false); sys.play("click"); refresh();
+    },
+    copy: (paths: string[], move = false) => setClipboard({ paths, move }),
+    paste: async (dest: string) => { if (!clipboard) return; await api.paste(clipboard.paths, dest, clipboard.move); if (clipboard.move) setClipboard(null); refresh(); },
+    clipboard,
+    setWallpaper: (path: string) => { sys.set({ wallpaper: path }); sys.play("click"); },
+    confirm: (opts: { title: string; text: string; ok: string; onOk: () => void }) => setConfirm(opts),
+    refresh,
+  }), [clipboard, refresh, sys]);
   const openUrl = useCallback((url: string) => { launch("chrome", { openUrl: url }); }, [launch]);
-  const launchEntry = useCallback((a: AppEntry) => { if (a.app) launch(a.app, a.url ? { openUrl: a.url } : undefined); }, [launch]);
+  const launchEntry = useCallback((a: AppEntry) => { if (a.app) launch(a.app, a.url ? { openUrl: a.url } : a.page ? { page: a.page } : undefined); }, [launch]);
 
-  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick]);
+  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fs: fsOps } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fsOps]);
 
   // Close any flyout on outside click; deselect desktop icons.
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement;
-      if (panel && !t.closest("[data-startmenu],[data-start],[data-search],[data-search-btn],[data-taskview-btn],[data-notif],[data-notif-btn],[data-widgets],[data-widgets-btn],[data-menu-root]")) setPanel(null);
+      if (panel && !t.closest("[data-startmenu],[data-start],[data-search],[data-search-btn],[data-taskview-btn],[data-notif],[data-notif-btn],[data-widgets],[data-widgets-btn],[data-quicksettings],[data-quick-btn],[data-menu-root]")) setPanel(null);
       if (!t.closest("[data-desktop-icon]") && !t.closest("[data-menu-root]")) setSelected(null);
     };
     window.addEventListener("pointerdown", onDown, true);
@@ -126,10 +158,13 @@ function DesktopInner() {
       if (e.key === "Escape") setPanel(null);
       // Win key (Meta) toggles Start; Win+S opens Search.
       if (e.key === "Meta" && !e.repeat) { e.preventDefault(); setPanel((p) => (p === "start" ? null : "start")); }
+      if (e.ctrlKey && e.shiftKey && e.key === "Escape") { e.preventDefault(); launch("taskmgr"); }
+      if (e.metaKey && e.key.toLowerCase() === "i") { e.preventDefault(); launch("settings"); }
+      if (e.metaKey && e.key.toLowerCase() === "a") { e.preventDefault(); setPanel((p) => (p === "quick" ? null : "quick")); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [launch]);
   useEffect(() => { if (panel === "notif") setSeenNotif(history.length); }, [panel, history.length]);
 
   const desktopMenu = (e: React.MouseEvent) => {
@@ -140,10 +175,16 @@ function DesktopInner() {
       { label: "Sort by", icon: <Sort />, children: [{ label: "Name" }, { label: "Size" }, { label: "Item type" }, { label: "Date modified" }] },
       { label: "Refresh", icon: <Refresh />, onClick: () => setRefreshTick((t) => t + 1) },
       { type: "sep" },
-      { label: "New", icon: <NewIcon />, children: [{ label: "Folder" }, { label: "Shortcut" }, { type: "sep" }, { label: "Bitmap image" }, { label: "Text Document", onClick: () => launch("notepad", { name: "New Text Document.txt", text: "" }) }, { label: "Compressed (zipped) Folder" }] },
+      { label: "New", icon: <NewIcon />, children: [
+        { label: "Folder", onClick: () => void fsOps.create(`${home}/Desktop`, "folder") },
+        { label: "Shortcut", disabled: true },
+        { type: "sep" },
+        { label: "Text Document", onClick: () => void fsOps.create(`${home}/Desktop`, "text") },
+      ] },
+      ...(clipboard ? [{ label: "Paste", icon: <NewIcon />, onClick: () => void fsOps.paste(`${home}/Desktop`) } as const] : []),
       { type: "sep" },
-      { label: "Display settings", icon: <Display /> },
-      { label: "Personalize", icon: <Personalize /> },
+      { label: "Display settings", icon: <Display />, onClick: () => launch("settings", { page: "system" }) },
+      { label: "Personalize", icon: <Personalize />, onClick: () => launch("settings", { page: "personalisation" }) },
       { type: "sep" },
       { label: "Open in Terminal", icon: <Terminal />, onClick: () => launch("terminal", { cwd: `${home}/Desktop` }) },
       { type: "sep" },
@@ -155,7 +196,11 @@ function DesktopInner() {
     e.preventDefault(); e.stopPropagation();
     setSelected(node ? node.path : "recycle-bin");
     if (!node) {
-      menu.open({ x: e.clientX, y: e.clientY, items: [{ label: "Open", onClick: () => openFolder("Recycle Bin") }, { label: "Empty Recycle Bin", disabled: profile?.recycleBinEmpty }, { type: "sep" }, { label: "Pin to Start" }, { type: "sep" }, { label: "Create shortcut" }, { label: "Rename" }, { label: "Properties" }] });
+      menu.open({ x: e.clientX, y: e.clientY, items: [
+        { label: "Open", onClick: () => openFolder("Recycle Bin") },
+        { label: "Empty Recycle Bin", onClick: () => setConfirm({ title: "Delete Multiple Items", text: "Are you sure you want to permanently delete these items?", ok: "Yes", onOk: async () => { await api.emptyBin(); sys.play("empty-bin"); refresh(); } }) },
+        { type: "sep" }, { label: "Pin to Start" }, { type: "sep" }, { label: "Properties" },
+      ] });
       return;
     }
     menu.open({ x: e.clientX, y: e.clientY, items: [
@@ -170,15 +215,18 @@ function DesktopInner() {
       ] },
       { label: "Open in Terminal", onClick: () => launch("terminal", { cwd: node.path.slice(0, node.path.lastIndexOf("/")) }) },
       { type: "sep" },
-      { label: "Cut", shortcut: "Ctrl+X" }, { label: "Copy", shortcut: "Ctrl+C" },
+      { label: "Cut", shortcut: "Ctrl+X", onClick: () => fsOps.copy([node.path], true) },
+      { label: "Copy", shortcut: "Ctrl+C", onClick: () => fsOps.copy([node.path]) },
+      ...(/^(jpg|jpeg|png|bmp|webp|heic)$/.test(node.ext) ? [{ label: "Set as desktop background", onClick: () => fsOps.setWallpaper(node.path) } as const] : []),
       { type: "sep" },
-      { label: "Create shortcut" }, { label: "Delete", shortcut: "Del" }, { label: "Rename", shortcut: "F2" },
+      { label: "Delete", shortcut: "Del", onClick: () => void fsOps.remove([node.path]) },
+      { label: "Rename", shortcut: "F2", onClick: () => fsOps.rename(node) },
       { type: "sep" },
-      { label: "Properties", shortcut: "Alt+Enter" },
+      { label: "Properties", shortcut: "Alt+Enter", onClick: () => wm.open("dialog", { props: { kind: "properties", name: node.name, ext: node.ext, path: node.path, node }, w: 400, h: 520, resizable: false }) },
     ] });
   };
 
-  if (!profile || !os) return <div className={styles.desktop} data-theme="dark" style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined }} />;
+  if (!profile || !os) return <div className={styles.desktop} data-theme={sys.settings.theme} style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined }} />;
 
   const iconFor = (n: VfsNode) => {
     if (n.ext === "lnk" && /chrome/i.test(n.name)) return <ChromeIcon size={48} />;
@@ -191,7 +239,18 @@ function DesktopInner() {
 
   return (
     <OSProvider value={os}>
-      <div className={styles.desktop} data-theme={profile.theme ?? "dark"} style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined, ...(profile.theme === "light" ? { ["--accent" as string]: profile.accentColor } : {}) }} onContextMenu={desktopMenu} data-desktop>
+      <div
+        className={styles.desktop}
+        data-theme={sys.settings.theme}
+        style={{
+          backgroundImage: wallpaper ? `url(${wallpaper})` : undefined,
+          backgroundSize: sys.settings.wallpaperFit === "fit" ? "contain" : sys.settings.wallpaperFit === "stretch" ? "100% 100%" : sys.settings.wallpaperFit === "tile" ? "auto" : sys.settings.wallpaperFit === "centre" ? "auto" : "cover",
+          backgroundRepeat: sys.settings.wallpaperFit === "tile" ? "repeat" : "no-repeat",
+          ["--accent" as string]: sys.settings.accent,
+        }}
+        onContextMenu={desktopMenu}
+        data-desktop
+      >
         <div className={styles.icons}>
           <button data-desktop-icon className={`${styles.icon} ${selected === "recycle-bin" ? styles.iconSel : ""}`} onClick={() => setSelected("recycle-bin")} onDoubleClick={() => openFolder("Recycle Bin")} onContextMenu={(e) => iconMenu(e, null)}>
             <span className={styles.iconImg}><RecycleBinIcon size={48} full={!profile.recycleBinEmpty} /></span>
@@ -207,12 +266,17 @@ function DesktopInner() {
         <div className={styles.windows}>
           {wm.windows.map((w) => { const C = APP_COMPONENTS[w.app]; return <C key={w.id} win={w} />; })}
         </div>
+        <div className={styles.screenTint} style={{ opacity: (100 - sys.settings.brightness) / 100 * 0.72 }} />
+        {sys.settings.nightLight && <div className={styles.nightLight} />}
         <TaskViewPanel open={panel === "taskview"} onClose={() => setPanel(null)} />
         <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} onOpen={openToast} />
         <StartMenu open={panel === "start"} displayName={profile.displayName} onLaunch={(a, p) => launch(a, p)} onOpenFile={openFile} onClose={() => setPanel(null)} onSearch={(q) => { setSearchInitial(q); setPanel("search"); }} />
         <SearchPanel open={panel === "search"} initial={searchInitial} onClose={() => { setPanel(null); setSearchInitial(""); }} onLaunch={launchEntry} onOpenFile={openFile} onOpenUrl={openUrl} />
         <NotificationPanel open={panel === "notif"} onClose={() => setPanel(null)} history={history} onOpen={openToast} onClear={() => { setHistory([]); setSeenNotif(0); }} />
         <WidgetsPanel open={panel === "widgets"} weather={weather} unit={profile.tempUnit ?? "C"} onOpenUrl={(u) => { setPanel(null); openUrl(u); }} />
+        <QuickSettingsPanel open={panel === "quick"} onClose={() => setPanel(null)} onOpenSettings={(page) => launch("settings", page ? { page } : undefined)} />
+        {renaming && <RenameDialog node={renaming} onClose={() => setRenaming(null)} onDone={() => { setRenaming(null); refresh(); }} />}
+        {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} />}
         <Taskbar profile={profile} pins={profile.taskbarPins as AppId[]} panel={panel} onPanel={(p) => { if (p === "search") setSearchInitial(""); setPanel(p); }} onLaunch={(a) => { setPanel(null); launch(a); }} onShowDesktop={() => { setPanel(null); wm.windows.forEach((w) => wm.minimize(w.id)); }} unreadCount={Math.max(0, history.length - seenNotif)} />
       </div>
     </OSProvider>

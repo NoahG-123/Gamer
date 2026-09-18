@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("__host", {
   serverOrigin: arg("found-origin"),
   webviewPartition: arg("found-partition") || "persist:browser",
   quit: () => ipcRenderer.send("quit"),
+  setNetwork: (online: boolean) => ipcRenderer.send("net-state", online),
+  tabDevTools: (webContentsId: number) => ipcRenderer.invoke("tab-devtools", webContentsId),
   toggleDevTools: () => ipcRenderer.send("toggle-devtools"),
   onOpenTab: (cb: (url: string) => void) => {
     const handler = (_e: unknown, url: string) => cb(url);

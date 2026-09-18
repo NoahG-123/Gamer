@@ -22,10 +22,12 @@ export interface PaneHandle {
   canGoForward: () => boolean;
   getURL: () => string;
   focus: () => void;
+  /** Chromium id of this tab, used to open devtools on it. */
+  webContentsId: () => number | null;
 }
 
 type WebviewEl = HTMLElement & {
-  loadURL: (u: string) => Promise<void>; reload: () => void; stop: () => void; goBack: () => void; goForward: () => void; canGoBack: () => boolean; canGoForward: () => boolean; getURL: () => string; src: string; focus: () => void;
+  loadURL: (u: string) => Promise<void>; reload: () => void; stop: () => void; goBack: () => void; goForward: () => void; canGoBack: () => boolean; canGoForward: () => boolean; getURL: () => string; src: string; focus: () => void; getWebContentsId: () => number;
 };
 
 /**
@@ -51,6 +53,7 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
     canGoForward: () => (h.isElectron ? !!wvRef.current?.canGoForward() : false),
     getURL: () => (h.isElectron ? wvRef.current?.getURL() ?? "" : iframeUrl.current),
     focus: () => { if (h.isElectron) wvRef.current?.focus(); else ifRef.current?.focus(); },
+    webContentsId: () => { try { return h.isElectron ? wvRef.current?.getWebContentsId() ?? null : null; } catch { return null; } },
   }), [h.isElectron, resolveForFrame]);
 
   useEffect(() => {

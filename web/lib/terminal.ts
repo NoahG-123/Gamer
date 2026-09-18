@@ -10,8 +10,9 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 import { loadContent, loadProfile, contentPath } from "./content";
-import { getNode, listDir, getStoryFile, normalizePath, parentPath, userHome, allStoryFiles, VfsNode, toWindowsPath } from "./vfs";
+import { getNode, listDir, getStoryFile, normalizePath, parentPath, userHome, allStoryFiles, VfsNode, toWindowsPath, resolveText, contentSeed } from "./vfs";
 import { recordEvent, reveal, setFlag, allFlags } from "./state";
+import { writeFile, mkdir as fsMkdir, remove as fsRemove, purge as fsPurge, rename as fsRename, copyTo, getOverlay } from "./fsmut";
 import { db } from "./db";
 
 export interface Line { text: string; color?: "red" | "yellow" | "green" | "cyan" | "dim" | "white"; delayMs?: number }
@@ -82,11 +83,11 @@ function gciLines(dir: string, nodes: VfsNode[]): Line[] {
   return out;
 }
 
+/** What `cat` reads: the story body, what the player saved, or a filler body. */
 function fileText(p: string): string | null {
   const f = getStoryFile(p);
-  if (!f) return null;
-  if (f.body !== undefined) return f.body;
-  return "";
+  if (f) return f.body ?? "";
+  return resolveText(p);
 }
 
 function walk(root: string, showHidden: boolean, depth = 0, max = 6, acc: VfsNode[] = []): VfsNode[] {
@@ -119,6 +120,21 @@ export function exec(req: ExecRequest): ExecResult {
   if (req.mode?.kind === "ssh") return sshExec(req.mode, line, cwd);
   if (req.mode?.kind === "python") return pyExec(line, cwd);
   if (!line) return { lines: [], cwd };
+
+  // Output redirection: `command > file` and `command >> file` really write the file.
+  const redirect = line.match(/^(.*?)\s*(>>|>)\s*("[^"]+"|'[^']+'|\S+)\s*$/);
+  if (redirect && !/^\s*(7z|gpg|git)\b/i.test(redirect[1])) {
+    const inner = exec({ ...req, line: redirect[1] });
+    const target = resolve(cwd, redirect[3].replace(/^["']|["']$/g, ""));
+    const parent = parentPath(target);
+    if (!parent || !getNode(parent)?.dir) return { cwd, lines: [red(`Could not find a part of the path '${toWindowsPath(target)}'.`), L("")] };
+    const text = inner.lines.map((l) => l.text).join("\r\n");
+    const existing = redirect[2] === ">>" ? resolveText(target) ?? "" : "";
+    writeFile(target, existing ? `${existing}\r\n${text}` : text);
+    recordEvent("file.saved", target, { via: "terminal" });
+    return { cwd, lines: [] };
+  }
+
   const argv = tokenize(line);
   const cmd = argv[0].toLowerCase();
   const args = argv.slice(1);
@@ -334,9 +350,89 @@ export function exec(req: ExecRequest): ExecResult {
     }
     case "set": case "get-childitem env:": case "env": return { cwd, lines: [L(`COMPUTERNAME=${profile.machineName}`), L(`HOMEPATH=\\Users\\${profile.username}`), L("OS=Windows_NT"), L(`USERNAME=${profile.username}`), L(`USERPROFILE=${toWindowsPath(home)}`), L("WITNESS_RELAY=relay.wrn.sh"), L("")] };
     case "shutdown": case "restart-computer": case "stop-computer": return { cwd, lines: [red("shutdown : Access is denied.(5)")] };
-    case "rm": case "del": case "remove-item": case "ri": case "mv": case "move": case "cp": case "copy": case "mkdir": case "md": case "new-item": case "ni": case "rmdir": case "ren": case "rename-item": case "touch": {
+    case "mkdir": case "md": {
       const a = args.filter((x) => !x.startsWith("-"))[0];
-      return { cwd, lines: [red(`${cmd} : Access to the path '${toWindowsPath(a ? resolve(cwd, a) : cwd)}' is denied.`), red("At line:1 char:1"), red(`+ ${line}`), red("    + CategoryInfo          : PermissionDenied: (" + (a ?? "") + ":String) [], UnauthorizedAccessException"), L("")] };
+      if (!a) return { cwd, lines: [red("mkdir : Cannot process command because of one or more missing mandatory parameters: Path."), L("")] };
+      const target = resolve(cwd, a);
+      if (getNode(target)) return { cwd, lines: [red(`mkdir : An item with the specified name ${toWindowsPath(target)} already exists.`), L("")] };
+      const parent = parentPath(target);
+      if (!parent || !getNode(parent)?.dir) return { cwd, lines: notFound(parent ?? target, "New-Item") };
+      fsMkdir(target);
+      recordEvent("folder.created", target, { via: "terminal" });
+      const node = getNode(target);
+      return { cwd, lines: node ? gciLines(parent, [node]) : [] };
+    }
+    case "new-item": case "ni": case "touch": {
+      const a = args.filter((x) => !x.startsWith("-"))[0];
+      if (!a) return { cwd, lines: [red(`${cmd} : Cannot process command because of one or more missing mandatory parameters: Path.`), L("")] };
+      const target = resolve(cwd, a);
+      const wantDir = /directory/i.test(line);
+      const parent = parentPath(target);
+      if (!parent || !getNode(parent)?.dir) return { cwd, lines: notFound(parent ?? target, "New-Item") };
+      if (getNode(target) && !/-force/i.test(line)) return { cwd, lines: [red(`${cmd} : The file '${toWindowsPath(target)}' already exists.`), L("")] };
+      if (wantDir) fsMkdir(target); else writeFile(target, "");
+      recordEvent(wantDir ? "folder.created" : "file.created", target, { via: "terminal" });
+      const node = getNode(target);
+      return { cwd, lines: node ? gciLines(parent, [node]) : [] };
+    }
+    case "set-content": case "sc": case "add-content": case "ac": case "out-file": {
+      const positional = args.filter((x) => !x.startsWith("-"));
+      const target = resolve(cwd, positional[0]);
+      const value = line.match(/-value\s+("([^"]*)"|'([^']*)'|(\S+))/i);
+      const text = value ? (value[2] ?? value[3] ?? value[4] ?? "") : positional.slice(1).join(" ");
+      const parent = parentPath(target);
+      if (!parent || !getNode(parent)?.dir) return { cwd, lines: notFound(parent ?? target, "Set-Content") };
+      const prev = cmd.startsWith("a") ? resolveText(target) ?? "" : "";
+      writeFile(target, prev ? `${prev}\r\n${text}` : text);
+      recordEvent("file.saved", target, { via: "terminal" });
+      return { cwd, lines: [] };
+    }
+    case "rm": case "del": case "erase": case "remove-item": case "ri": case "rmdir": case "rd": {
+      const targets = args.filter((x) => !x.startsWith("-"));
+      if (!targets.length) return { cwd, lines: [red(`${cmd} : Cannot process command because of one or more missing mandatory parameters: Path.`), L("")] };
+      const force = /(^|\s)(-f|-force|-rf|-fr)(\s|$)/i.test(line);
+      const out: Line[] = [];
+      for (const t of targets) {
+        const target = resolve(cwd, t);
+        const node = getNode(target);
+        if (!node) { out.push(...notFound(target, "Remove-Item")); continue; }
+        if (node.dir && (listDir(target, { showHidden: true })?.children.length ?? 0) > 0 && !/(-r|-recurse|-rf|-fr)/i.test(line)) {
+          out.push(red(`${cmd} : The directory is not empty: '${toWindowsPath(target)}'`), red("Use -Recurse to remove it and everything in it."), L(""));
+          continue;
+        }
+        fsRemove(target, { seed: contentSeed(target), dir: node.dir });
+        if (force) fsPurge(target);
+        recordEvent("file.deleted", target, { via: "terminal", permanent: force });
+      }
+      return { cwd, lines: out };
+    }
+    case "mv": case "move": case "move-item": case "ren": case "rename": case "rename-item": {
+      const positional = args.filter((x) => !x.startsWith("-"));
+      if (positional.length < 2) return { cwd, lines: [red(`${cmd} : Cannot process command because of one or more missing mandatory parameters: Destination.`), L("")] };
+      const from = resolve(cwd, positional[0]);
+      const node = getNode(from);
+      if (!node) return { cwd, lines: notFound(from, "Move-Item") };
+      const destRaw = positional[1];
+      const destNode = getNode(resolve(cwd, destRaw));
+      const to = destNode?.dir ? `${resolve(cwd, destRaw)}/${node.name}` : resolve(cwd, destRaw);
+      if (getNode(to)) return { cwd, lines: [red(`${cmd} : Cannot create a file when that file already exists.`), L("")] };
+      const ov = getOverlay(from);
+      fsRename(from, to, { dir: node.dir, seed: contentSeed(from), body: ov?.body ?? null, disk: ov?.disk ?? null, kind: (node.kind as string) ?? null });
+      recordEvent("file.renamed", from, { to, via: "terminal" });
+      return { cwd, lines: [] };
+    }
+    case "cp": case "copy": case "copy-item": case "cpi": {
+      const positional = args.filter((x) => !x.startsWith("-"));
+      if (positional.length < 2) return { cwd, lines: [red(`${cmd} : Cannot process command because of one or more missing mandatory parameters: Destination.`), L("")] };
+      const from = resolve(cwd, positional[0]);
+      const node = getNode(from);
+      if (!node) return { cwd, lines: notFound(from, "Copy-Item") };
+      const destNode = getNode(resolve(cwd, positional[1]));
+      const to = destNode?.dir ? `${resolve(cwd, positional[1])}/${node.name}` : resolve(cwd, positional[1]);
+      const ov = getOverlay(from);
+      copyTo(to, { dir: node.dir, seed: contentSeed(from), body: ov?.body ?? resolveText(from), disk: ov?.disk ?? null, kind: (node.kind as string) ?? null });
+      recordEvent("file.copied", from, { to, via: "terminal" });
+      return { cwd, lines: [] };
     }
     default: {
       // Running a file directly: .\script.py, .\thing.exe, a bare path

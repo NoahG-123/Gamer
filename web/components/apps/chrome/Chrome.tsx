@@ -14,6 +14,8 @@ import { GoogleIcon } from "@/components/icons/apps";
 interface Tab { id: string; url: string; title: string; favicon: string | null; loading: boolean; canBack: boolean; canForward: boolean; pinned?: boolean }
 
 const NTP_PATH = "/chrome/ntp";
+/** Chrome's own pages, served by this machine but addressed the way Chrome addresses them. */
+const CHROME_PAGES: Record<string, string> = { history: "/chrome/history", downloads: "/chrome/downloads", offline: "/chrome/offline" };
 let tabSeq = 1;
 
 /** URL the address bar shows for what the pane actually loaded. Local story routes appear as their real-looking hosts. */
@@ -22,6 +24,7 @@ function toDisplay(actual: string, origin: string): string {
   if (actual.startsWith(origin)) {
     const rest = actual.slice(origin.length);
     if (rest.startsWith(NTP_PATH)) return "";
+    for (const [name, p] of Object.entries(CHROME_PAGES)) if (rest.startsWith(p)) return `chrome://${name}`;
     const m = rest.match(/^\/sites\/([^/?#]+)(.*)$/);
     if (m) return `https://${m[1]}${m[2] || "/"}`;
     const f = rest.match(/^\/lf\/(.*)$/);
@@ -34,9 +37,14 @@ function prettyUrl(display: string): string {
   if (!display) return "";
   return display.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/$/, "");
 }
-function fromInput(text: string): string {
+function fromInput(text: string, origin = ""): string {
   const t = text.trim();
   if (!t) return "";
+  const chrome = t.match(/^chrome:\/\/([a-z-]+)\/?$/i);
+  if (chrome) {
+    const page = CHROME_PAGES[chrome[1].toLowerCase()];
+    return page ? `${origin}${page}` : `${origin}${NTP_PATH}`;
+  }
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t) || /^(about|chrome|file):/i.test(t)) return t;
   if (/^localhost(:\d+)?(\/|$)/.test(t) || /^[\w.-]+\.[a-z]{2,}(:\d+)?([/?#].*)?$/i.test(t) || /^\d{1,3}(\.\d{1,3}){3}(:\d+)?([/?#].*)?$/.test(t)) return `https://${t}`;
   return `https://www.google.com/search?q=${encodeURIComponent(t)}&sourceid=chrome&ie=UTF-8`;
@@ -133,7 +141,7 @@ export function Chrome({ win }: { win: WinState }) {
   }, [update]);
 
   const commitOmni = (text: string) => {
-    const url = fromInput(text);
+    const url = fromInput(text, origin);
     if (!url || !activeTab) return;
     setOmniFocus(false); omniRef.current?.blur();
     navigate(activeTab.id, url);
@@ -144,7 +152,7 @@ export function Chrome({ win }: { win: WinState }) {
     if (!q || !omniFocus) return [] as { kind: "search" | "history" | "url"; text: string; url: string; title?: string }[];
     const out: { kind: "search" | "history" | "url"; text: string; url: string; title?: string }[] = [];
     const looksUrl = /^[\w.-]+\.[a-z]{2,}/i.test(q) || /^[a-z]+:\/\//i.test(q);
-    if (looksUrl) out.push({ kind: "url", text: q, url: fromInput(q) });
+    if (looksUrl) out.push({ kind: "url", text: q, url: fromInput(q, origin) });
     out.push({ kind: "search", text: omniText.trim(), url: `https://www.google.com/search?q=${encodeURIComponent(omniText.trim())}&sourceid=chrome&ie=UTF-8` });
     for (const h of history) {
       if (h.url.toLowerCase().includes(q) || h.title.toLowerCase().includes(q)) out.push({ kind: "history", text: h.title || h.url, url: h.url, title: prettyUrl(h.url) });
@@ -152,7 +160,7 @@ export function Chrome({ win }: { win: WinState }) {
     }
     const seen = new Set<string>();
     return out.filter((s) => (seen.has(s.url) ? false : (seen.add(s.url), true)));
-  }, [omniText, omniFocus, history]);
+  }, [omniText, omniFocus, history, origin]);
 
   const onOmniKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") { e.preventDefault(); commitOmni(ddIndex >= 0 && suggestions[ddIndex] ? suggestions[ddIndex].url : omniText); setDdIndex(-1); }
@@ -169,6 +177,10 @@ export function Chrome({ win }: { win: WinState }) {
     else if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); if (activeTab) panes.current.get(activeTab.id)?.goBack(); }
     else if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); if (activeTab) panes.current.get(activeTab.id)?.goForward(); }
     else if (e.ctrlKey && e.key === "Tab") { e.preventDefault(); const i = tabs.findIndex((t) => t.id === activeId); if (tabs.length) setActiveId(tabs[(i + (e.shiftKey ? tabs.length - 1 : 1)) % tabs.length].id); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "h") { e.preventDefault(); openChromePage("history"); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "j") { e.preventDefault(); openChromePage("downloads"); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "u") { e.preventDefault(); if (activeTab) viewSource(activeTab.id); }
+    else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") { e.preventDefault(); if (activeTab) inspect(activeTab.id); }
   };
 
   // ---- menus ----
@@ -206,7 +218,7 @@ export function Chrome({ win }: { win: WinState }) {
         { label: "Save link as...", icon: <span /> },
         { label: "Copy link address", icon: <span />, onClick: () => navigator.clipboard?.writeText(p.linkURL!).catch(() => {}) },
         { type: "sep" },
-        { label: "Inspect", icon: <M.MInspect /> },
+        { label: "Inspect", icon: <M.MInspect />, onClick: () => inspect(t.id) },
       ]);
       return;
     }
@@ -214,10 +226,10 @@ export function Chrome({ win }: { win: WinState }) {
       const sel = p.selectionText.trim().slice(0, 40);
       chromeMenu(x, y, [
         { label: "Copy", icon: <span />, shortcut: "Ctrl+C", onClick: () => navigator.clipboard?.writeText(p.selectionText!).catch(() => {}) },
-        { label: `Search Google for "${sel}${p.selectionText.trim().length > 40 ? "…" : ""}"`, icon: <span />, onClick: () => openTab(fromInput(p.selectionText!), { after: t.id }) },
-        { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P" },
+        { label: `Search Google for "${sel}${p.selectionText.trim().length > 40 ? "…" : ""}"`, icon: <span />, onClick: () => openTab(fromInput(p.selectionText!, origin), { after: t.id }) },
+        { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P", disabled: true },
         { type: "sep" },
-        { label: "Inspect", icon: <M.MInspect /> },
+        { label: "Inspect", icon: <M.MInspect />, onClick: () => inspect(t.id) },
       ]);
       return;
     }
@@ -235,8 +247,8 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Create QR Code for this page", icon: <span /> },
       { label: "Translate to English", icon: <span /> },
       { type: "sep" },
-      { label: "View page source", icon: <span />, shortcut: "Ctrl+U" },
-      { label: "Inspect", icon: <span />, shortcut: "Ctrl+Shift+I" },
+      { label: "View page source", icon: <span />, shortcut: "Ctrl+U", onClick: () => viewSource(t.id) },
+      { label: "Inspect", icon: <span />, shortcut: "Ctrl+Shift+I", onClick: () => inspect(t.id) },
     ]);
   };
   const mainMenu = (e: React.MouseEvent) => {
@@ -248,8 +260,8 @@ export function Chrome({ win }: { win: WinState }) {
       { type: "sep" },
       { label: os.profile.displayName, icon: <M.MAccount />, children: [{ label: "Manage your Google Account" }, { type: "sep" }, { label: "Customize profile" }, { label: "Add new profile" }] },
       { label: "Passwords and autofill", icon: <M.MKey />, children: [{ label: "Google Password Manager" }, { label: "Payment methods" }, { label: "Addresses and more" }] },
-      { label: "History", icon: <M.MHistory />, children: [{ label: "History", shortcut: "Ctrl+H" }, { type: "sep" }, ...history.slice(0, 8).map((h) => ({ label: h.title || h.url, onClick: () => openTab(h.url) }))] },
-      { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J" },
+      { label: "History", icon: <M.MHistory />, children: [{ label: "History", shortcut: "Ctrl+H", onClick: () => openChromePage("history") }, { type: "sep" }, ...history.slice(0, 8).map((h) => ({ label: h.title || h.url, onClick: () => openTab(h.url) }))] },
+      { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J", onClick: () => openChromePage("downloads") },
       { label: "Bookmarks and lists", icon: <M.MBookmarks />, children: [{ label: "Bookmark this tab...", shortcut: "Ctrl+D" }, { label: "Bookmark all tabs...", shortcut: "Ctrl+Shift+D" }, { type: "sep" }, { label: "Show bookmarks bar", shortcut: "Ctrl+Shift+B", checked: true }, { label: "Bookmark manager", shortcut: "Ctrl+Shift+O" }, { label: "Reading list" }] },
       { label: "Tab groups", icon: <span />, children: [{ label: "No tab groups", disabled: true }] },
       { label: "Extensions", icon: <M.MExtension />, children: [{ label: "Manage extensions" }, { label: "Visit Chrome Web Store" }] },
@@ -261,10 +273,10 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Translate...", icon: <M.MTranslate /> },
       { label: "Find and edit", icon: <M.MFind />, children: [{ label: "Find...", shortcut: "Ctrl+F" }, { type: "sep" }, { label: "Cut", shortcut: "Ctrl+X" }, { label: "Copy", shortcut: "Ctrl+C" }, { label: "Paste", shortcut: "Ctrl+V" }] },
       { label: "Cast, save, and share", icon: <M.MCast />, children: [{ label: "Cast..." }, { label: "Save page as...", shortcut: "Ctrl+S" }, { label: "Create shortcut..." }, { label: "Copy link" }, { label: "Send to your devices" }, { label: "Create QR Code" }] },
-      { label: "More tools", icon: <span />, children: [{ label: "Name window..." }, { label: "Reading mode" }, { label: "Performance" }, { label: "Task manager", shortcut: "Shift+Esc" }, { label: "Developer tools", shortcut: "Ctrl+Shift+I" }] },
+      { label: "More tools", icon: <span />, children: [{ label: "Name window..." }, { label: "Reading mode" }, { label: "Performance" }, { label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
       { type: "sep" },
       { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome" }, { label: "What's new" }, { label: "Help center" }, { label: "Report an issue...", shortcut: "Alt+Shift+I" }] },
-      { label: "Settings", icon: <M.MSettings /> },
+      { label: "Settings", icon: <M.MSettings />, onClick: () => os.launch("settings") },
       { label: "Exit", icon: <M.MExit />, onClick: () => wm.close(win.id) },
     ], 300);
   };
@@ -290,6 +302,19 @@ export function Chrome({ win }: { win: WinState }) {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     chromeMenu(r.left, r.bottom + 2, (b.children ?? []).map((c) => ({ label: c.title, icon: <Favicon url={c.url} />, onClick: () => c.url && navigate(activeTab!.id, c.url) })).concat(b.children?.length ? [] : [{ label: "(empty)", icon: <span />, onClick: () => {} }]));
   };
+
+  /** Chrome's Inspect: opens Chromium's own devtools on the page in this tab. */
+  const inspect = useCallback((tabId: string) => {
+    const id = panes.current.get(tabId)?.webContentsId();
+    if (id != null) void hostBridge().tabDevTools?.(id);
+  }, []);
+  const viewSource = useCallback((tabId: string) => {
+    const url = panes.current.get(tabId)?.getURL();
+    if (url) openTab(`view-source:${url}`, { after: tabId });
+  }, [openTab]);
+  const openChromePage = useCallback((name: keyof typeof CHROME_PAGES | string) => {
+    openTab(`${origin}${CHROME_PAGES[name] ?? NTP_PATH}`);
+  }, [openTab, origin]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const isNtp = !display;
@@ -352,7 +377,7 @@ export function Chrome({ win }: { win: WinState }) {
             </div>
           </div>
           <button className={styles.tbBtn} title="Extensions"><M.MExtension /></button>
-          <button className={styles.tbBtn} title="Downloads"><M.MDownload /></button>
+          <button className={styles.tbBtn} title="Downloads (Ctrl+J)" onClick={() => openChromePage("downloads")}><M.MDownload /></button>
           <button className={styles.avatarBtn} title={`Google Account\n${os.profile.displayName}\n${os.profile.accountEmail}`}><span className={styles.avatarDot}><M.MPerson size={16} /></span></button>
           <button className={styles.tbBtn} title="Customize and control Google Chrome" onClick={mainMenu}><M.MMoreVert /></button>
         </div>

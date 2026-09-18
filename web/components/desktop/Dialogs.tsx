@@ -6,7 +6,8 @@ import { Window, CaptionButtons } from "./Window";
 import { useOS } from "./os";
 import * as A from "@/components/icons/apps";
 import { ChevronDown } from "@/components/icons/fluent";
-import type { OpenWith } from "@/lib/client/api";
+import type { OpenWith, VfsNode } from "@/lib/client/api";
+import { formatBytes, formatDateTime, toWindowsPath } from "@/lib/client/api";
 
 /**
  * Realistic Windows responses for files that cannot be opened:
@@ -17,7 +18,7 @@ import type { OpenWith } from "@/lib/client/api";
  *  - "shortcut": "Problem with Shortcut"
  *  - "bad-zip": "Compressed (zipped) Folders Error"
  */
-export type DialogKind = "open-with" | "cant-run" | "shortcut" | "bad-zip";
+export type DialogKind = "open-with" | "cant-run" | "shortcut" | "bad-zip" | "properties";
 
 export function dialogForFile(name: string, ext: string): { kind: DialogKind; w: number; h: number } {
   if (ext === "exe" || ext === "msi" || ext === "com" || ext === "bat" || ext === "jar") return { kind: "cant-run", w: 428, h: 178 };
@@ -58,6 +59,41 @@ export function DialogWindow({ win }: { win: WinState }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [isActive, wm, win.id]);
+
+  if (kind === "properties") {
+    const node = win.props.node as VfsNode | undefined;
+    const round = (n: number) => Math.ceil(n / 4096) * 4096;
+    return (
+      <Window win={win} className={styles.dialogWin}>
+        <div className={styles.dialog}>
+          <div className={styles.titleBar} data-drag>
+            <span className={styles.titleText}>{name} Properties</span>
+            <CaptionButtons win={win} closeOnly className={styles.captionSmall} />
+          </div>
+          <div className={styles.propTabs}>
+            {["General", "Security", "Details", "Previous Versions"].map((t, i) => <span key={t} className={`${styles.propTab} ${i === 0 ? styles.propTabOn : ""}`}>{t}</span>)}
+          </div>
+          <div className={styles.propBody}>
+            <div className={styles.propHead}><A.FileTypeIcon ext={ext} dir={node?.dir} name={name} size={32} /><span>{name}</span></div>
+            <div className={styles.propRows}>
+              <div><b>Type of file:</b><span>{A.typeLabel(ext, !!node?.dir)}{ext ? ` (.${ext})` : ""}</span></div>
+              <div><b>Opens with:</b><span>{["jpg", "jpeg", "png", "heic", "gif", "bmp"].includes(ext) ? "Photos" : ["wav", "mp3", "mp4", "m4a", "mkv", "mov"].includes(ext) ? "VLC media player" : ext === "pdf" ? "Google Chrome" : "Notepad"}</span></div>
+              <div><b>Location:</b><span>{toWindowsPath(path.slice(0, path.lastIndexOf("/")))}</span></div>
+              <div><b>Size:</b><span>{node ? `${formatBytes(node.size)} (${node.size.toLocaleString("en-US")} bytes)` : "—"}</span></div>
+              <div><b>Size on disk:</b><span>{node ? `${formatBytes(round(node.size))} (${round(node.size).toLocaleString("en-US")} bytes)` : "—"}</span></div>
+              <div className={styles.propSep} />
+              <div><b>Created:</b><span>{node?.created ? formatDateTime(node.created, os.profile.locale, os.profile.dateFormat) : "—"}</span></div>
+              <div><b>Modified:</b><span>{node?.modified ? formatDateTime(node.modified, os.profile.locale, os.profile.dateFormat) : "—"}</span></div>
+              <div><b>Accessed:</b><span>{node?.modified ? formatDateTime(node.modified, os.profile.locale, os.profile.dateFormat) : "—"}</span></div>
+              <div className={styles.propSep} />
+              <div><b>Attributes:</b><span>{[node?.hidden ? "Hidden" : "", node?.system ? "System" : "", "Read-only"].filter(Boolean).join(", ")}</span></div>
+            </div>
+          </div>
+          <div className={styles.buttons}><button className={styles.btn} onClick={close} autoFocus>OK</button><button className={styles.btn} onClick={close}>Cancel</button></div>
+        </div>
+      </Window>
+    );
+  }
 
   if (kind === "open-with") return (
     <Window win={win} className={styles.flyoutWin}>

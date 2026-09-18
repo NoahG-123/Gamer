@@ -17,6 +17,8 @@ let serverProc: ChildProcess | null = null;
 let serverOrigin = "";
 let storyHosts = new Set<string>();
 let mainWindow: BrowserWindow | null = null;
+/** Whether this computer's Wi-Fi is on. The desktop pushes it whenever the setting changes. */
+let netOnline = true;
 
 Menu.setApplicationMenu(null);
 app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
@@ -105,6 +107,12 @@ function setupBrowserSession(): void {
     try {
       const u = new URL(details.url);
       const host = u.hostname.toLowerCase();
+      // Wi-Fi off: nothing leaves this machine, and pages land on Chrome's offline page.
+      if (!netOnline && host !== "127.0.0.1" && host !== "localhost") {
+        if (details.resourceType === "mainFrame") { callback({ redirectURL: `${serverOrigin}/chrome/offline?u=${encodeURIComponent(details.url)}` }); return; }
+        callback({ cancel: true });
+        return;
+      }
       if (storyHosts.has(host)) {
         const canonical = host.replace(/^www\./, "");
         callback({ redirectURL: `${serverOrigin}/sites/${canonical}${u.pathname}${u.search}` });
@@ -115,6 +123,35 @@ function setupBrowserSession(): void {
   });
   ses.setPermissionRequestHandler((_wc, permission, callback) => callback(permission === "fullscreen" || permission === "clipboard-read" || permission === "clipboard-sanitized-write"));
   ses.setPermissionCheckHandler((_wc, permission) => permission === "fullscreen" || permission === "clipboard-read" || permission === "clipboard-sanitized-write");
+  captureDownloads(ses);
+}
+
+/**
+ * Downloads never touch the machine this is running on. Chromium is pointed at a folder
+ * inside the app's own data directory, and the finished file is registered with the
+ * content server so it turns up in this computer's Downloads folder.
+ */
+function captureDownloads(ses: Electron.Session): void {
+  const dir = path.join(app.getPath("userData"), "downloads");
+  ses.on("will-download", (_e, item) => {
+    fs.mkdirSync(dir, { recursive: true });
+    const safe = item.getFilename().replace(/[\\/:*?"<>|]/g, "_") || "download";
+    let target = path.join(dir, safe);
+    for (let i = 1; fs.existsSync(target); i++) {
+      const dot = safe.lastIndexOf(".");
+      target = path.join(dir, dot > 0 ? `${safe.slice(0, dot)} (${i})${safe.slice(dot)}` : `${safe} (${i})`);
+    }
+    item.setSavePath(target);
+    const url = item.getURL();
+    item.once("done", (_ev, state) => {
+      if (state !== "completed") return;
+      fetch(`${serverOrigin}/api/downloads`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: path.basename(target), disk: target, size: item.getTotalBytes(), url }),
+      }).catch(() => { /* the file is still on disk; it just is not listed */ });
+    });
+  });
 }
 
 app.on("web-contents-created", (_e, contents: WebContents) => {
@@ -126,6 +163,7 @@ app.on("web-contents-created", (_e, contents: WebContents) => {
       return { action: "deny" };
     });
     contents.on("will-attach-webview" as never, () => {});
+    return; // a browser tab keeps its devtools: Inspect is a real Chrome feature
   }
   if (!isDev) contents.on("devtools-opened", () => contents.closeDevTools());
 });
@@ -146,6 +184,7 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: false,
       webviewTag: true,
+      plugins: true,
       spellcheck: false,
       additionalArguments: [`--found-origin=${serverOrigin}`, `--found-partition=${PARTITION}`],
     },
@@ -154,6 +193,8 @@ function createWindow(): void {
     delete (webPreferences as { preload?: string }).preload;
     webPreferences.nodeIntegration = false;
     webPreferences.contextIsolation = true;
+    // Without this Chromium has no PDF viewer and hands every PDF to the download manager.
+    webPreferences.plugins = true;
     if (params.partition !== PARTITION) params.partition = PARTITION;
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -163,7 +204,20 @@ function createWindow(): void {
 }
 
 ipcMain.on("quit", () => app.quit());
+ipcMain.on("net-state", (_e, online: boolean) => { netOnline = !!online; });
 ipcMain.on("toggle-devtools", () => { if (isDev) mainWindow?.webContents.toggleDevTools(); });
+/** Chrome's Inspect / View source, on the webview that asked for it. */
+ipcMain.on("webview-devtools", (e) => {
+  const wc = e.sender.hostWebContents ? e.sender : e.sender;
+  const target = wc.getType() === "webview" ? wc : null;
+  if (target) target.isDevToolsOpened() ? target.closeDevTools() : target.openDevTools({ mode: "bottom" });
+});
+ipcMain.handle("tab-devtools", (_e, webContentsId: number) => {
+  const wc = require("electron").webContents.fromId(webContentsId) as WebContents | undefined;
+  if (!wc) return false;
+  if (wc.isDevToolsOpened()) wc.closeDevTools(); else wc.openDevTools({ mode: "bottom" });
+  return true;
+});
 ipcMain.handle("origin", () => serverOrigin);
 
 app.whenReady().then(async () => {
@@ -179,6 +233,7 @@ app.whenReady().then(async () => {
   await refreshHosts();
   setInterval(refreshHosts, 30000);
   setupBrowserSession();
+  captureDownloads(session.defaultSession);
   createWindow();
   // Hidden exits: Alt+F4 works as usual; this is the belt-and-braces one.
   globalShortcut.register("Control+Shift+Alt+Q", () => app.quit());

@@ -13,7 +13,9 @@ export type BusEvent =
   | { type: "mail.changed"; ids: string[] }
   | { type: "calendar.changed"; ids: string[] }
   | { type: "ui.open"; app: string; props: Record<string, unknown> }
-  | { type: "ui.notify"; app: string; title: string; text: string; props: Record<string, unknown> };
+  | { type: "ui.notify"; app: string; title: string; text: string; props: Record<string, unknown> }
+  | { type: "settings"; settings: Record<string, unknown> }
+  | { type: "sound"; name: string };
 
 type G = typeof globalThis & { __foundBus?: EventEmitter };
 

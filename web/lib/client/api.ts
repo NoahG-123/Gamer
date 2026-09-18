@@ -23,6 +23,10 @@ async function post<T>(url: string, body: unknown): Promise<T> {
   return r.json();
 }
 
+export interface BinItem { name: string; path: string; origin: string; dir: boolean; size: number; modified: string; ext: string; deletedHere: boolean }
+export interface DownloadItem { id: number; name: string; url: string; path: string; size: number; state: string; at: string }
+export interface SettingsState { volume: number; muted: boolean; brightness: number; wifi: boolean; bluetooth: boolean; airplane: boolean; nightLight: boolean; theme: "dark" | "light"; accent: string; wallpaper: string | null; wallpaperFit: string }
+
 export const api = {
   profile: () => get<{ profile: Profile; home: string; drives: Drive[]; serverTime: string }>("/api/profile"),
   list: (path: string, opts: { hidden?: boolean; record?: boolean } = {}) => get<{ node: VfsNode; children: VfsNode[]; drives: Drive[]; home: string }>(`/api/fs/list?path=${encodeURIComponent(path)}${opts.hidden ? "&hidden=1" : ""}${opts.record === false ? "&record=0" : ""}`),
@@ -36,6 +40,20 @@ export const api = {
   visit: (url: string, title: string) => post<{ ok: true }>("/api/browser/visit", { url, title }),
   hosts: () => get<{ hosts: { host: string; title?: string }[]; match: string[] }>("/api/sites/hosts"),
   event: (type: string, subject = "", data: unknown = null) => post<{ id: number; fired: string[] }>("/api/state/events", { type, subject, data }),
+
+  // --- changes the player makes to the machine ---
+  save: (path: string, text: string) => post<{ ok: true; path: string; node: VfsNode }>("/api/fs/mutate", { op: "save", path, text }),
+  create: (parent: string, kind: "text" | "folder", name?: string) => post<{ ok: true; path: string; node: VfsNode }>("/api/fs/mutate", { op: "new", parent, kind, name }),
+  rename: (path: string, name: string) => post<{ ok: true; path: string; node: VfsNode }>("/api/fs/mutate", { op: "rename", path, name }),
+  remove: (paths: string[], permanent = false) => post<{ ok: true; deleted: string[] }>("/api/fs/mutate", { op: "delete", paths, permanent }),
+  restore: (paths: string[]) => post<{ ok: true }>("/api/fs/mutate", { op: "restore", paths }),
+  emptyBin: () => post<{ ok: true; count: number }>("/api/fs/mutate", { op: "emptyBin" }),
+  paste: (paths: string[], dest: string, move = false) => post<{ ok: true; created: string[] }>("/api/fs/mutate", { op: "copy", paths, dest, move }),
+  bin: () => get<{ items: BinItem[] }>("/api/fs/mutate"),
+  downloads: () => get<{ downloads: DownloadItem[] }>("/api/downloads"),
+  settings: () => get<{ settings: SettingsState }>("/api/settings"),
+  setSettings: (patch: Partial<SettingsState>) => post<{ settings: SettingsState }>("/api/settings", patch),
+  tasks: () => get<{ processes: { name: string; pid: number; cpu: number; memMb: number; disk: number; network: number; app: boolean; status?: string }[]; totals: { cpu: number; memPct: number; memUsedGb: number; memTotalGb: number; diskPct: number; netMbps: number } }>("/api/tasks"),
 };
 
 export type LiveEvent = { type: string; [k: string]: unknown };

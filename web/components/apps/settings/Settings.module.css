@@ -1,0 +1,63 @@
+.win { color: var(--text, #fff); }
+.frame { display: flex; flex-direction: column; height: 100%; background: var(--win-bg, #202020); border-radius: 8px; overflow: hidden; }
+.inactive { filter: saturate(.9) brightness(.97); }
+.titleBar { display: flex; align-items: center; gap: 8px; height: 40px; padding-left: 14px; background: var(--win-title, #262626); }
+.titleIcon { display: flex; }
+.titleText { font-size: 12px; flex: 1; }
+.body { display: flex; flex: 1; min-height: 0; }
+
+.nav { width: 250px; flex: 0 0 250px; padding: 6px 8px 12px; overflow: auto; background: var(--win-bg, #202020); }
+.account { display: flex; align-items: center; gap: 10px; padding: 12px 10px 14px; }
+.accountAvatar { display: flex; border-radius: 50%; overflow: hidden; }
+.accountText { display: flex; flex-direction: column; min-width: 0; }
+.accountText b { font-size: 13px; font-weight: 600; }
+.accountText small { font-size: 11px; opacity: .65; overflow: hidden; text-overflow: ellipsis; }
+.navSearch { display: flex; align-items: center; gap: 8px; margin: 0 4px 10px; padding: 7px 10px; border-radius: 4px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.navSearch input { all: unset; flex: 1; font-size: 12px; color: inherit; }
+.navItem { all: unset; display: flex; align-items: center; gap: 12px; padding: 9px 12px; margin: 1px 4px; border-radius: 4px; font-size: 13px; cursor: default; position: relative; }
+.navItem:hover { background: rgba(255,255,255,.055); }
+.navActive { background: rgba(255,255,255,.08); }
+.navActive::before { content: ""; position: absolute; left: -4px; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: var(--accent, #4CC2FF); }
+.navIcon { display: flex; opacity: .9; }
+
+.content { flex: 1; min-width: 0; overflow: auto; padding: 18px 32px 40px; background: var(--win-body, #272727); }
+.h2 { margin: 6px 0 18px; font-size: 20px; font-weight: 600; }
+.group { margin: 22px 0 8px; font-size: 13px; font-weight: 600; opacity: .95; }
+.card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 4px; border-radius: 4px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.055); }
+.cardClickable:hover { background: rgba(255,255,255,.07); }
+.cardIcon { display: flex; opacity: .9; }
+.cardText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cardTitle { font-size: 13px; }
+.cardSub { font-size: 11.5px; opacity: .62; }
+.value { font-size: 12px; opacity: .7; }
+.slider { width: 190px; accent-color: var(--accent, #4CC2FF); }
+.note { margin: 10px 2px 4px; font-size: 12px; opacity: .6; line-height: 1.5; max-width: 620px; }
+
+.toggle { all: unset; position: relative; width: 40px; height: 20px; border-radius: 10px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); cursor: default; flex: 0 0 auto; }
+.toggleOn { background: var(--accent, #4CC2FF); border-color: transparent; }
+.toggleDisabled { opacity: .4; }
+.toggleKnob { position: absolute; top: 3px; left: 4px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: left .12s ease; }
+.toggleOn .toggleKnob { left: 22px; background: #000; }
+
+.about { display: grid; grid-template-columns: 200px 1fr; gap: 6px 16px; padding: 14px 16px; border-radius: 4px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.055); font-size: 12.5px; }
+.about div { display: contents; }
+.about b { font-weight: 600; opacity: .85; }
+.about span { opacity: .72; }
+
+.preview { height: 180px; border-radius: 6px; background: #111 center/cover no-repeat; border: 1px solid rgba(255,255,255,.1); position: relative; overflow: hidden; }
+.previewBar { position: absolute; left: 20%; right: 20%; bottom: 10px; height: 8px; border-radius: 4px; opacity: .9; }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 8px; }
+.thumb { all: unset; height: 64px; border-radius: 4px; overflow: hidden; cursor: default; border: 2px solid transparent; background: #111; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbOn { border-color: var(--accent, #4CC2FF); }
+.rowBtns { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.btn, .btnAccent, .linkBtn { all: unset; padding: 6px 14px; border-radius: 4px; font-size: 12.5px; cursor: default; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); }
+.btn:hover, .btnAccent:hover { background: rgba(255,255,255,.1); }
+.btnAccent { background: var(--accent, #4CC2FF); color: #04121e; border-color: transparent; }
+.linkBtn { border: none; background: none; color: var(--accent, #4CC2FF); padding: 4px 6px; }
+.select { all: unset; padding: 6px 10px; border-radius: 4px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; cursor: default; }
+.select option { background: #2b2b2b; color: #fff; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap: 8px; margin-top: 8px; max-width: 520px; }
+.swatch { all: unset; height: 36px; border-radius: 4px; cursor: default; border: 2px solid transparent; }
+.swatchOn { border-color: #fff; }
+.toast { position: sticky; top: 0; z-index: 3; margin-bottom: 12px; padding: 10px 14px; border-radius: 4px; background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.12); font-size: 12.5px; }

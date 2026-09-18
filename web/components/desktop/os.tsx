@@ -14,6 +14,18 @@ export interface OS {
   openFolder: (path: string) => void;
   openUrl: (url: string) => void;
   refreshTick: number;
+  /** Real changes to the machine: create, rename, delete, copy/paste, wallpaper. */
+  fs: {
+    create: (parent: string, kind: "text" | "folder") => Promise<VfsNode>;
+    rename: (node: VfsNode) => void;
+    remove: (paths: string[], permanent?: boolean) => Promise<void>;
+    copy: (paths: string[], move?: boolean) => void;
+    paste: (dest: string) => Promise<void>;
+    clipboard: { paths: string[]; move: boolean } | null;
+    setWallpaper: (path: string) => void;
+    confirm: (opts: { title: string; text: string; ok: string; onOk: () => void }) => void;
+    refresh: () => void;
+  };
 }
 const Ctx = createContext<OS | null>(null);
 export const OSProvider = Ctx.Provider;

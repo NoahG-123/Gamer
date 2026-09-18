@@ -7,6 +7,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadContent, loadProfile, contentPath } from "./content";
 import { allFlags, isVisible, revealedIds } from "./state";
+import { allOverlay, getOverlay, OverlayRow } from "./fsmut";
+import { synthText } from "./synthtext";
+import { dressingKind } from "./synth";
 
 export type FileKind = "text" | "html" | "image" | "pdf" | "audio";
 
@@ -169,34 +172,83 @@ function storyVisible(f: StoryFile | undefined, flags: Record<string, unknown>, 
   return isVisible(f, "file", normalizePath(f.path), flags, revealed);
 }
 
+/** A node as the overlay describes it, inheriting what it does not override from the base entry. */
+function overlayNode(r: OverlayRow, base?: VfsNode): VfsNode {
+  const name = baseName(r.path);
+  const size = r.body != null ? Buffer.byteLength(r.body) : base ? base.size : r.size;
+  return {
+    name, path: r.path, dir: r.dir, size,
+    created: r.created, modified: r.modified,
+    hidden: base?.hidden ?? false, system: base?.system ?? false,
+    openable: true,
+    kind: (r.kind as FileKind | null) ?? base?.kind,
+    ext: extOf(name),
+  };
+}
+
+function overlayMaps(): { byPath: Map<string, OverlayRow>; byParent: Map<string, OverlayRow[]> } {
+  const byPath = new Map<string, OverlayRow>();
+  const byParent = new Map<string, OverlayRow[]>();
+  for (const r of allOverlay()) {
+    byPath.set(r.path, r);
+    if (r.deleted) continue;
+    const parent = parentPath(r.path);
+    if (!parent) continue;
+    if (!byParent.has(parent)) byParent.set(parent, []);
+    byParent.get(parent)!.push(r);
+  }
+  return { byPath, byParent };
+}
+
 export function getNode(p: string): VfsNode | null {
   const idx = buildIndex();
-  const n = idx.nodes.get(normalizePath(p));
-  if (!n) return null;
-  if (!storyVisible(idx.story.get(n.path), allFlags(), revealedIds("file"))) return null;
-  return n;
+  const n = normalizePath(p);
+  const ov = getOverlay(n);
+  if (ov?.deleted) return null;
+  const base = idx.nodes.get(n);
+  if (ov) return overlayNode(ov, base);
+  if (!base) return null;
+  if (!storyVisible(idx.story.get(base.path), allFlags(), revealedIds("file"))) return null;
+  return base;
 }
 
 export interface ListOptions { showHidden?: boolean }
 
 export function listDir(p: string, opts: ListOptions = {}): { node: VfsNode; children: VfsNode[] } | null {
   const idx = buildIndex();
-  const n = idx.nodes.get(normalizePath(p));
-  if (!n || !n.dir) return null;
+  const path = normalizePath(p);
+  const ov = overlayMaps();
+  const ovSelf = ov.byPath.get(path);
+  if (ovSelf?.deleted) return null;
+  const base = idx.nodes.get(path);
+  const node = base ?? (ovSelf?.dir ? overlayNode(ovSelf) : null);
+  if (!node || !node.dir) return null;
   const flags = allFlags();
   const revealed = revealedIds("file");
-  const kids = (idx.children.get(n.path) ?? []).filter((c) => (opts.showHidden || !c.hidden) && storyVisible(idx.story.get(c.path), flags, revealed));
-  return { node: n, children: kids };
+  const kids: VfsNode[] = [];
+  for (const c of idx.children.get(path) ?? []) {
+    const o = ov.byPath.get(c.path);
+    if (o?.deleted) continue;
+    if (!opts.showHidden && c.hidden) continue;
+    if (!o && !storyVisible(idx.story.get(c.path), flags, revealed)) continue;
+    kids.push(o ? overlayNode(o, c) : c);
+  }
+  const known = new Set(kids.map((k) => k.path));
+  for (const o of ov.byParent.get(path) ?? []) if (!known.has(o.path)) kids.push(overlayNode(o, idx.nodes.get(o.path)));
+  const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+  kids.sort((a, b) => (a.dir === b.dir ? collator.compare(a.name, b.name) : a.dir ? -1 : 1));
+  return { node, children: kids };
 }
 
 export function folderItemCount(p: string): number {
-  const idx = buildIndex();
-  return (idx.children.get(normalizePath(p)) ?? []).filter((c) => !c.hidden).length;
+  return listDir(p)?.children.length ?? 0;
 }
 
 export function getStoryFile(p: string): StoryFile | null {
   const idx = buildIndex();
   const n = normalizePath(p);
+  const ov = getOverlay(n);
+  if (ov?.deleted || ov?.body != null) return null; // deleted, or the player overwrote it
   const f = idx.story.get(n);
   if (!f) return null;
   if (!storyVisible(f, allFlags(), revealedIds("file"))) return null;
@@ -219,13 +271,21 @@ export function search(root: string, query: string, limit = 200): VfsNode[] {
   const r = normalizePath(root);
   const flags = allFlags();
   const revealed = revealedIds("file");
+  const ov = overlayMaps();
   const out: VfsNode[] = [];
+  const emit = (n: VfsNode) => { if (!out.some((x) => x.path === n.path)) out.push(n); };
+  for (const o of ov.byParent.values()) for (const e of o) {
+    if (!e.path.startsWith(r === e.path ? r : r + "/")) continue;
+    if (!baseName(e.path).toLowerCase().includes(q)) continue;
+    emit(overlayNode(e, idx.nodes.get(e.path)));
+  }
   for (const n of idx.nodes.values()) {
+    if (ov.byPath.get(n.path)?.deleted) continue;
     if (!n.path.startsWith(r === n.path ? r : r + "/") || n.path === r) continue;
     if (n.hidden) continue;
     if (!n.name.toLowerCase().includes(q)) continue;
     if (!storyVisible(idx.story.get(n.path), flags, revealed)) continue;
-    out.push(n);
+    emit(n);
     if (out.length >= limit) break;
   }
   return out;
@@ -234,4 +294,29 @@ export function search(root: string, query: string, limit = 200): VfsNode[] {
 export function toWindowsPath(p: string): string {
   const n = normalizePath(p);
   return (/^[A-Z]:$/.test(n) ? n + "\\" : n.replace(/\//g, "\\"));
+}
+
+/**
+ * The text a file actually holds right now: what the player saved, else what it
+ * inherits (a renamed copy keeps its old bytes), else the story body, else a
+ * deterministic filler body. Returns null for things that are not text.
+ */
+export function resolveText(p: string): string | null {
+  const n = normalizePath(p);
+  const ov = getOverlay(n);
+  if (ov?.deleted) return null;
+  if (ov?.body != null) return ov.body;
+  const seed = ov?.seed && ov.seed !== n ? normalizePath(ov.seed) : n;
+  const story = buildIndex().story.get(seed);
+  if (story) return story.body ?? "";
+  const node = buildIndex().nodes.get(seed) ?? (ov ? overlayNode(ov) : null);
+  if (!node || node.dir) return null;
+  if (dressingKind(node.ext) !== "text") return null;
+  return synthText(seed, node.ext, node.size);
+}
+
+/** What a path inherits its bytes from (used when copying or renaming). */
+export function contentSeed(p: string): string {
+  const ov = getOverlay(normalizePath(p));
+  return ov?.seed ?? normalizePath(p);
 }

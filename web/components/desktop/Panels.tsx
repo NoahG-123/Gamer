@@ -5,11 +5,13 @@ import { AppId, useWM, WinState } from "./wm";
 import { APP_META } from "./Taskbar";
 import { api, VfsNode } from "@/lib/client/api";
 import * as A from "@/components/icons/apps";
-import { Search, ChevronRight, Close, Gear, Globe } from "@/components/icons/fluent";
+import { DataUsage as TaskMgrIcon } from "@/components/icons/fluent";
+import { Search, ChevronRight, Close, Gear, Globe, Wifi, WifiOff, Bluetooth, Airplane, NightLight, Accessibility, Brightness, Speaker, SpeakerMute, Battery, NearbyShare, Cast, Pin } from "@/components/icons/fluent";
+import { useSystem } from "@/lib/client/system";
 import { Ico } from "@/lib/icons/Ico";
 import type { Toast } from "./Toasts";
 
-export interface AppEntry { label: string; icon: React.ReactNode; app?: AppId; url?: string; keywords?: string }
+export interface AppEntry { label: string; icon: React.ReactNode; app?: AppId; url?: string; keywords?: string; page?: string }
 
 /** Everything the Start menu and Search know how to launch. Apps without an `app` are installed-but-not-simulated. */
 export const ALL_APPS: AppEntry[] = [
@@ -25,15 +27,22 @@ export const ALL_APPS: AppEntry[] = [
   { label: "Paint", icon: <A.PaintIcon size={24} /> },
   { label: "Photos", icon: <A.PhotosIcon size={24} /> },
   { label: "REAPER", icon: <A.GenericAppIcon size={24} />, keywords: "daw audio" },
-  { label: "Settings", icon: <A.SettingsIcon size={24} /> },
+  { label: "Settings", icon: <A.SettingsIcon size={24} />, app: "settings", keywords: "settings control panel wallpaper background volume brightness wifi bluetooth theme personalise personalize display sound" },
   { label: "Snipping Tool", icon: <A.SnipIcon size={24} /> },
+  { label: "Task Manager", icon: <TaskMgrIcon size={24} />, app: "taskmgr", keywords: "processes performance cpu memory end task" },
   { label: "Spotify", icon: <A.SpotifyIcon size={24} /> },
   { label: "Terminal", icon: <A.TerminalAppIcon size={24} />, app: "terminal", keywords: "powershell cmd command prompt shell" },
   { label: "WhatsApp", icon: <A.WhatsAppIcon size={24} />, app: "whatsapp", keywords: "messages chat" },
   { label: "Xbox", icon: <A.XboxIcon size={24} /> },
 ];
 
-const SETTINGS = ["Display settings", "Bluetooth & devices", "Network & internet", "Personalization", "Apps", "Accounts", "Time & language", "Privacy & security", "Windows Update", "Sound settings", "Power & battery", "Storage"];
+const SETTINGS: { label: string; page: string }[] = [
+  { label: "Display settings", page: "system" }, { label: "Sound settings", page: "system" }, { label: "Bluetooth & devices", page: "bluetooth" },
+  { label: "Network & internet", page: "network" }, { label: "Personalisation", page: "personalisation" }, { label: "Background", page: "personalisation" },
+  { label: "Colours", page: "personalisation" }, { label: "Apps", page: "apps" }, { label: "Accounts", page: "accounts" },
+  { label: "Time & language", page: "time" }, { label: "Privacy & security", page: "privacy" }, { label: "Windows Update", page: "update" },
+  { label: "Accessibility", page: "accessibility" }, { label: "About this PC", page: "system" },
+];
 
 export interface SearchLaunch { app: AppEntry }
 export function useSearch(q: string) {
@@ -48,7 +57,7 @@ export function useSearch(q: string) {
   }, [q]);
   const t = q.trim().toLowerCase();
   const apps = t ? ALL_APPS.filter((a) => a.label.toLowerCase().includes(t) || (a.keywords ?? "").includes(t)) : [];
-  const settings = t ? SETTINGS.filter((s) => s.toLowerCase().includes(t)).slice(0, 4) : [];
+  const settings = t ? SETTINGS.filter((s) => s.label.toLowerCase().includes(t)).slice(0, 4) : [];
   return { apps, files, settings, loading };
 }
 
@@ -100,7 +109,7 @@ export function SearchPanel({ open, onClose, initial, onLaunch, onOpenFile, onOp
             {best?.kind === "file" && <button className={`${styles.row} ${styles.best}`} onClick={runBest}><span className={styles.rowIcon}><A.FileTypeIcon ext={best.file.ext} dir={best.file.dir} name={best.file.name} size={24} /></span><span className={styles.rowText}><b>{best.file.name}</b><small>{best.file.dir ? "File folder" : A.typeLabel(best.file.ext, false)}</small></span></button>}
             {!best && <button className={`${styles.row} ${styles.best}`} onClick={runBest}><span className={styles.rowIcon}><Search size={24} /></span><span className={styles.rowText}><b>{q}</b><small>{loading ? "Searching…" : "See web results"}</small></span></button>}
             {apps.length > 1 && <><div className={styles.h}>Apps</div>{apps.slice(1, 5).map((a) => <button key={a.label} className={styles.row} onClick={() => { onLaunch(a); onClose(); }}><span className={styles.rowIcon}>{a.icon}</span><span>{a.label}</span></button>)}</>}
-            {settings.length > 0 && <><div className={styles.h}>Settings</div>{settings.map((s) => <button key={s} className={styles.row}><span className={styles.rowIcon}><Gear size={20} /></span><span>{s}</span></button>)}</>}
+            {settings.length > 0 && <><div className={styles.h}>Settings</div>{settings.map((s) => <button key={s.label} className={styles.row} onClick={() => { onLaunch({ label: s.label, icon: <Gear size={20} />, app: "settings", page: s.page }); onClose(); }}><span className={styles.rowIcon}><Gear size={20} /></span><span>{s.label}</span></button>)}</>}
             {files.length > (best?.kind === "file" ? 1 : 0) && <><div className={styles.h}>Documents</div>{files.slice(best?.kind === "file" ? 1 : 0, 6).map((n) => <button key={n.path} className={styles.row} onClick={() => { onOpenFile(n); onClose(); }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={20} /></span><span className={styles.rowText}><span>{n.name}</span><small>{n.path.slice(0, n.path.lastIndexOf("/")).replace(/\//g, "\\")}</small></span></button>)}</>}
             <button className={styles.row} onClick={() => { onOpenUrl(`https://www.bing.com/search?q=${encodeURIComponent(q.trim())}`); onClose(); }}><span className={styles.rowIcon}><Globe size={20} /></span><span className={styles.rowText}><span>{q}</span><small>Search the web</small></span></button>
           </div>
@@ -186,6 +195,61 @@ export function WidgetsPanel({ open, weather, unit, onOpenUrl }: { open: boolean
         <div className={styles.widgetCardHead}>Top stories</div>
         {news.length === 0 && <div className={styles.widgetMuted}>Loading…</div>}
         {news.map((n) => <button key={n.url} className={styles.newsRow} onClick={() => onOpenUrl(n.url)}>{n.title}<small>The Harbour Ledger</small></button>)}
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * Quick settings (the Windows 11 flyout on the tray). These are real controls: the volume
+ * slider changes what the speakers do, brightness dims the screen, and turning Wi-Fi off
+ * takes the browser offline until it is turned back on.
+ */
+export function QuickSettingsPanel({ open, onClose, onOpenSettings }: { open: boolean; onClose: () => void; onOpenSettings: (page?: string) => void }) {
+  const sys = useSystem();
+  const s = sys.settings;
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => { if (!open) setNote(null); }, [open]);
+  if (!open) return null;
+
+  const tile = (key: string, label: string, sub: string, on: boolean, icon: React.ReactNode, onClick: () => void, chevron?: () => void) => (
+    <div key={key} className={`${styles.qsTile} ${on ? styles.qsTileOn : ""}`}>
+      <button className={styles.qsTileBtn} onClick={onClick}>
+        <span className={styles.qsTileIcon}>{icon}</span>
+        <span className={styles.qsTileText}><span className={styles.qsTileLabel}>{label}</span><span className={styles.qsTileSub}>{sub}</span></span>
+      </button>
+      {chevron && <button className={styles.qsChevron} onClick={chevron} aria-label={`${label} settings`}><ChevronRight size={12} /></button>}
+    </div>
+  );
+
+  return (
+    <div className={styles.qs} data-quicksettings>
+      <div className={styles.qsTiles}>
+        {tile("wifi", "Wi-Fi", s.airplane ? "Airplane mode" : s.wifi ? "Bell-902" : "Not connected", s.wifi && !s.airplane, s.wifi && !s.airplane ? <Wifi size={20} /> : <WifiOff size={20} />, () => { sys.set({ wifi: !s.wifi }); sys.play("click"); }, () => { onClose(); onOpenSettings("network"); })}
+        {tile("bt", "Bluetooth", "No adapter", false, <Bluetooth size={20} />, () => { setNote("No Bluetooth adapter found."); sys.play("error"); }, () => { onClose(); onOpenSettings("bluetooth"); })}
+        {tile("air", "Airplane mode", s.airplane ? "On" : "Off", s.airplane, <Airplane size={20} />, () => { sys.set({ airplane: !s.airplane }); sys.play("click"); })}
+        {tile("night", "Night light", s.nightLight ? "On" : "Off", s.nightLight, <NightLight size={20} />, () => { sys.set({ nightLight: !s.nightLight }); sys.play("click"); })}
+        {tile("a11y", "Accessibility", "", false, <Accessibility size={20} />, () => { onClose(); onOpenSettings("accessibility"); })}
+        {tile("cast", "Cast", "No displays found", false, <Cast size={20} />, () => { setNote("No wireless displays found."); sys.play("error"); })}
+        {tile("near", "Nearby sharing", "Off", false, <NearbyShare size={20} />, () => setNote("Nearby sharing needs Bluetooth. No Bluetooth adapter found."))}
+        {tile("proj", "Project", "", false, <Pin size={20} />, () => { setNote("No second display detected."); sys.play("error"); })}
+      </div>
+      {note && <div className={styles.qsNote}>{note}</div>}
+      <div className={styles.qsSlider}>
+        <span className={styles.qsSliderIcon}><Brightness size={18} /></span>
+        <input type="range" min={30} max={100} value={s.brightness} onChange={(e) => sys.set({ brightness: Number(e.target.value) })} aria-label="Brightness" />
+      </div>
+      <div className={styles.qsSlider}>
+        <button className={styles.qsSliderIcon} onClick={() => { sys.set({ muted: !s.muted }); if (s.muted) sys.play("click"); }} title={s.muted ? "Unmute" : "Mute"}>{s.muted || s.volume === 0 ? <SpeakerMute size={18} /> : <Speaker size={18} />}</button>
+        <input type="range" min={0} max={100} value={s.muted ? 0 : s.volume} onChange={(e) => { const v = Number(e.target.value); sys.set({ volume: v, muted: v === 0 }); }} onMouseUp={() => sys.play("click")} aria-label="Volume" />
+        <span className={styles.qsSliderVal}>{s.muted ? 0 : s.volume}</span>
+      </div>
+      <div className={styles.qsFoot}>
+        <span className={styles.qsBattery}><Battery size={16} /> 71%</span>
+        <span style={{ flex: 1 }} />
+        <button className={styles.qsFootBtn} title="Edit quick settings" onClick={() => setNote("Pinning is turned off by your organisation.")}><Pin size={16} /></button>
+        <button className={styles.qsFootBtn} title="Settings" onClick={() => { onClose(); onOpenSettings(); }}><Gear size={16} /></button>
       </div>
     </div>
   );

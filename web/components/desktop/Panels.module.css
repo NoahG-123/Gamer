@@ -61,3 +61,38 @@
 .newsRow:hover { background: var(--hover); }
 .newsRow small { color: var(--text-2); font-size: 11px; margin-top: 3px; }
 .widgetMuted { color: var(--text-2); font-size: 12px; }
+
+/* ---- Quick settings ---- */
+.qs {
+  position: fixed; right: 8px; bottom: 56px; width: 360px;
+  background: var(--shell-bg); border: 1px solid var(--shell-border); border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0,0,0,.5); padding: 14px 12px 8px; z-index: 900;
+  backdrop-filter: blur(60px) saturate(150%);
+  animation: qsIn .14s ease-out;
+}
+@keyframes qsIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.qsTiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.qsTile { position: relative; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,.055); }
+.qsTileOn { background: var(--accent, #0067C0); }
+.qsTileBtn {
+  all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  width: 100%; padding: 10px 4px 8px; cursor: default; text-align: center;
+}
+.qsTile:hover { filter: brightness(1.18); }
+.qsTileIcon { display: block; color: var(--text, #fff); }
+.qsTileOn .qsTileIcon, .qsTileOn .qsTileLabel, .qsTileOn .qsTileSub { color: #061021; }
+.qsTileText { display: block; min-width: 0; width: 100%; }
+.qsTileLabel { display: block; font-size: 11px; line-height: 1.25; color: var(--text, #fff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qsTileSub { display: block; font-size: 10px; opacity: .65; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qsChevron { all: unset; position: absolute; right: 2px; top: 2px; padding: 3px; border-radius: 4px; color: inherit; cursor: default; opacity: .7; }
+.qsChevron:hover { background: rgba(255,255,255,.14); opacity: 1; }
+.qsNote { margin: 10px 4px 2px; font-size: 12px; color: var(--text-secondary, #c8c8c8); }
+.qsSlider { display: flex; align-items: center; gap: 10px; padding: 10px 6px 2px; }
+.qsSlider input[type="range"] { flex: 1; accent-color: var(--accent, #0067C0); height: 18px; }
+.qsSliderIcon { all: unset; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; cursor: default; color: var(--text, #fff); }
+.qsSliderIcon:hover { background: rgba(255,255,255,.08); }
+.qsSliderVal { width: 24px; text-align: right; font-size: 12px; opacity: .8; }
+.qsFoot { display: flex; align-items: center; gap: 4px; margin-top: 8px; padding: 6px 4px; border-top: 1px solid rgba(255,255,255,.07); }
+.qsBattery { display: flex; align-items: center; gap: 6px; font-size: 12px; opacity: .85; }
+.qsFootBtn { all: unset; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 4px; cursor: default; }
+.qsFootBtn:hover { background: rgba(255,255,255,.1); }

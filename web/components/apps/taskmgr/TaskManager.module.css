@@ -1,0 +1,59 @@
+.win { color: var(--text, #fff); }
+.frame { display: flex; flex-direction: column; height: 100%; background: var(--win-bg, #202020); border-radius: 8px; overflow: hidden; font-size: 12px; }
+.inactive { filter: brightness(.97); }
+.titleBar { display: flex; align-items: center; gap: 8px; height: 38px; padding-left: 12px; background: var(--win-title, #262626); }
+.titleIcon { display: flex; }
+.titleText { flex: 1; font-size: 12px; }
+.body { display: flex; flex: 1; min-height: 0; }
+.rail { width: 178px; flex: 0 0 178px; padding: 8px 6px; background: var(--win-bg, #202020); overflow: auto; }
+.railBtn { all: unset; display: flex; align-items: center; gap: 10px; width: calc(100% - 12px); padding: 8px 10px; margin: 1px 0; border-radius: 4px; cursor: default; position: relative; }
+.railBtn:hover { background: rgba(255,255,255,.055); }
+.railOn { background: rgba(255,255,255,.08); }
+.railOn::before { content: ""; position: absolute; left: -6px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--accent, #4CC2FF); }
+.railIcon { display: flex; opacity: .9; }
+.railLabel { font-size: 12.5px; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--win-body, #272727); }
+.toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.pageTitle { font-size: 15px; font-weight: 600; }
+.btn { all: unset; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); cursor: default; }
+.btn:hover:not(:disabled) { background: rgba(255,255,255,.12); }
+.btn:disabled { opacity: .4; }
+.value { opacity: .65; }
+
+.table { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.head { display: flex; padding: 0 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.hName { all: unset; flex: 1; min-width: 160px; padding: 6px 4px; cursor: default; opacity: .75; align-self: flex-end; }
+.hCell { all: unset; width: 92px; padding: 4px; text-align: right; cursor: default; opacity: .75; display: flex; flex-direction: column; align-items: flex-end; }
+.hCell small { font-size: 10px; opacity: .8; }
+.hName:hover, .hCell:hover { background: rgba(255,255,255,.05); }
+.rows { flex: 1; overflow: auto; padding-bottom: 12px; }
+.groupRow { padding: 8px 14px 4px; font-size: 11.5px; font-weight: 600; opacity: .65; }
+.row, .srow { display: flex; align-items: center; padding: 3px 14px; cursor: default; }
+.row:hover, .srow:hover { background: rgba(255,255,255,.05); }
+.rowSel { background: rgba(0,120,212,.32) !important; }
+.cName { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px; overflow: hidden; }
+.nameText { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.appIcon { display: flex; }
+.dot { width: 14px; height: 14px; border-radius: 3px; background: rgba(255,255,255,.14); flex: 0 0 auto; }
+.status { font-style: normal; opacity: .55; font-size: 11px; }
+.cell { width: 92px; text-align: right; padding: 2px 4px; border-radius: 2px; }
+.simple { flex: 1; overflow: auto; padding: 6px 0 14px; }
+
+.perf { display: flex; flex: 1; min-height: 0; }
+.perfList { width: 230px; flex: 0 0 230px; overflow: auto; padding: 4px 8px; }
+.perfItem { all: unset; display: flex; align-items: center; gap: 10px; width: calc(100% - 16px); padding: 8px; border-radius: 4px; cursor: default; }
+.perfItem:hover { background: rgba(255,255,255,.05); }
+.perfOn { background: rgba(255,255,255,.08); }
+.perfText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.perfText b { font-size: 12.5px; font-weight: 600; }
+.perfText small { font-size: 11px; opacity: .65; }
+.perfMain { flex: 1; min-width: 0; padding: 4px 16px 16px; display: flex; flex-direction: column; }
+.perfHead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.perfHead b { font-size: 20px; font-weight: 500; }
+.perfHead span { opacity: .6; }
+.spark { width: 100%; height: 230px; border: 1px solid rgba(255,255,255,.12); border-radius: 2px; }
+.sparkSmall { width: 54px; height: 32px; border: 1px solid rgba(255,255,255,.12); border-radius: 2px; flex: 0 0 auto; }
+.perfStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 18px; margin-top: 16px; }
+.stat { display: flex; flex-direction: column; }
+.stat small { font-size: 11px; opacity: .6; }
+.stat b { font-size: 16px; font-weight: 500; }

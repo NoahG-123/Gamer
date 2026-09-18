@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import styles from "./Taskbar.module.css";
 import { useWM, AppId } from "./wm";
 import { useMenu } from "./ContextMenu";
-import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon, TerminalAppIcon } from "@/components/icons/apps";
-import { Search, TaskView, Wifi, SpeakerMute, Speaker, Battery, ChevronUp, Gear, Cloud, Pin, Close } from "@/components/icons/fluent";
+import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon, TerminalAppIcon, SettingsIcon } from "@/components/icons/apps";
+import { DataUsage as TaskMgrIcon } from "@/components/icons/fluent";
+import { Search, TaskView, Wifi, WifiOff, SpeakerMute, Speaker, Battery, ChevronUp, Gear, Cloud, Pin, Close } from "@/components/icons/fluent";
+import { useSystem } from "@/lib/client/system";
 import { Ico } from "@/lib/icons/Ico";
 import { useAsset } from "@/lib/client/assets";
 import { Profile, formatDate, formatTime } from "@/lib/client/api";
@@ -16,6 +18,8 @@ export const APP_META: Record<AppId, { name: string; icon: (size: number) => Rea
   whatsapp: { name: "WhatsApp", icon: (s) => <WhatsAppIcon size={s} /> },
   notepad: { name: "Notepad", icon: (s) => <NotepadIcon size={s} /> },
   terminal: { name: "Terminal", icon: (s) => <TerminalAppIcon size={s} /> },
+  settings: { name: "Settings", icon: (s) => <SettingsIcon size={s} /> },
+  taskmgr: { name: "Task Manager", icon: (s) => <TaskMgrIcon size={s} /> },
   dialog: { name: "", icon: () => null },
 };
 
@@ -30,12 +34,13 @@ function useClock(profile: Profile) {
   return { time: formatTime(now, profile.locale), date: formatDate(now, profile.dateFormat, profile.locale) };
 }
 
-export type Panel = "start" | "search" | "taskview" | "notif" | "widgets" | null;
+export type Panel = "start" | "search" | "taskview" | "notif" | "widgets" | "quick" | null;
 
 export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop, unreadCount }: { profile: Profile; pins: AppId[]; panel: Panel; onPanel: (p: Panel) => void; onLaunch: (app: AppId) => void; onShowDesktop: () => void; unreadCount: number }) {
   const wm = useWM();
   const menu = useMenu();
   const clock = useClock(profile);
+  const sys = useSystem();
   const highlight = useAsset("taskbar.searchHighlight");
   const running = wm.windows.filter((w) => w.app !== "dialog");
   const apps: AppId[] = [...pins];
@@ -67,7 +72,7 @@ export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop
   const taskbarMenu = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("[data-app]")) return;
     e.preventDefault();
-    menu.open({ x: e.clientX, y: e.clientY, anchorBottom: true, items: [{ label: "Task Manager", onClick: () => onLaunch("terminal") }, { type: "sep" }, { label: "Taskbar settings", icon: <Gear size={16} /> }] });
+    menu.open({ x: e.clientX, y: e.clientY, anchorBottom: true, items: [{ label: "Task Manager", onClick: () => onLaunch("taskmgr") }, { type: "sep" }, { label: "Taskbar settings", icon: <Gear size={16} />, onClick: () => onLaunch("settings") }] });
   };
 
   return (
@@ -103,16 +108,21 @@ export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop
       <div className={styles.right}>
         <button className={styles.trayBtn} title="Show hidden icons" style={{ width: 22 }} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 60, y: r.top - 4, anchorBottom: true, items: [{ label: "REAPER", onClick: () => {} }, { label: "Dropbox — Up to date" }, { label: "Realtek Audio Console" }, { label: "Windows Security — No action needed" }] }); }}><ChevronUp size={12} /></button>
         {(profile.trayIcons ?? []).map((t) => (
-          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? "OneDrive - Personal\nUp to date" : "WhatsApp"} onClick={() => { if (t === "whatsapp") onLaunch("whatsapp"); }}>
+          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? (sys.online ? "OneDrive - Personal\nUp to date" : "OneDrive - Personal\nNot connected") : "WhatsApp"} onClick={() => { if (t === "whatsapp") onLaunch("whatsapp"); }}>
             {t === "onedrive" ? <Cloud size={16} /> : t === "whatsapp" ? <SiWhatsapp size={15} color="#25D366" /> : null}
           </button>
         ))}
         {profile.inputLanguage && (
           <button className={styles.lang} title="To switch input methods, press Windows key+Space"><span>{profile.inputLanguage[0]}</span><span>{profile.inputLanguage[1]}</span></button>
         )}
-        <button className={styles.trayGroup} title={`Internet access\nSpeakers: Muted${profile.laptop ? "\nBattery: 71% remaining" : ""}`}>
-          <Wifi size={16} />
-          {profile.laptop ? <SpeakerMute size={16} /> : <Speaker size={16} />}
+        <button
+          className={`${styles.trayGroup} ${panel === "quick" ? styles.btnPressed : ""}`}
+          data-quick-btn
+          title={`${sys.online ? "Internet access" : sys.settings.airplane ? "Airplane mode" : "Not connected"}\nSpeakers: ${sys.settings.muted ? "Muted" : `${sys.settings.volume}%`}${profile.laptop ? "\nBattery: 71% remaining" : ""}`}
+          onClick={() => toggle("quick")}
+        >
+          {sys.online ? <Wifi size={16} /> : <WifiOff size={16} />}
+          {sys.settings.muted || sys.settings.volume === 0 ? <SpeakerMute size={16} /> : <Speaker size={16} />}
           {profile.laptop && <Battery size={16} />}
         </button>
         <button className={`${styles.clock} ${panel === "notif" ? styles.btnPressed : ""}`} title="Notifications" onClick={() => toggle("notif")} data-notif-btn>

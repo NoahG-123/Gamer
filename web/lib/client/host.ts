@@ -6,6 +6,10 @@ export interface HostBridge {
   quit: () => void;
   webviewPartition: string;
   toggleDevTools?: () => void;
+  /** Tell the shell whether this computer's Wi-Fi is on. */
+  setNetwork?: (online: boolean) => void;
+  /** Open devtools on a browser tab (Chrome's Inspect). */
+  tabDevTools?: (webContentsId: number) => Promise<boolean>;
 }
 
 declare global {
@@ -21,5 +25,7 @@ export function host(): HostBridge {
     quit: h?.quit ?? (() => {}),
     webviewPartition: h?.webviewPartition ?? "persist:browser",
     toggleDevTools: h?.toggleDevTools,
+    setNetwork: h?.setNetwork,
+    tabDevTools: h?.tabDevTools,
   };
 }
