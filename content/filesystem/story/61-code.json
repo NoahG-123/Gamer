@@ -1,0 +1,54 @@
+{
+  "_comment": "Bodies for the code and config files a programmer's machine would actually have. Readable in Notepad and with `cat` in the terminal.",
+  "files": [
+    {
+      "path": "C:/Users/{user}/Projects/roomtone/denoise.py",
+      "kind": "text",
+      "created": "2023-02-10T10:30:00Z",
+      "modified": "2026-05-02T14:00:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"spectral gate for room tone. tuned for institutional HVAC floors.\r\ndoesn't eat the top end like the stock plugins do. usage: denoise.py IN.wav [OUT.wav]\"\"\"\r\nimport sys\r\nimport numpy as np\r\nimport soundfile as sf\r\nfrom scipy.signal import stft, istft\r\n\r\nFLOOR_DB = -6.0        # how far below the noise profile we gate. -6 for the institutional set (was -12)\r\nATTACK, RELEASE = 0.02, 0.35\r\n\r\ndef profile(mag, seconds, sr, hop):\r\n    frames = int(seconds * sr / hop)\r\n    return np.median(mag[:, :frames], axis=1, keepdims=True)\r\n\r\ndef gate(x, sr):\r\n    f, t, Z = stft(x, sr, nperseg=2048, noverlap=1536)\r\n    mag, ph = np.abs(Z), np.angle(Z)\r\n    noise = profile(mag, 1.5, sr, 512) * 10 ** (FLOOR_DB / 20)\r\n    mask = np.clip((mag - noise) / (mag + 1e-9), 0, 1)\r\n    # smooth the mask in time so it breathes instead of chatters\r\n    a = np.exp(-1 / (ATTACK * sr / 512)); r = np.exp(-1 / (RELEASE * sr / 512))\r\n    sm = np.zeros_like(mask); prev = np.zeros(mask.shape[0])\r\n    for i in range(mask.shape[1]):\r\n        cur = mask[:, i]\r\n        prev = np.where(cur > prev, a * prev + (1 - a) * cur, r * prev + (1 - r) * cur)\r\n        sm[:, i] = prev\r\n    _, y = istft(mag * sm * np.exp(1j * ph), sr, nperseg=2048, noverlap=1536)\r\n    return y[: len(x)]\r\n\r\nif __name__ == \"__main__\":\r\n    src = sys.argv[1]; dst = sys.argv[2] if len(sys.argv) > 2 else src.replace(\".wav\", \"_dn.wav\")\r\n    x, sr = sf.read(src, always_2d=True)\r\n    out = np.stack([gate(x[:, c], sr) for c in range(x.shape[1])], axis=1)\r\n    sf.write(dst, out, sr, subtype=\"PCM_24\")\r\n    print(f\"wrote {dst}\")\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/roomtone/slate.py",
+      "kind": "text",
+      "created": "2023-03-01T11:00:00Z",
+      "modified": "2024-11-02T14:00:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"write a metadata slate into a wav's bext chunk so future-me knows what past-me did.\r\nusage: slate.py FILE.wav --loc \"east corridor\" --mic \"MKH8040 ORTF\" --gain 42\"\"\"\r\nimport argparse, datetime, struct\r\n\r\ndef bext(desc, originator, date, time):\r\n    d = desc.encode()[:256].ljust(256, b\"\\0\")\r\n    o = originator.encode()[:32].ljust(32, b\"\\0\")\r\n    oref = b\"WC\".ljust(32, b\"\\0\")\r\n    return b\"bext\" + struct.pack(\"<I\", 602) + d + o + oref + date.encode() + time.encode() + b\"\\0\" * 8 + struct.pack(\"<H\", 1) + b\"\\0\" * 254 + b\"\\0\" * 2\r\n\r\nif __name__ == \"__main__\":\r\n    p = argparse.ArgumentParser(); p.add_argument(\"file\"); p.add_argument(\"--loc\", default=\"\"); p.add_argument(\"--mic\", default=\"\"); p.add_argument(\"--gain\", default=\"\")\r\n    a = p.parse_args()\r\n    now = datetime.datetime.now()\r\n    chunk = bext(f\"loc={a.loc}; mic={a.mic}; gain={a.gain}dB\", \"Wren Castellanos\", now.strftime(\"%Y-%m-%d\"), now.strftime(\"%H:%M:%S\"))\r\n    with open(a.file, \"r+b\") as f:\r\n        data = f.read()\r\n        i = data.find(b\"fmt \")\r\n        f.seek(0); f.write(data[:i] + chunk + data[i:])\r\n        f.seek(4); f.write(struct.pack(\"<I\", len(data) + len(chunk) - 8))\r\n    print(\"slated\", a.file)\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/transcribe/align.py",
+      "kind": "text",
+      "created": "2026-05-16T12:00:00Z",
+      "modified": "2026-05-16T12:00:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"turn a whisper json (word timestamps) into a timecoded draft I can correct by hand.\r\nprints MM:SS  text, one line per ~8 seconds, so the [inaudible] gaps land where they should.\"\"\"\r\nimport json, sys\r\n\r\ndef mmss(t): return f\"{int(t // 60):02d}:{int(t % 60):02d}\"\r\n\r\nres = json.load(open(sys.argv[1]))\r\nline, start = [], None\r\nfor seg in res[\"segments\"]:\r\n    for w in seg.get(\"words\", []):\r\n        if start is None: start = w[\"start\"]\r\n        line.append(w[\"word\"].strip())\r\n        if w[\"end\"] - start > 8:\r\n            print(mmss(start), \" \".join(line)); line, start = [], None\r\nif line: print(mmss(start), \" \".join(line))\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/build.py",
+      "kind": "text",
+      "created": "2026-08-29T22:35:00Z",
+      "modified": "2026-08-30T02:00:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"build.py — package this user profile into N self-contained copies, each with a serial,\r\ndisguised as an installer people already go looking for. see README.md for why.\r\n\r\nthis file is intentionally inert when run from inside a copy (it checks for serial.txt).\r\n\"\"\"\r\nimport argparse, hashlib, os, pathlib, shutil, sys\r\n\r\nHERE = pathlib.Path(__file__).parent\r\nPROFILE = pathlib.Path(os.path.expanduser(\"~\"))\r\nEXCLUDE = {\"AppData/Local/Temp\", \"AppData/Local/Google\", \".witness_state\", \"node_modules\"}\r\n\r\ndef snapshot(dst):\r\n    for p in PROFILE.rglob(\"*\"):\r\n        rel = p.relative_to(PROFILE)\r\n        if any(str(rel).startswith(e) for e in EXCLUDE): continue\r\n        t = dst / rel\r\n        if p.is_dir(): t.mkdir(parents=True, exist_ok=True)\r\n        else: shutil.copy2(p, t)\r\n\r\ndef stamp(dst, serial, total):\r\n    (dst / \"Projects\" / \"witness\" / \"serial.txt\").write_text(f\"WITNESS COPY {serial:05d} / {total}\\n\")\r\n\r\ndef main():\r\n    ap = argparse.ArgumentParser(); ap.add_argument(\"--serial-range\", nargs=2, type=int, required=True); ap.add_argument(\"--disguise\", required=True)\r\n    a = ap.parse_args()\r\n    if (HERE / \"serial.txt\").exists():\r\n        print(\"build.py: refusing to run inside a copy. the copies exist. they're out there.\"); sys.exit(0)\r\n    lo, hi = a.serial_range\r\n    for s in range(lo, hi + 1):\r\n        out = HERE / \"out\" / f\"{s:05d}\"; out.mkdir(parents=True, exist_ok=True)\r\n        snapshot(out); stamp(out, s, hi)\r\n        shutil.make_archive(str(out), \"zip\", out)\r\n        os.rename(f\"{out}.zip\", HERE / \"out\" / a.disguise.replace(\".exe\", f\"_{s:05d}.exe\"))\r\n        print(s, hashlib.sha256(open(HERE / \"out\" / a.disguise.replace(\".exe\", f\"_{s:05d}.exe\"), \"rb\").read()).hexdigest()[:12])\r\n\r\nif __name__ == \"__main__\": main()\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/requirements.txt",
+      "kind": "text",
+      "created": "2026-08-29T22:35:00Z",
+      "modified": "2026-08-29T22:35:00Z",
+      "body": "requests==2.32.3\r\nparamiko==3.4.1\r\n# whatsapp bridge deps live on the relay, not here. nothing in the image talks to anything but the relay.\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/.ssh/id_ed25519.pub",
+      "kind": "text",
+      "created": "2022-01-04T09:00:00Z",
+      "modified": "2022-01-04T09:00:00Z",
+      "body": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx4kQ2vTfB7N0cJzY6R1pW8uHs3eA9dLm5qXo2VtKjF wren@WREN-THINKPAD\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/.ssh/known_hosts",
+      "kind": "text",
+      "created": "2022-01-04T09:00:00Z",
+      "modified": "2026-08-29T23:00:00Z",
+      "body": "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\r\n192.168.14.20 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHm3LmQdY9XtNvJZ0oM8PqRrSl7yWkA1cDeF2gHi3jK4LmN5oP6qR7sT8uV9wX0yZ1a2b3c4d5e6f7g8h9i0j1k=\r\nrelay.wrn.sh ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB7c1Dq9x0Zt7vWpb3n2aQeR8sK1mYf6uHj0oLxP5rGc\r\n"
+    }
+  ]
+}

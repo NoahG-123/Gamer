@@ -30,7 +30,9 @@ function useClock(profile: Profile) {
   return { time: formatTime(now, profile.locale), date: formatDate(now, profile.dateFormat, profile.locale) };
 }
 
-export function Taskbar({ profile, pins, startOpen, onToggleStart, onLaunch, onShowDesktop }: { profile: Profile; pins: AppId[]; startOpen: boolean; onToggleStart: () => void; onLaunch: (app: AppId) => void; onShowDesktop: () => void }) {
+export type Panel = "start" | "search" | "taskview" | "notif" | "widgets" | null;
+
+export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop, unreadCount }: { profile: Profile; pins: AppId[]; panel: Panel; onPanel: (p: Panel) => void; onLaunch: (app: AppId) => void; onShowDesktop: () => void; unreadCount: number }) {
   const wm = useWM();
   const menu = useMenu();
   const clock = useClock(profile);
@@ -40,8 +42,10 @@ export function Taskbar({ profile, pins, startOpen, onToggleStart, onLaunch, onS
   for (const w of running) if (!apps.includes(w.app)) apps.push(w.app);
   const weather = profile.weather ?? { temp: 21, text: "Partly cloudy", icon: "sun-behind-cloud" };
   const unit = profile.tempUnit ?? "C";
+  const toggle = (p: Panel) => onPanel(panel === p ? null : p);
 
   const clickApp = (app: AppId) => {
+    onPanel(null);
     const wins = running.filter((w) => w.app === app);
     if (!wins.length) { onLaunch(app); return; }
     const top = wins.reduce((a, b) => (a.z > b.z ? a : b));
@@ -63,27 +67,27 @@ export function Taskbar({ profile, pins, startOpen, onToggleStart, onLaunch, onS
   const taskbarMenu = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("[data-app]")) return;
     e.preventDefault();
-    menu.open({ x: e.clientX, y: e.clientY, anchorBottom: true, items: [{ label: "Taskbar settings", icon: <Gear size={16} /> }] });
+    menu.open({ x: e.clientX, y: e.clientY, anchorBottom: true, items: [{ label: "Task Manager", onClick: () => onLaunch("terminal") }, { type: "sep" }, { label: "Taskbar settings", icon: <Gear size={16} /> }] });
   };
 
   return (
     <div className={styles.taskbar} onContextMenu={taskbarMenu} data-taskbar>
       <div className={styles.left}>
-        <button className={styles.widget} title="Widgets">
+        <button className={`${styles.widget} ${panel === "widgets" ? styles.btnPressed : ""}`} title="Widgets" onClick={() => toggle("widgets")} data-widgets-btn>
           <Ico name={`fluent-emoji-flat:${weather.icon ?? "sun-behind-cloud"}`} size={30} />
           <span className={styles.widgetText}><span className={styles.widgetTemp}>{weather.temp}°{unit}</span><span className={styles.widgetDesc}>{weather.text}</span></span>
         </button>
       </div>
       <div className={styles.center}>
-        <button className={`${styles.btn} ${startOpen ? styles.btnPressed : ""}`} title="Start" onClick={onToggleStart} data-start>
+        <button className={`${styles.btn} ${panel === "start" ? styles.btnPressed : ""}`} title="Start" onClick={() => toggle("start")} data-start>
           <WindowsLogo size={18} color="#3AA0F3" />
         </button>
-        <button className={styles.searchBox} title="Search">
+        <button className={`${styles.searchBox} ${panel === "search" ? styles.btnPressed : ""}`} title="Search" onClick={() => toggle("search")} data-search-btn>
           <Search size={18} />
           <span className={styles.searchText}>Search</span>
           {highlight && <img className={styles.searchHighlight} src={highlight} alt="" />}
         </button>
-        <button className={styles.btn} title="Task View"><TaskView size={20} /></button>
+        <button className={`${styles.btn} ${panel === "taskview" ? styles.btnPressed : ""}`} title="Task View" onClick={() => toggle("taskview")} data-taskview-btn><TaskView size={20} /></button>
         {apps.map((app) => {
           const wins = running.filter((w) => w.app === app);
           const top = wins.length ? wins.reduce((a, b) => (a.z > b.z ? a : b)) : null;
@@ -97,9 +101,9 @@ export function Taskbar({ profile, pins, startOpen, onToggleStart, onLaunch, onS
         })}
       </div>
       <div className={styles.right}>
-        <button className={styles.trayBtn} title="Show hidden icons" style={{ width: 22 }}><ChevronUp size={12} /></button>
+        <button className={styles.trayBtn} title="Show hidden icons" style={{ width: 22 }} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 60, y: r.top - 4, anchorBottom: true, items: [{ label: "REAPER", onClick: () => {} }, { label: "Dropbox — Up to date" }, { label: "Realtek Audio Console" }, { label: "Windows Security — No action needed" }] }); }}><ChevronUp size={12} /></button>
         {(profile.trayIcons ?? []).map((t) => (
-          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? "OneDrive - Personal\nUp to date" : "WhatsApp"}>
+          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? "OneDrive - Personal\nUp to date" : "WhatsApp"} onClick={() => { if (t === "whatsapp") onLaunch("whatsapp"); }}>
             {t === "onedrive" ? <Cloud size={16} /> : t === "whatsapp" ? <SiWhatsapp size={15} color="#25D366" /> : null}
           </button>
         ))}
@@ -111,9 +115,10 @@ export function Taskbar({ profile, pins, startOpen, onToggleStart, onLaunch, onS
           {profile.laptop ? <SpeakerMute size={16} /> : <Speaker size={16} />}
           {profile.laptop && <Battery size={16} />}
         </button>
-        <button className={styles.clock} title="Notifications">
+        <button className={`${styles.clock} ${panel === "notif" ? styles.btnPressed : ""}`} title="Notifications" onClick={() => toggle("notif")} data-notif-btn>
           <span className={styles.clockTime} suppressHydrationWarning>{clock.time}</span>
           <span className={styles.clockDate} suppressHydrationWarning>{clock.date}</span>
+          {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
         </button>
         <button className={styles.showDesktop} title="Show desktop" onClick={onShowDesktop} />
       </div>

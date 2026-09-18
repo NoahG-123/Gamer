@@ -49,3 +49,8 @@
 .paneBtn:hover { background: var(--control-bg-hover); }
 .paneHide { font-size: 12px; color: var(--text-2); }
 .paneHide:hover { color: var(--text); }
+.allApps { flex: 1; overflow: auto; margin: 0 32px 8px 44px; padding-right: 8px; }
+.letter { font-size: 14px; font-weight: 600; padding: 12px 12px 6px; color: var(--text); }
+.appRow { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border-radius: 4px; width: 100%; text-align: left; font-size: 13px; color: var(--text); }
+.appRow:hover { background: var(--hover); }
+.appRowIcon { width: 28px; display: flex; justify-content: center; }

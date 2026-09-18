@@ -98,7 +98,20 @@ export function Explorer({ win }: { win: WinState }) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    if (path === SPECIAL.pc || path === SPECIAL.bin || path === SPECIAL.net || path === SPECIAL.gallery) {
+    if (path === SPECIAL.bin) {
+      // The bin lists what was deleted: the per-user folder under C:\$Recycle.Bin, shown with original names.
+      api.list("C:/$Recycle.Bin", { hidden: true, record: false })
+        .then((d) => { const user = d.children.find((c) => c.dir); return user ? api.list(user.path, { hidden: true }) : null; })
+        .then((d) => { if (!cancelled) { setItems(d ? d.children : []); setLoading(false); } })
+        .catch(() => { if (!cancelled) { setItems([]); setLoading(false); } });
+      return () => { cancelled = true; };
+    }
+    if (path === SPECIAL.gallery) {
+      // Gallery: every picture under the profile, newest first.
+      api.search(os.home, ".").then((d) => { if (!cancelled) { setItems(d.results.filter((n) => !n.dir && /^(jpg|jpeg|png|gif|heic|webp|bmp)$/.test(n.ext)).sort((a, b) => b.modified.localeCompare(a.modified))); setLoading(false); } }).catch(() => { if (!cancelled) { setItems([]); setLoading(false); } });
+      return () => { cancelled = true; };
+    }
+    if (path === SPECIAL.pc || path === SPECIAL.net) {
       api.profile().then((d) => { if (!cancelled) { setDrives(d.drives); setItems([]); setLoading(false); } }).catch(() => setLoading(false));
       return () => { cancelled = true; };
     }
@@ -136,6 +149,8 @@ export function Explorer({ win }: { win: WinState }) {
     if (n.dir) navigate(n.path);
     else os.openFile(n);
   }, [navigate, os]);
+  // Recycle Bin and Gallery are special locations that still show a plain file list.
+  const listLike = !isSpecial(path) || path === SPECIAL.bin || path === SPECIAL.gallery;
 
   const click = (e: React.MouseEvent, n: VfsNode) => {
     e.stopPropagation();
@@ -343,8 +358,7 @@ export function Explorer({ win }: { win: WinState }) {
           <div className={styles.content} ref={bodyRef} onClick={() => setSelected(new Set())} onContextMenu={bgMenu}>
             {path === SPECIAL.pc && <ThisPCView drives={drives} home={home} quick={quick} navigate={navigate} selected={selected} click={click} />}
             {path === SPECIAL.home && <HomeView home={home} quick={quick} recent={recent} navigate={navigate} open={open} click={click} selected={selected} fileMenu={fileMenu} />}
-            {(path === SPECIAL.bin || path === SPECIAL.net || path === SPECIAL.gallery) && <div className={styles.empty}>{path === SPECIAL.net ? "" : "This folder is empty."}</div>}
-            {!isSpecial(path) && tab.view === "details" && (
+            {listLike && tab.view === "details" && (
               <div className={styles.details}>
                 <div className={styles.header}>
                   <HeaderCell label="Name" k="name" sort={tab} onClick={setSort} style={{ flex: "0 0 auto", width: searchResults ? 300 : 360 }} />
@@ -367,7 +381,7 @@ export function Explorer({ win }: { win: WinState }) {
                 </div>
               </div>
             )}
-            {!isSpecial(path) && tab.view === "large" && (
+            {listLike && tab.view === "large" && (
               <div className={styles.grid}>
                 {sorted.map((n) => (
                   <div key={n.path} data-row className={`${styles.tile} ${selected.has(n.path) ? styles.rowSel : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>

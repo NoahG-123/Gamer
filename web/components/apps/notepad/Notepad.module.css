@@ -16,3 +16,7 @@
 .status { height: 26px; display: flex; align-items: center; background: var(--layer); font-size: 12px; color: var(--text-2); padding: 0 4px; }
 .statusCell { padding: 0 12px; border-right: 1px solid var(--divider); line-height: 16px; }
 .statusCell:last-child, .statusCell:nth-child(2) { border-right: none; }
+.tabActive { background: var(--layer); }
+.tabIdle { background: transparent; box-shadow: none; color: var(--text-2); }
+.tabIdle:hover { background: var(--hover); }
+.tab { margin-right: 2px; cursor: default; }

@@ -3,13 +3,16 @@ import React, { useEffect, useState } from "react";
 import styles from "./Dialogs.module.css";
 import { WinState, useWM } from "./wm";
 import { Window, CaptionButtons } from "./Window";
+import { useOS } from "./os";
 import * as A from "@/components/icons/apps";
-import { typeLabel } from "@/components/icons/apps";
 import { ChevronDown } from "@/components/icons/fluent";
+import type { OpenWith } from "@/lib/client/api";
 
 /**
  * Realistic Windows responses for files that cannot be opened:
- *  - "open-with": Windows 11 "Select an app to open this .xyz file" flyout
+ *  - "open-with": Windows 11 "Select an app to open this .xyz file" flyout. Picking an
+ *    app really opens the file in it (Notepad shows the raw bytes, Chrome renders it,
+ *    the media player plays it), like Windows would.
  *  - "cant-run": "This app can't run on your PC"
  *  - "shortcut": "Problem with Shortcut"
  *  - "bad-zip": "Compressed (zipped) Folders Error"
@@ -20,24 +23,29 @@ export function dialogForFile(name: string, ext: string): { kind: DialogKind; w:
   if (ext === "exe" || ext === "msi" || ext === "com" || ext === "bat" || ext === "jar") return { kind: "cant-run", w: 428, h: 178 };
   if (ext === "lnk" || ext === "url") return { kind: "shortcut", w: 440, h: 190 };
   if (ext === "zip" || ext === "rar" || ext === "7z") return { kind: "bad-zip", w: 440, h: 170 };
-  return { kind: "open-with", w: 460, h: 530 };
+  return { kind: "open-with", w: 460, h: 560 };
 }
 
-const APPS_FOR: Record<string, { label: string; icon: React.ReactNode }[]> = {
-  image: [{ label: "Paint", icon: <A.PaintIcon size={28} /> }, { label: "Snipping Tool", icon: <A.SnipIcon size={28} /> }, { label: "Google Chrome", icon: <A.ChromeIcon size={28} /> }, { label: "Microsoft Edge", icon: <A.EdgeIcon size={28} /> }],
-  doc: [{ label: "Google Chrome", icon: <A.ChromeIcon size={28} /> }, { label: "Microsoft Edge", icon: <A.EdgeIcon size={28} /> }, { label: "Notepad", icon: <A.NotepadIcon size={28} /> }, { label: "Notepad++ : a free (GNU) source code editor", icon: <A.NotepadPlusIcon size={28} /> }],
-  media: [{ label: "VLC media player", icon: <A.VlcIcon size={28} /> }, { label: "Google Chrome", icon: <A.ChromeIcon size={28} /> }, { label: "Microsoft Edge", icon: <A.EdgeIcon size={28} /> }],
-  other: [{ label: "Notepad", icon: <A.NotepadIcon size={28} /> }, { label: "Notepad++ : a free (GNU) source code editor", icon: <A.NotepadPlusIcon size={28} /> }, { label: "Google Chrome", icon: <A.ChromeIcon size={28} /> }],
-};
-function appsFor(ext: string) {
-  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "tif", "svg"].includes(ext)) return APPS_FOR.image;
-  if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "odt", "rtf", "csv"].includes(ext)) return APPS_FOR.doc;
-  if (["mp3", "mp4", "mkv", "mov", "m4a", "wav", "avi", "webm"].includes(ext)) return APPS_FOR.media;
-  return APPS_FOR.other;
+interface AppChoice { label: string; icon: React.ReactNode; open: OpenWith | "store" }
+const CHROME: AppChoice = { label: "Google Chrome", icon: <A.ChromeIcon size={28} />, open: "chrome" };
+const EDGE: AppChoice = { label: "Microsoft Edge", icon: <A.EdgeIcon size={28} />, open: "chrome" };
+const NOTEPAD: AppChoice = { label: "Notepad", icon: <A.NotepadIcon size={28} />, open: "notepad" };
+const NPP: AppChoice = { label: "Notepad++ : a free (GNU) source code editor", icon: <A.NotepadPlusIcon size={28} />, open: "notepad" };
+const VLC: AppChoice = { label: "VLC media player", icon: <A.VlcIcon size={28} />, open: "player" };
+const PAINT: AppChoice = { label: "Paint", icon: <A.PaintIcon size={28} />, open: "image" };
+const PHOTOS: AppChoice = { label: "Photos", icon: <A.PhotosIcon size={28} />, open: "image" };
+const MORE: AppChoice[] = [{ label: "WordPad", icon: <A.WordIcon size={28} />, open: "notepad" }, VLC, PAINT, { label: "Windows Media Player Legacy", icon: <A.GenericAppIcon size={28} />, open: "player" }];
+
+function appsFor(ext: string): AppChoice[] {
+  if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "tif", "svg"].includes(ext)) return [PHOTOS, PAINT, CHROME, EDGE];
+  if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "odt", "rtf", "csv"].includes(ext)) return [CHROME, EDGE, NOTEPAD, NPP];
+  if (["mp3", "mp4", "mkv", "mov", "m4a", "wav", "avi", "webm"].includes(ext)) return [VLC, CHROME, EDGE];
+  return [NOTEPAD, NPP, CHROME];
 }
 
 export function DialogWindow({ win }: { win: WinState }) {
   const wm = useWM();
+  const os = useOS();
   const kind = win.props.kind as DialogKind;
   const name = String(win.props.name ?? "");
   const ext = String(win.props.ext ?? "");
@@ -55,7 +63,11 @@ export function DialogWindow({ win }: { win: WinState }) {
     <Window win={win} className={styles.flyoutWin}>
       <div className={styles.flyout} data-drag>
         <div className={styles.flyoutTitle}>Select an app to open this .{ext} file</div>
-        <OpenWithList apps={appsFor(ext)} ext={ext} onDone={close} />
+        <OpenWithList apps={appsFor(ext)} ext={ext} onChoose={(c) => {
+          close();
+          if (c.open === "store") os.openUrl(`https://apps.microsoft.com/search?query=${encodeURIComponent("." + ext)}`);
+          else os.openWith(path, c.open);
+        }} />
       </div>
     </Window>
   );
@@ -91,7 +103,7 @@ export function DialogWindow({ win }: { win: WinState }) {
           <div className={styles.body}>
             <div className={styles.bodyMain} style={{ display: "flex", gap: 14 }}>
               <ErrorGlyph />
-              <div className={styles.text}>Windows cannot open the folder.<br /><br />The Compressed (zipped) Folder &apos;{path.replace(/\//g, "\\")}&apos; is invalid.</div>
+              <div className={styles.text}>Windows cannot open the folder.<br /><br />The Compressed (zipped) Folder &apos;{(path || name).replace(/\//g, "\\")}&apos; is invalid.</div>
             </div>
             <div className={styles.buttons}><button className={styles.btn} onClick={close} autoFocus>OK</button></div>
           </div>
@@ -101,26 +113,28 @@ export function DialogWindow({ win }: { win: WinState }) {
   );
 }
 
-function OpenWithList({ apps, ext, onDone }: { apps: { label: string; icon: React.ReactNode }[]; ext: string; onDone: () => void }) {
+function OpenWithList({ apps, ext, onChoose }: { apps: AppChoice[]; ext: string; onChoose: (c: AppChoice) => void }) {
   const [sel, setSel] = useState<number | null>(null);
+  const [more, setMore] = useState(false);
+  const list: AppChoice[] = [...apps, ...(more ? MORE.filter((m) => !apps.some((a) => a.label === m.label)) : [])];
+  const store: AppChoice = { label: "Look for an app in the Microsoft Store", icon: <A.StoreIcon size={28} />, open: "store" };
+  const all = [...list, store];
+  const go = () => { if (sel !== null && all[sel]) onChoose(all[sel]); };
   return (
     <>
       <div className={styles.appList} data-nodrag>
-        {apps.map((a, i) => (
-          <button key={a.label} className={`${styles.appRow} ${sel === i ? styles.appRowSel : ""}`} onClick={() => setSel(i)}>
+        {all.map((a, i) => (
+          <button key={a.label} className={`${styles.appRow} ${sel === i ? styles.appRowSel : ""}`} onClick={() => setSel(i)} onDoubleClick={() => onChoose(a)}>
             <span className={styles.appIcon}>{a.icon}</span><span className={styles.appLabel}>{a.label}</span>
           </button>
         ))}
-        <button className={styles.appRow} onClick={() => setSel(99)}>
-          <span className={styles.appIcon}><A.StoreIcon size={28} /></span><span className={styles.appLabel}>Look for an app in the Microsoft Store</span>
-        </button>
-        <button className={styles.moreApps}><ChevronDown size={12} /> More apps</button>
+        {!more && <button className={styles.moreApps} onClick={() => setMore(true)}><ChevronDown size={12} /> More apps</button>}
       </div>
       <div className={styles.flyoutButtons} data-nodrag>
-        <button className={`${styles.btn} ${styles.btnAccent}`} disabled={sel === null} onClick={onDone}>Always</button>
-        <button className={styles.btn} disabled={sel === null} onClick={onDone}>Just once</button>
+        <button className={`${styles.btn} ${styles.btnAccent}`} disabled={sel === null} onClick={go}>Always</button>
+        <button className={styles.btn} disabled={sel === null} onClick={go}>Just once</button>
       </div>
-      <span style={{ display: "none" }}>{typeLabel(ext, false)}</span>
+      <span style={{ display: "none" }}>{A.typeLabel(ext, false)}</span>
     </>
   );
 }

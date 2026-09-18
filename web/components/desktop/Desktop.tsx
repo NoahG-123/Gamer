@@ -3,12 +3,13 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./Desktop.module.css";
 import { WMProvider, useWM, AppId } from "./wm";
 import { MenuProvider, useMenu } from "./ContextMenu";
-import { Taskbar } from "./Taskbar";
+import { Taskbar, Panel } from "./Taskbar";
 import { StartMenu } from "./StartMenu";
 import { OSProvider, OS } from "./os";
 import { APP_COMPONENTS } from "./registry";
 import { dialogForFile } from "./Dialogs";
-import { api, Profile, VfsNode, useLiveEvents, LiveEvent } from "@/lib/client/api";
+import { SearchPanel, TaskViewPanel, NotificationPanel, WidgetsPanel, AppEntry } from "./Panels";
+import { api, Profile, VfsNode, OpenResult, OpenWith, useLiveEvents, LiveEvent } from "@/lib/client/api";
 import { RecycleBinIcon, FileTypeIcon, ChromeIcon, WhatsAppIcon, TerminalAppIcon } from "@/components/icons/apps";
 import { Toasts, Toast } from "./Toasts";
 import { AssetsProvider, useAsset } from "@/lib/client/assets";
@@ -31,11 +32,14 @@ function DesktopInner() {
   const menu = useMenu();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [home, setHome] = useState("");
-  const [startOpen, setStartOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel>(null);
+  const [searchInitial, setSearchInitial] = useState("");
   const [desktopItems, setDesktopItems] = useState<VfsNode[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [history, setHistory] = useState<Toast[]>([]);
+  const [seenNotif, setSeenNotif] = useState(0);
   const wallpaper = useAsset(profile?.wallpaper ?? "wallpaper.desktop");
 
   useEffect(() => { api.profile().then((d) => { setProfile(d.profile); setHome(d.home); }).catch(() => {}); }, []);
@@ -56,7 +60,11 @@ function DesktopInner() {
   const onLive = useCallback((ev: LiveEvent) => {
     if (ev.type === "fs.changed" || ev.type === "flag" || ev.type === "trigger.fired") setRefreshTick((t) => t + 1);
     if (ev.type === "ui.open") launch(String(ev.app) as AppId, (ev.props as Record<string, unknown>) ?? {});
-    if (ev.type === "ui.notify") setToasts((t) => [...t, { id: Date.now() + Math.random(), app: String(ev.app), title: String(ev.title), text: String(ev.text), props: (ev.props as Record<string, unknown>) ?? {}, at: Date.now() }]);
+    if (ev.type === "ui.notify") {
+      const t: Toast = { id: Date.now() + Math.random(), app: String(ev.app), title: String(ev.title), text: String(ev.text), props: (ev.props as Record<string, unknown>) ?? {}, at: Date.now() };
+      setToasts((x) => [...x, t]);
+      setHistory((x) => [...x.slice(-49), t]);
+    }
   }, [launch]);
   useLiveEvents(onLive);
 
@@ -67,6 +75,17 @@ function DesktopInner() {
     else if (t.app === "terminal") launch("terminal", t.props);
   }, [launch]);
 
+  /** Route an open result to the right app. Every openable file ends up somewhere visible. */
+  const showOpen = useCallback((res: OpenResult, node: VfsNode) => {
+    if (!res.openable) {
+      const d = dialogForFile(node.name, node.ext);
+      wm.open("dialog", { props: { kind: d.kind, name: node.name, ext: node.ext, path: node.path }, w: d.w, h: d.h, resizable: false });
+      return;
+    }
+    if (res.viewer === "notepad") { wm.open("notepad", { props: { name: node.name, text: res.text, path: node.path } }); return; }
+    launch("chrome", { openUrl: res.url, displayUrl: `file:///${node.path}`, title: node.name });
+  }, [wm, launch]);
+
   const openFile = useCallback(async (node: VfsNode) => {
     if (node.dir) { wm.open("explorer", { props: { path: node.path } }); return; }
     // Shortcuts to the apps that exist launch them; any other shortcut is a broken .lnk.
@@ -75,42 +94,43 @@ function DesktopInner() {
       const target: AppId | null = /chrome/.test(n) ? "chrome" : /whatsapp/.test(n) ? "whatsapp" : /notepad/.test(n) ? "notepad" : /terminal|powershell/.test(n) ? "terminal" : /(desktop|downloads|documents|explorer)/.test(n) ? "explorer" : null;
       if (target) { api.event("file.opened", node.path).catch(() => {}); launch(target); return; }
     }
-    let res;
-    try { res = await api.open(node.path); } catch { return; }
-    if (res.openable) {
-      if (res.viewer === "notepad") wm.open("notepad", { props: { name: node.name, text: res.text, path: node.path } });
-      else launch("chrome", { openUrl: res.url, displayUrl: `file:///${node.path}`, title: node.name });
-      return;
-    }
-    // Dressing text files open in Notepad (empty), everything else gets the OS's usual response.
-    if (["txt", "log", "ini", "md", "csv", "srt"].includes(node.ext) || node.ext === "") {
-      wm.open("notepad", { props: { name: node.name, text: "", path: node.path } });
-      return;
-    }
-    const d = dialogForFile(node.name, node.ext);
-    wm.open("dialog", { props: { kind: d.kind, name: node.name, ext: node.ext, path: node.path }, w: d.w, h: d.h, resizable: false });
-  }, [wm, launch]);
+    let res: OpenResult;
+    try { res = await api.open(node.path); } catch { res = { openable: false, node }; }
+    showOpen(res, node);
+  }, [wm, launch, showOpen]);
+
+  const openWith = useCallback(async (path: string, app: OpenWith) => {
+    let res: OpenResult;
+    try { res = await api.open(path, app); } catch { return; }
+    showOpen(res, res.node);
+  }, [showOpen]);
 
   const openFolder = useCallback((path: string) => { wm.open("explorer", { props: { path } }); }, [wm]);
   const openUrl = useCallback((url: string) => { launch("chrome", { openUrl: url }); }, [launch]);
+  const launchEntry = useCallback((a: AppEntry) => { if (a.app) launch(a.app, a.url ? { openUrl: a.url } : undefined); }, [launch]);
 
-  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openFolder, openUrl, refreshTick } : null, [profile, home, launch, openFile, openFolder, openUrl, refreshTick]);
+  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick]);
 
-  // Close start menu on outside click; deselect desktop icons.
+  // Close any flyout on outside click; deselect desktop icons.
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement;
-      if (startOpen && !t.closest("[data-startmenu]") && !t.closest("[data-start]")) setStartOpen(false);
+      if (panel && !t.closest("[data-startmenu],[data-start],[data-search],[data-search-btn],[data-taskview-btn],[data-notif],[data-notif-btn],[data-widgets],[data-widgets-btn],[data-menu-root]")) setPanel(null);
       if (!t.closest("[data-desktop-icon]") && !t.closest("[data-menu-root]")) setSelected(null);
     };
     window.addEventListener("pointerdown", onDown, true);
     return () => window.removeEventListener("pointerdown", onDown, true);
-  }, [startOpen]);
+  }, [panel]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setStartOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPanel(null);
+      // Win key (Meta) toggles Start; Win+S opens Search.
+      if (e.key === "Meta" && !e.repeat) { e.preventDefault(); setPanel((p) => (p === "start" ? null : "start")); }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  useEffect(() => { if (panel === "notif") setSeenNotif(history.length); }, [panel, history.length]);
 
   const desktopMenu = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("[data-desktop-icon]")) return;
@@ -120,7 +140,7 @@ function DesktopInner() {
       { label: "Sort by", icon: <Sort />, children: [{ label: "Name" }, { label: "Size" }, { label: "Item type" }, { label: "Date modified" }] },
       { label: "Refresh", icon: <Refresh />, onClick: () => setRefreshTick((t) => t + 1) },
       { type: "sep" },
-      { label: "New", icon: <NewIcon />, children: [{ label: "Folder" }, { label: "Shortcut" }, { type: "sep" }, { label: "Bitmap image" }, { label: "Text Document" }, { label: "Compressed (zipped) Folder" }] },
+      { label: "New", icon: <NewIcon />, children: [{ label: "Folder" }, { label: "Shortcut" }, { type: "sep" }, { label: "Bitmap image" }, { label: "Text Document", onClick: () => launch("notepad", { name: "New Text Document.txt", text: "" }) }, { label: "Compressed (zipped) Folder" }] },
       { type: "sep" },
       { label: "Display settings", icon: <Display /> },
       { label: "Personalize", icon: <Personalize /> },
@@ -135,12 +155,20 @@ function DesktopInner() {
     e.preventDefault(); e.stopPropagation();
     setSelected(node ? node.path : "recycle-bin");
     if (!node) {
-      menu.open({ x: e.clientX, y: e.clientY, items: [{ label: "Open" }, { label: "Empty Recycle Bin", disabled: profile?.recycleBinEmpty }, { type: "sep" }, { label: "Pin to Start" }, { type: "sep" }, { label: "Create shortcut" }, { label: "Rename" }, { label: "Properties" }] });
+      menu.open({ x: e.clientX, y: e.clientY, items: [{ label: "Open", onClick: () => openFolder("Recycle Bin") }, { label: "Empty Recycle Bin", disabled: profile?.recycleBinEmpty }, { type: "sep" }, { label: "Pin to Start" }, { type: "sep" }, { label: "Create shortcut" }, { label: "Rename" }, { label: "Properties" }] });
       return;
     }
     menu.open({ x: e.clientX, y: e.clientY, items: [
       { label: "Open", onClick: () => openFile(node) },
-      { label: "Open with", children: [{ label: "Choose another app" }] },
+      { label: "Open with", children: [
+        { label: "Notepad", onClick: () => openWith(node.path, "notepad") },
+        { label: "Google Chrome", onClick: () => openWith(node.path, "chrome") },
+        { label: "VLC media player", onClick: () => openWith(node.path, "player") },
+        { label: "Photos", onClick: () => openWith(node.path, "image") },
+        { type: "sep" },
+        { label: "Choose another app", onClick: () => { const d = dialogForFile(node.name, node.ext); wm.open("dialog", { props: { kind: "open-with", name: node.name, ext: node.ext, path: node.path }, w: d.w, h: 560, resizable: false }); } },
+      ] },
+      { label: "Open in Terminal", onClick: () => launch("terminal", { cwd: node.path.slice(0, node.path.lastIndexOf("/")) }) },
       { type: "sep" },
       { label: "Cut", shortcut: "Ctrl+X" }, { label: "Copy", shortcut: "Ctrl+C" },
       { type: "sep" },
@@ -159,6 +187,7 @@ function DesktopInner() {
     return <FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={48} />;
   };
   const label = (n: VfsNode) => (n.ext === "lnk" || n.ext === "url" ? n.name.replace(/\.(lnk|url)$/i, "") : n.name);
+  const weather = profile.weather ?? { temp: 21, text: "Partly cloudy", icon: "sun-behind-cloud" };
 
   return (
     <OSProvider value={os}>
@@ -178,9 +207,13 @@ function DesktopInner() {
         <div className={styles.windows}>
           {wm.windows.map((w) => { const C = APP_COMPONENTS[w.app]; return <C key={w.id} win={w} />; })}
         </div>
+        <TaskViewPanel open={panel === "taskview"} onClose={() => setPanel(null)} />
         <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} onOpen={openToast} />
-        <StartMenu open={startOpen} displayName={profile.displayName} onLaunch={(a, p) => launch(a, p)} onOpenFile={openFile} onClose={() => setStartOpen(false)} />
-        <Taskbar profile={profile} pins={profile.taskbarPins as AppId[]} startOpen={startOpen} onToggleStart={() => setStartOpen((s) => !s)} onLaunch={(a) => launch(a)} onShowDesktop={() => wm.windows.forEach((w) => wm.minimize(w.id))} />
+        <StartMenu open={panel === "start"} displayName={profile.displayName} onLaunch={(a, p) => launch(a, p)} onOpenFile={openFile} onClose={() => setPanel(null)} onSearch={(q) => { setSearchInitial(q); setPanel("search"); }} />
+        <SearchPanel open={panel === "search"} initial={searchInitial} onClose={() => { setPanel(null); setSearchInitial(""); }} onLaunch={launchEntry} onOpenFile={openFile} onOpenUrl={openUrl} />
+        <NotificationPanel open={panel === "notif"} onClose={() => setPanel(null)} history={history} onOpen={openToast} onClear={() => { setHistory([]); setSeenNotif(0); }} />
+        <WidgetsPanel open={panel === "widgets"} weather={weather} unit={profile.tempUnit ?? "C"} onOpenUrl={(u) => { setPanel(null); openUrl(u); }} />
+        <Taskbar profile={profile} pins={profile.taskbarPins as AppId[]} panel={panel} onPanel={(p) => { if (p === "search") setSearchInitial(""); setPanel(p); }} onLaunch={(a) => { setPanel(null); launch(a); }} onShowDesktop={() => { setPanel(null); wm.windows.forEach((w) => wm.minimize(w.id)); }} unreadCount={Math.max(0, history.length - seenNotif)} />
       </div>
     </OSProvider>
   );

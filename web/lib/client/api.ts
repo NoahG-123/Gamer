@@ -9,7 +9,8 @@ export interface Message { id: number; chatId: string; sender: string; text: str
 export interface ChatSummary { contact: Contact; last: Message | null; unread: number }
 export interface Bookmark { id: string; title: string; url?: string; folder?: boolean; children?: Bookmark[] }
 export interface HistoryEntry { url: string; title: string; visits: number }
-export type OpenResult = { openable: false; node: VfsNode } | { openable: true; node: VfsNode; viewer: "notepad"; text: string } | { openable: true; node: VfsNode; viewer: "chrome"; url: string; kind: string };
+export type OpenWith = "notepad" | "chrome" | "player" | "image";
+export type OpenResult = { openable: false; node: VfsNode } | { openable: true; node: VfsNode; viewer: "notepad"; text: string; synthetic?: boolean } | { openable: true; node: VfsNode; viewer: "chrome"; url: string; kind: string; synthetic?: boolean };
 
 async function get<T>(url: string): Promise<T> {
   const r = await fetch(url, { cache: "no-store" });
@@ -25,7 +26,7 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 export const api = {
   profile: () => get<{ profile: Profile; home: string; drives: Drive[]; serverTime: string }>("/api/profile"),
   list: (path: string, opts: { hidden?: boolean; record?: boolean } = {}) => get<{ node: VfsNode; children: VfsNode[]; drives: Drive[]; home: string }>(`/api/fs/list?path=${encodeURIComponent(path)}${opts.hidden ? "&hidden=1" : ""}${opts.record === false ? "&record=0" : ""}`),
-  open: (path: string) => post<OpenResult>("/api/fs/open", { path }),
+  open: (path: string, withApp?: OpenWith) => post<OpenResult>("/api/fs/open", withApp ? { path, with: withApp } : { path }),
   search: (path: string, q: string) => get<{ results: VfsNode[] }>(`/api/fs/search?path=${encodeURIComponent(path)}&q=${encodeURIComponent(q)}`),
   chats: () => get<{ chats: ChatSummary[] }>("/api/messages"),
   messages: (chatId: string, since = 0, record = true) => get<{ contact: Contact; messages: Message[] }>(`/api/messages/${encodeURIComponent(chatId)}?since=${since}${record ? "" : "&record=0"}`),

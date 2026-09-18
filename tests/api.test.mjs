@@ -28,9 +28,22 @@ test("profile is Wren's machine; filesystem lists deep tree", async () => {
   assert.ok(!root.body.children.some((c) => c.name === "pagefile.sys"), "hidden system files hidden by default");
 });
 
-test("dressing files are unopenable; the README opens and unlocks Wren", async () => {
-  const dressing = await post("/api/fs/open", { path: `${home}/Desktop/passport scan (2).pdf` });
-  assert.equal(dressing.body.openable, false);
+test("dressing files open into something plausible; the README opens and unlocks Wren", async () => {
+  // Office documents (no Office on this machine) get the real "how do you want to open this" dialog...
+  const docx = await post("/api/fs/open", { path: `${home}/Desktop/Untitled document.docx` });
+  assert.equal(docx.body.openable, false);
+  // ...but forcing an app opens them anyway, like Windows would.
+  const forced = await post("/api/fs/open", { path: `${home}/Desktop/Untitled document.docx`, with: "notepad" });
+  assert.equal(forced.body.viewer, "notepad");
+  assert.ok(forced.body.text.startsWith("PK"), "Notepad shows the raw bytes of a docx");
+  // Media, images and PDFs always open: synthetic bodies keep the machine from dead-ending.
+  const pdf = await post("/api/fs/open", { path: `${home}/Desktop/passport scan (2).pdf` });
+  assert.equal(pdf.body.viewer, "chrome");
+  const pdfBody = await fetch(`${B}${pdf.body.url}`);
+  assert.match(pdfBody.headers.get("content-type"), /application\/pdf/);
+  const img = await post("/api/fs/open", { path: `${home}/Desktop/IMG_4471.HEIC` });
+  assert.equal(img.body.kind, "image");
+  assert.match((await fetch(`${B}${img.body.url}`)).headers.get("content-type"), /image\/png/);
   const before = await j("/api/messages");
   assert.ok(!before.body.chats.some((c) => c.contact.id === "wren"), "Wren hidden before README");
   const readme = await post("/api/fs/open", { path: `${home}\\Desktop\\READ ME.txt` });

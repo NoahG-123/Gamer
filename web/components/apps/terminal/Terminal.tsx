@@ -13,12 +13,68 @@ interface ExecResult { lines: Line[]; cwd: string; mode?: Mode; prompt?: string;
 
 const BANNER = ["Windows PowerShell", "Copyright (C) Microsoft Corporation. All rights reserved.", "", "Install the latest PowerShell for new features and improvements! https://aka.ms/PSWindows", ""];
 const winPath = (p: string) => (/^[A-Z]:$/.test(p) ? p + "\\" : p.replace(/\//g, "\\"));
+let tabSeq = 1;
+interface TabInfo { id: number; title: string }
 
-/** Windows Terminal with a PowerShell tab. The shell itself runs server-side over the virtual filesystem. */
+/** Windows Terminal: a tab strip of independent PowerShell sessions. Each pane keeps its own cwd, mode and scrollback. */
 export function Terminal({ win }: { win: WinState }) {
   const wm = useWM();
   const os = useOS();
-  const [cwd, setCwd] = useState<string>(String(win.props.cwd ?? os.home));
+  const [tabs, setTabs] = useState<TabInfo[]>(() => [{ id: tabSeq++, title: "Windows PowerShell" }]);
+  const [activeId, setActiveId] = useState<number>(() => tabs[0].id);
+  const active = wm.activeId === win.id;
+  const firstId = useRef(tabs[0].id);
+
+  const newTab = () => { const t = { id: tabSeq++, title: "Windows PowerShell" }; setTabs((ts) => [...ts, t]); setActiveId(t.id); };
+  const closeTab = useCallback((id: number) => {
+    setTabs((ts) => {
+      const i = ts.findIndex((t) => t.id === id);
+      const next = ts.filter((t) => t.id !== id);
+      if (!next.length) { setTimeout(() => wm.close(win.id), 0); return ts; }
+      setActiveId((cur) => (cur === id ? next[Math.min(i, next.length - 1)].id : cur));
+      return next;
+    });
+  }, [wm, win.id]);
+  const setTitle = useCallback((id: number, title: string) => setTabs((ts) => ts.map((t) => (t.id === id ? { ...t, title } : t))), []);
+
+  useEffect(() => {
+    if (!active) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey && e.shiftKey)) return;
+      if (e.key.toLowerCase() === "t") { e.preventDefault(); newTab(); }
+      else if (e.key.toLowerCase() === "w") { e.preventDefault(); closeTab(activeId); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, activeId, closeTab]);
+
+  return (
+    <Window win={win} className={styles.win}>
+      <div className={styles.titleBar} data-drag>
+        {tabs.map((t) => (
+          <div key={t.id} className={`${styles.tab} ${t.id === activeId ? "" : styles.tabIdle}`} data-nodrag onMouseDown={(e) => { if (e.button === 1) { e.preventDefault(); closeTab(t.id); } else if (e.button === 0) setActiveId(t.id); }}>
+            <TerminalAppIcon size={16} />
+            <span className={styles.tabTitle}>{t.title}</span>
+            <button className={styles.tabClose} onClick={(e) => { e.stopPropagation(); closeTab(t.id); }} onMouseDown={(e) => e.stopPropagation()} aria-label="Close tab"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.1" /></svg></button>
+          </div>
+        ))}
+        <button className={styles.newTab} data-nodrag title="New tab (Ctrl+Shift+T)" onClick={newTab}><Plus size={14} /></button>
+        <button className={styles.newTabDrop} data-nodrag onClick={newTab}><ChevronDown size={10} /></button>
+        <div className={styles.dragSpace} />
+        <CaptionButtons win={win} />
+      </div>
+      {tabs.map((t) => (
+        <Pane key={t.id} id={t.id} visible={t.id === activeId} winActive={active} initialCwd={String(win.props.cwd ?? os.home)} script={t.id === firstId.current ? (win.props.script as string[] | undefined) : undefined} autoClose={t.id === firstId.current ? Number(win.props.autoClose ?? 0) : 0}
+          onExit={() => closeTab(t.id)} onTitle={(s) => setTitle(t.id, s)} />
+      ))}
+    </Window>
+  );
+}
+
+function Pane({ id, visible, winActive, initialCwd, script, autoClose, onExit, onTitle }: { id: number; visible: boolean; winActive: boolean; initialCwd: string; script?: string[]; autoClose: number; onExit: () => void; onTitle: (s: string) => void }) {
+  const os = useOS();
+  const [cwd, setCwd] = useState<string>(initialCwd);
   const [mode, setMode] = useState<Mode>(null);
   const [out, setOut] = useState<Line[]>(BANNER.map((t) => ({ text: t })));
   const [input, setInput] = useState("");
@@ -28,13 +84,15 @@ export function Terminal({ win }: { win: WinState }) {
   const [histIdx, setHistIdx] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const active = wm.activeId === win.id;
   const sshPrompt = useRef<string>("");
+  const exitRef = useRef(onExit); exitRef.current = onExit;
+  const titleRef = useRef(onTitle); titleRef.current = onTitle;
 
   const prompt = mode?.kind === "python" ? ">>> " : mode?.kind === "ssh" ? sshPrompt.current || `${mode.host}:~$ ` : `PS ${winPath(cwd)}> `;
 
-  useEffect(() => { if (active) inputRef.current?.focus(); }, [active, busy, secret]);
+  useEffect(() => { if (winActive && visible) inputRef.current?.focus(); }, [winActive, visible, busy, secret]);
   useEffect(() => { const el = bodyRef.current; if (el) el.scrollTop = el.scrollHeight; }, [out, input, busy]);
+  useEffect(() => { titleRef.current(mode?.kind === "ssh" ? sshPrompt.current.replace(/:.*$/, "") : mode?.kind === "python" ? "python" : "Windows PowerShell"); }, [mode]);
 
   const append = useCallback(async (lines: Line[]) => {
     for (const l of lines) {
@@ -61,17 +119,16 @@ export function Terminal({ win }: { win: WinState }) {
         else if (res.open.app === "file") os.launch("notepad", { name: String(res.open.props.newFile ?? "Untitled").split("/").pop(), text: "" });
         else os.launch(res.open.app as "explorer" | "chrome" | "whatsapp" | "notepad", res.open.props);
       }
-      if (res.exit) { wm.close(win.id); return; }
+      if (res.exit) { exitRef.current(); return; }
     } catch {
       setOut((o) => [...o, { text: "The connection to the shell was lost.", color: "red" }]);
     }
     setBusy(false);
-  }, [cwd, mode, append, os, wm, win.id]);
+  }, [cwd, mode, append, os]);
 
   // Scripted launch (a trigger can open the terminal and type for the owner's automation).
   const scripted = useRef(false);
   useEffect(() => {
-    const script = win.props.script as string[] | undefined;
     if (!script?.length || scripted.current) return;
     scripted.current = true;
     (async () => {
@@ -80,8 +137,7 @@ export function Terminal({ win }: { win: WinState }) {
         setOut((o) => [...o, { text: `PS ${winPath(cwd)}> ${s}` }]);
         await run(s);
       }
-      const autoClose = Number(win.props.autoClose ?? 0);
-      if (autoClose) setTimeout(() => wm.close(win.id), autoClose);
+      if (autoClose) setTimeout(() => exitRef.current(), autoClose);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -112,21 +168,8 @@ export function Terminal({ win }: { win: WinState }) {
     if (e.key === "Tab") { e.preventDefault(); }
   };
 
-  const title = mode?.kind === "ssh" ? `${sshPrompt.current.replace(/:.*$/, "")}` : "Windows PowerShell";
-
   return (
-    <Window win={win} className={styles.win}>
-      <div className={styles.titleBar} data-drag>
-        <div className={styles.tab}>
-          <TerminalAppIcon size={16} />
-          <span className={styles.tabTitle}>{title}</span>
-          <button className={styles.tabClose} data-nodrag aria-label="Close tab" onClick={() => wm.close(win.id)}><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1L1 9" stroke="currentColor" strokeWidth="1.1" /></svg></button>
-        </div>
-        <button className={styles.newTab} data-nodrag title="New tab (Ctrl+Shift+T)"><Plus size={14} /></button>
-        <button className={styles.newTabDrop} data-nodrag><ChevronDown size={10} /></button>
-        <div className={styles.dragSpace} />
-        <CaptionButtons win={win} />
-      </div>
+    <div className={`${styles.pane} ${visible ? "" : styles.paneHidden}`} data-pane={id}>
       <div className={styles.body} ref={bodyRef} onMouseUp={() => { if (!window.getSelection()?.toString()) inputRef.current?.focus(); }}>
         {out.map((l, i) => <div key={i} className={`${styles.line} ${l.color ? styles["c_" + l.color] : ""}`}>{l.text || " "}</div>)}
         {!busy && (
@@ -137,6 +180,6 @@ export function Terminal({ win }: { win: WinState }) {
         )}
         {busy && <div className={styles.line}>&nbsp;</div>}
       </div>
-    </Window>
+    </div>
   );
 }

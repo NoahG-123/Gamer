@@ -56,11 +56,15 @@ you arrive: new mail and messages land on a clock and in response to what you re
 ```bash
 npm install
 npm run fetch:people         # profile photos for the cast (randomuser.me, no key needed)
-npm run dev                  # Next dev server + Electron pointed at it
+npm run play                 # production server + Electron: fast, this is how to play
 ```
 
-`npm run dev` creates `.env` for you on first run (copied from `.env.example`) and
-tells you so. Paste your API key after `DEEPSEEK_API_KEY=` in it and restart to
+`npm run play` builds the content server once (about a minute) and then starts
+instantly on later runs. `npm run dev` is for editing code: it compiles every page
+the first time you open it, which makes the machine feel sluggish.
+
+`npm run play` (and `npm run dev`) creates `.env` for you on first run (copied from
+`.env.example`) and tells you so. Paste your API key after `DEEPSEEK_API_KEY=` in it and restart to
 give the characters a voice — without it everything else still works, messages just
 never get answered. That file is gitignored, so your key stays on your machine.
 
@@ -74,7 +78,8 @@ if you'd rather commit one fixed cast for every build.)
 
 Useful while developing:
 
-- `FOUND_WINDOWED=1 npm run dev` runs in a normal window instead of fullscreen.
+- `npm run dev` runs the Next dev server with hot reload instead of the built one.
+- `FOUND_WINDOWED=1 npm run play` (or `dev`) runs in a normal window instead of fullscreen.
 - `F12` toggles devtools in dev builds. `Ctrl+Shift+Alt+Q` quits anywhere (also `Alt+F4`).
 - `LLM_PROVIDER=mock` makes characters answer with canned text and no network.
 

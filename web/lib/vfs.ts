@@ -67,13 +67,31 @@ interface Index { nodes: Map<string, VfsNode>; children: Map<string, VfsNode[]>;
 let cached: Index | null = null;
 let cacheKey = "";
 
+/**
+ * Cheap change detector for everything the index is built from. Stats the content
+ * files at most every 300ms; the index is rebuilt only when one of them changes.
+ */
+let versionAt = 0, versionVal = "";
+function contentVersion(): string {
+  const now = Date.now();
+  if (now - versionAt < 300) return versionVal;
+  versionAt = now;
+  const files = ["profile.json", "filesystem/dressing.json", "filesystem/story-dressing.json", "filesystem/story.json"].map((f) => contentPath(f));
+  for (const dir of ["story", "bodies"]) { const d = contentPath("filesystem", dir); if (fs.existsSync(d)) for (const f of fs.readdirSync(d)) files.push(path.join(d, f)); }
+  let v = "";
+  for (const f of files) { try { v += fs.statSync(f).mtimeMs + "|"; } catch { v += "-|"; } }
+  versionVal = v;
+  return v;
+}
+
 function buildIndex(): Index {
+  const key = contentVersion();
+  if (cached && cacheKey === key) return cached;
   const dressing = loadContent<DressingFile>("filesystem/dressing.json");
   const story = loadStory();
   const extra = fs.existsSync(contentPath("filesystem", "story-dressing.json")) ? loadContent<DressingFile>("filesystem/story-dressing.json") : { entries: [] };
-  const key = JSON.stringify([dressing.entries.length, extra.entries.length, story.files.length, loadProfile().username, storyMtime()]);
-  if (cached && cacheKey === key) return cached;
-  dressing.entries = [...dressing.entries, ...extra.entries];
+  // Never mutate the cached content objects; combine into a local list.
+  const entries: DressingEntry[] = [...dressing.entries, ...extra.entries];
 
   const nodes = new Map<string, VfsNode>();
   const storyMap = new Map<string, StoryFile>();
@@ -86,7 +104,7 @@ function buildIndex(): Index {
   };
   for (const d of DRIVES) nodes.set(`${d.letter}:`, { name: `${d.letter}:`, path: `${d.letter}:`, dir: true, size: 0, created: "2021-06-14T09:12:41Z", modified: "2026-09-16T23:59:14Z", hidden: false, system: false, openable: true, ext: "" });
 
-  for (const e of dressing.entries) {
+  for (const e of entries) {
     const p = normalizePath(e.path);
     const parent = parentPath(p);
     if (parent) ensureFolder(parent, e.created, e.modified);
@@ -130,12 +148,6 @@ function safeSize(p: string): number { try { return fs.statSync(p).size; } catch
  * (one file per topic keeps the world editable). Bodies may also be loaded from
  * `bodyFile` (relative to filesystem/bodies/) so long documents live as plain files.
  */
-function storyMtime(): number {
-  let m = 0;
-  const dir = contentPath("filesystem", "story");
-  if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) m += fs.statSync(path.join(dir, f)).mtimeMs;
-  return m;
-}
 function loadStory(): StoryFileList {
   const base = loadContent<StoryFileList>("filesystem/story.json");
   const files = [...base.files];

@@ -7,7 +7,7 @@
 [data-theme="dark"], :root {
   --accent: #4cc2ff;
   --accent-text: #000;
-  --shell-bg: rgba(32, 32, 32, 0.86);
+  --shell-bg: rgba(32, 32, 32, 0.97);
   --shell-solid: #202020;
   --mica: #202020;
   --layer: #2b2b2b;
@@ -43,7 +43,7 @@
 [data-theme="light"] {
   --accent: #0067c0;
   --accent-text: #fff;
-  --shell-bg: rgba(243, 243, 243, 0.86);
+  --shell-bg: rgba(243, 243, 243, 0.97);
   --shell-solid: #f3f3f3;
   --mica: #eef1f6;
   --layer: #ffffff;
