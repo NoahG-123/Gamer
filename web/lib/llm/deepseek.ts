@@ -45,6 +45,20 @@ export function usageSummary() {
 
 export function provider(): "deepseek" | "mock" { return process.env.LLM_PROVIDER === "mock" ? "mock" : "deepseek"; }
 
+/**
+ * Trouble with the key or the endpoint is reported once, on the console of whoever
+ * started the app — never inside the machine, where it would not belong. In the app
+ * itself an unanswered message just looks like someone who has not picked up.
+ */
+type Warned = typeof globalThis & { __foundLlmWarned?: Set<string> };
+function warnOnce(kind: string, message: string): void {
+  const g = globalThis as Warned;
+  g.__foundLlmWarned = g.__foundLlmWarned ?? new Set();
+  if (g.__foundLlmWarned.has(kind)) return;
+  g.__foundLlmWarned.add(kind);
+  console.warn(`\n[found] ${message}\n`);
+}
+
 function estimateCost(model: string, u: { promptTokens: number; cacheHitTokens: number; completionTokens: number }): number {
   let pricing: Pricing | null = null;
   try { pricing = loadContent<Pricing>("llm/pricing.json"); } catch { pricing = null; }
@@ -63,7 +77,10 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
   const model = req.model || process.env.LLM_DEFAULT_MODEL || "deepseek-chat";
   const budget = budgetUsd();
   const spent = spentUsd();
-  if (spent >= budget) throw new BudgetExceededError(spent, budget);
+  if (spent >= budget) {
+    warnOnce("budget", `The spend cap of $${budget.toFixed(2)} has been reached (LLM_BUDGET_USD), so nobody will reply. Raise it in .env to carry on.`);
+    throw new BudgetExceededError(spent, budget);
+  }
 
   const messages: ChatMessage[] = [];
   if (req.system) messages.push({ role: "system", content: req.system });
@@ -79,7 +96,10 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
   }
 
   const key = process.env.DEEPSEEK_API_KEY;
-  if (!key) throw new NotConfiguredError();
+  if (!key) {
+    warnOnce("nokey", "No DEEPSEEK_API_KEY is set, so nobody will answer messages or email. Put your key in the .env file next to the app and restart.");
+    throw new NotConfiguredError();
+  }
   const base = (process.env.DEEPSEEK_API_BASE || "https://api.deepseek.com").replace(/\/$/, "");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Number(process.env.LLM_TIMEOUT_MS ?? 120000));
@@ -95,6 +115,10 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      if (res.status === 401 || res.status === 403) warnOnce("badkey", `The model provider rejected the key (HTTP ${res.status}). Check DEEPSEEK_API_KEY in your .env; until it works, nobody will reply.`);
+      else if (res.status === 402) warnOnce("nofunds", "The model account has no credit left, so nobody will reply.");
+      else if (res.status === 429) warnOnce("ratelimit", "The model provider is rate limiting this key; replies will be slow or missing.");
+      else if (res.status >= 500) warnOnce("provider", `The model provider returned HTTP ${res.status}. Replies will be missing until it recovers.`);
       const err = `DeepSeek HTTP ${res.status}: ${text.slice(0, 300)}`;
       record(req.characterId, model, { promptTokens: 0, cacheHitTokens: 0, completionTokens: 0, reasoningTokens: 0, costUsd: 0 }, false, err);
       throw new Error(err);
@@ -116,6 +140,7 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
     record(req.characterId, model, usage, true);
     return { content: (msg?.content ?? "").trim(), reasoning: msg?.reasoning_content, model: json.model ?? model, usage, provider: "deepseek" };
   } catch (e) {
+    if ((e as Error).cause || (e as Error).message.includes("fetch failed")) warnOnce("network", `Could not reach ${base}. Check the machine's internet connection, or DEEPSEEK_API_BASE if you changed it.`);
     if ((e as Error).name === "AbortError") {
       record(req.characterId, model, { promptTokens: 0, cacheHitTokens: 0, completionTokens: 0, reasoningTokens: 0, costUsd: 0 }, false, "timeout");
       throw new Error("DeepSeek request timed out");

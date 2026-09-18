@@ -31,10 +31,10 @@ you arrive: new mail and messages land on a clock and in response to what you re
 | --- | --- |
 | `electron/` | The app shell: one fullscreen frameless window, the local content server lifecycle, and the session-level URL intercept for story hosts. |
 | `web/` | Next.js app. Serves the desktop UI (`/`), the fake sites (`/sites/<host>/...`), file bodies (`/lf/...`), the audio player (`/player`), Chrome's New Tab Page, and the JSON API. |
-| `web/lib/` | Server modules: SQLite state engine + triggers (with time-based `since` conditions), virtual filesystem, messaging, mail, calendar, the PowerShell terminal emulator, DeepSeek client with spend cap, asset manifest, first-run Pexels fetch. |
-| `web/components/` | Desktop shell (window manager, taskbar, start menu, context menus, dialogs, notification toasts) and the apps: Explorer, Chrome, WhatsApp, Notepad, **Terminal**. Gmail and Calendar are full HTML apps served as story sites. |
+| `web/lib/` | Server modules: SQLite state engine + triggers (with time-based `since` conditions), virtual filesystem and its writable overlay, reply scheduling, messaging, mail, calendar, the PowerShell terminal emulator, machine settings, the recording renderer, DeepSeek client with spend cap, asset manifest, first-run image fetch. |
+| `web/components/` | Desktop shell (window manager, taskbar, start menu, quick settings, lock screen, context menus, dialogs, notification toasts) and the apps: Explorer, Chrome, WhatsApp, Notepad, Terminal, Settings, Task Manager, Photos, Paint, Calculator, Clock and the audio editor. Gmail and Calendar are full HTML apps served as story sites. |
 | `content/` | The whole world as data. See `content/README.md`. |
-| `scripts/` | Generators (dressing, audio, wallpaper, icons), Pexels fetch, dev runner, packaging hooks. |
+| `scripts/` | Generators (dressing, images, icons), voice and portrait fetch, dev and play runners, packaging hooks. |
 | `tests/` | API tests and the Electron end-to-end test (Playwright). |
 
 ## Content map
@@ -55,9 +55,11 @@ you arrive: new mail and messages land on a clock and in response to what you re
 
 ```bash
 npm install
-npm run fetch:people         # profile photos for the cast (randomuser.me, no key needed)
 npm run play                 # production server + Electron: fast, this is how to play
 ```
+
+The faces of the people on the machine are fetched on first run, so there is nothing to do
+about them. `npm run fetch:people` does the same thing by hand if you would rather.
 
 `npm run play` builds the content server once (about a minute) and then starts
 instantly on later runs. `npm run dev` is for editing code: it compiles every page
@@ -76,12 +78,51 @@ never redistributes them, but they *are* copied into packaged builds from your
 working tree — so run it before `npm run package`. (Drop the two `.gitignore` lines
 if you'd rather commit one fixed cast for every build.)
 
+## What is real on this machine
+
+Nearly everything. The volume slider changes what comes out of the speakers, the
+brightness slider dims the screen, turning Wi-Fi off takes the browser offline and
+Chrome shows its own offline page until it goes back on. Files can be created, renamed,
+edited, saved, deleted to the Recycle Bin, restored and emptied — from Explorer, from
+Notepad, or from the Terminal (`New-Item`, `Set-Content`, `rm`, `mv`, `cp`, `>` and `>>`).
+Wallpaper, theme and accent colour change from Settings or by right-clicking a picture.
+Chrome keeps real history, real bookmarks, real downloads, and its Inspect and View source
+open Chromium's own tools. Task Manager lists the windows that are actually open and End
+task closes them. Downloads land in this machine's Downloads folder and never touch the
+computer it is running on.
+
+A few things genuinely cannot work inside an app like this, and they say so plainly and
+identically every time you try: Bluetooth (no adapter), casting and second displays,
+nearby sharing, printing, the camera and microphone, and changing the host account's
+password. Nothing else hides behind an excuse.
+
+## Voices
+
+The recordings are not stored as files. `web/lib/audio.ts` renders each one while it plays:
+an ambient bed plus spoken lines placed at the timecodes the transcripts give, so a
+forty-minute recording costs no disk and seeking anywhere in it is instant. The east-wing
+room tone keeps its exact signature (a ~92 Hz fundamental with a 0.16 Hz swell and drifting
+470/1180 Hz partials), so anything measured off the audio still agrees with what is written
+about it in the world.
+
+```bash
+npm run fetch:voices     # generates the spoken lines (needs GEMINI_API_KEY)
+```
+
+Free-tier keys allow only a handful of speech requests per model per day, so the script
+works through several models in turn, does the most important lines first, and stops when
+the day's allowance is gone. Run it again the next day and it carries on from where it
+stopped; lines it has not reached yet are simply room tone. Interface sounds are
+synthesised in the browser, so they follow the volume slider exactly.
+
 Useful while developing:
 
 - `npm run dev` runs the Next dev server with hot reload instead of the built one.
 - `FOUND_WINDOWED=1 npm run play` (or `dev`) runs in a normal window instead of fullscreen.
 - `F12` toggles devtools in dev builds. `Ctrl+Shift+Alt+Q` quits anywhere (also `Alt+F4`).
 - `LLM_PROVIDER=mock` makes characters answer with canned text and no network.
+- `FOUND_FAST_REPLIES=1` makes everyone answer immediately (used by the tests).
+- `npm run make:images` rebuilds the wallpaper and the photographs that ship with the machine.
 
 ## The key (making the world come alive)
 
@@ -178,11 +219,18 @@ After each event every trigger in `content/triggers.json` is evaluated; effects 
 hidden files, unlock contacts, set flags, or deliver messages. Live changes reach the UI
 over an SSE stream at `/api/events`.
 
-**Messaging.** `POST /api/messages/<chat>` stores the message and starts a background
-pipeline: delivered tick, DeepSeek request (history window + character system prompt),
-read receipt, typing indicator sized to the reply, then the reply. Character configs live
-in `content/characters/*.json`; `model` can be swapped per character (`deepseek-chat` is
-roughly a third of the price of `deepseek-reasoner`).
+**Messaging.** `POST /api/messages/<chat>` stores the message and schedules a reply in the
+database for the moment that person would actually pick up their phone — worked out from
+who they are, the time where they are, and how the conversation is going. Delays run from
+seconds to days, and a reply that came due while the app was closed lands shortly after it
+opens again. When it is due: read receipt, model request (history window + character system
+prompt), typing indicator sized to the reply, then the message. Messages sent while the
+machine is off the network sit on one tick and go out when it comes back. Character configs
+live in `content/characters/*.json`, reply speeds in `content/messaging/contacts.json`.
+
+If the key is missing, rejected, out of credit or over the spend cap, the app says so once
+on the console of whoever started it. Inside the machine nothing is said at all: an
+unanswered message just looks like someone who has not picked up.
 
 **Cost control.** Every call's token usage and estimated cost (prices in
 `content/llm/pricing.json`) is logged in `llm_usage`; calls stop at `LLM_BUDGET_USD`.

@@ -22,6 +22,10 @@ const outDir = path.join(root, "content/filesystem/assets/audio/voice");
 const dataFile = path.join(root, "content/audio/recordings.json");
 const MODELS = (process.env.TTS_MODELS || "gemini-3.1-flash-tts-preview,gemini-2.5-flash-preview-tts,gemini-2.5-pro-preview-tts")
   .split(",").map((m) => m.trim()).filter(Boolean);
+// The live-audio models speak over a socket and have their own daily allowance, so they
+// pick up when the plain speech models are spent for the day.
+const LIVE_MODELS = (process.env.TTS_LIVE_MODELS || "gemini-2.5-flash-native-audio-preview-09-2025,gemini-2.5-flash-native-audio-latest,gemini-2.5-flash-native-audio-preview-12-2025,gemini-3.1-flash-live-preview")
+  .split(",").map((m) => m.trim()).filter(Boolean);
 const SR = 22050;
 const force = process.argv.includes("--force");
 const exhausted = new Set();
@@ -103,6 +107,47 @@ async function ask(model, voiceName, style, text) {
   return { json: await res.json() };
 }
 
+/** A line spoken over the live-audio socket. Same 24 kHz PCM, delivered in chunks. */
+function liveSay(model, voiceName, style, text) {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${key}`);
+    const chunks = [];
+    let settled = false;
+    const finish = (err, buf) => {
+      if (settled) return;
+      settled = true;
+      try { ws.close(); } catch { /* already closed */ }
+      err ? reject(err) : resolve(buf);
+    };
+    const timer = setTimeout(() => finish(new Error("live: timed out")), 120000);
+    ws.onopen = () => ws.send(JSON.stringify({
+      setup: {
+        model: `models/${model}`,
+        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } } },
+        systemInstruction: { parts: [{ text: `You are a voice actor recording a line. Speak as ${style}. Say only the line you are given, word for word, with nothing added before or after it — no greeting, no acknowledgement, no commentary.` }] },
+      },
+    }));
+    ws.onmessage = async (ev) => {
+      let msg;
+      try { msg = JSON.parse(typeof ev.data === "string" ? ev.data : await ev.data.text()); } catch { return; }
+      if (msg.setupComplete) {
+        ws.send(JSON.stringify({ clientContent: { turns: [{ role: "user", parts: [{ text: `Say exactly this and nothing else:\n\n${text}` }] }], turnComplete: true } }));
+        return;
+      }
+      for (const p of msg.serverContent?.modelTurn?.parts ?? []) if (p.inlineData?.data) chunks.push(Buffer.from(p.inlineData.data, "base64"));
+      if (msg.serverContent?.turnComplete) { clearTimeout(timer); finish(null, Buffer.concat(chunks)); }
+      if (msg.error) { clearTimeout(timer); finish(new Error(`live: ${JSON.stringify(msg.error).slice(0, 120)}`)); }
+    };
+    ws.onerror = () => { clearTimeout(timer); finish(new Error("live: socket error")); };
+    ws.onclose = (e) => { clearTimeout(timer); chunks.length ? finish(null, Buffer.concat(chunks)) : finish(new Error(`live: closed ${e.code} ${String(e.reason).slice(0, 90)}`)); };
+  });
+}
+
+/** Roughly how long a line should take to say, used to catch a model that adds words. */
+function expectedSeconds(text) {
+  return Math.max(1, text.trim().split(/\s+/).length / 2.4) + 0.8;
+}
+
 /** One line, through whichever model still has allowance left. */
 async function tts(voiceName, style, text) {
   for (let round = 0; round < 3; round++) {
@@ -114,7 +159,23 @@ async function tts(voiceName, style, text) {
       process.stdout.write(` waiting ${Math.round(r.wait / 1000)}s…`);
       await sleep(r.wait);
     }
-    if (exhausted.size >= MODELS.length) throw new Error("daily allowance spent on every speech model");
+    for (const model of LIVE_MODELS) {
+      if (exhausted.has(model)) continue;
+      try {
+        const pcm = await liveSay(model, voiceName, style, text);
+        if (!pcm.length) throw new Error("live: no audio");
+        const samples = conditionPcm(pcm, 24000);
+        const got = samples.length / SR, want = expectedSeconds(text);
+        if (got > want * 1.9 + 2) throw new Error(`live: ${got.toFixed(1)}s for a ${want.toFixed(1)}s line, discarding`);
+        process.stdout.write(" [live]");
+        return samples;
+      } catch (e) {
+        if (/quota|RESOURCE_EXHAUSTED|1011|429/i.test(e.message)) { exhausted.add(model); process.stdout.write(` [${model} spent]`); continue; }
+        process.stdout.write(` ${e.message};`);
+      }
+    }
+    if (exhausted.size >= MODELS.length + LIVE_MODELS.length) throw new Error("daily allowance spent on every speech model");
+    await sleep(4000);
   }
   throw new Error("rate limited");
 }

@@ -221,9 +221,27 @@ async function deliverReply(chatId: string, sender: string, characterId: string)
   }
 }
 
+/**
+ * Messages sent while this computer was off the network. When it comes back they go out,
+ * and the people they were sent to start answering, the way a phone catches up.
+ */
+function flushOffline(): void {
+  const rows = db().prepare("SELECT chat_id AS chatId, MAX(id) AS id FROM messages WHERE sender = 'me' AND status = 'sent' GROUP BY chat_id").all() as { chatId: string; id: number }[];
+  for (const r of rows) {
+    setStatus(r.chatId, [r.id], "delivered");
+    if (pendingFor(r.chatId).some((p) => p.kind === "message")) continue;
+    const contact = getContact(r.chatId);
+    if (!contact) continue;
+    const speaker = speakerFor(contact);
+    if (!speaker) continue;
+    enqueue({ chatId: r.chatId, sender: speaker.sender, dueAt: scheduleFor(contact.responsiveness ?? DEFAULT_RESPONSIVENESS, countMyMessages(r.chatId)), kind: "message", meta: { character: speaker.character.id } });
+  }
+}
+
 /** Called by the clock: deliver everything that has come due, including while the app was closed. */
 export function runDueReplies(): void {
   if (!online()) return;
+  flushOffline();
   for (const p of dueReplies()) {
     if (p.kind !== "message") continue;
     markDone(p.id);
