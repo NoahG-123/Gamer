@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   // Fake sites decide their own trailing-slash behaviour, like a real server would.
   skipTrailingSlashRedirect: true,
   devIndicators: false,
+  agentRules: false,
   poweredByHeader: false,
   images: { unoptimized: true },
   typescript: { tsconfigPath: "../tsconfig.json" },

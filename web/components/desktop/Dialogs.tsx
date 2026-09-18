@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./Dialogs.module.css";
 import { WinState, useWM } from "./wm";
 import { Window, CaptionButtons } from "./Window";
@@ -43,6 +43,13 @@ export function DialogWindow({ win }: { win: WinState }) {
   const ext = String(win.props.ext ?? "");
   const path = String(win.props.path ?? "");
   const close = () => wm.close(win.id);
+  const isActive = wm.activeId === win.id;
+  useEffect(() => {
+    if (!isActive) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") wm.close(win.id); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isActive, wm, win.id]);
 
   if (kind === "open-with") return (
     <Window win={win} className={styles.flyoutWin}>

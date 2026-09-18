@@ -8,18 +8,13 @@ directories:
 files:
   - dist/electron/**
   - package.json
+afterPack: scripts/after-pack.cjs
 extraResources:
-  - from: web/.next/standalone
-    to: web
-    filter: ["**/*"]
-  - from: web/.next/static
-    to: web/web/.next/static
-  - from: web/public
-    to: web/web/public
   - from: content
     to: content
     filter: ["**/*", "!assets/people/*.png"]
 asar: true
+executableName: recovered_00417
 win:
   target:
     - portable

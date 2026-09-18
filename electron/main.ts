@@ -69,7 +69,7 @@ async function startServer(): Promise<string> {
   const serverDir = resourcePath("web");
   const serverJs = path.join(serverDir, "web", "server.js");
   if (!fs.existsSync(serverJs)) throw new Error(`content server missing at ${serverJs}`);
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     ELECTRON_RUN_AS_NODE: "1",
     PORT: String(port),
@@ -79,7 +79,9 @@ async function startServer(): Promise<string> {
     DATA_DIR: app.getPath("userData"),
     NEXT_TELEMETRY_DISABLED: "1",
   };
-  serverProc = spawn(process.execPath, [serverJs], { env, cwd: path.join(serverDir, "web"), stdio: isDev ? "inherit" : "ignore", windowsHide: true });
+  delete env.NODE_OPTIONS; // packaged Electron rejects most of these; the child must not inherit them
+  const debug = isDev || process.env.FOUND_DEBUG === "1";
+  serverProc = spawn(process.execPath, [serverJs], { env, cwd: path.join(serverDir, "web"), stdio: debug ? "inherit" : "ignore", windowsHide: true });
   serverProc.on("exit", (code) => { if (!app.isPackaged) console.error("[server] exited", code); });
   const origin = `http://127.0.0.1:${port}`;
   await waitFor(`${origin}/api/profile`, 60000);
@@ -169,7 +171,8 @@ app.whenReady().then(async () => {
   try {
     serverOrigin = await startServer();
   } catch (e) {
-    console.error(e);
+    console.error("[found] failed to start content server:", e);
+    if (process.env.FOUND_DEBUG === "1") { const { dialog } = await import("electron"); dialog.showErrorBox("Startup failed", String(e)); }
     app.quit();
     return;
   }
