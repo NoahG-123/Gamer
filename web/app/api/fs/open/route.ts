@@ -19,5 +19,6 @@ export async function POST(req: NextRequest) {
   if (!story) return json({ openable: false, node, fired });
   const rawUrl = `/lf/${encodeURIComponent(node.path).replace(/%2F/g, "/")}`;
   if (story.kind === "text") return json({ openable: true, node, viewer: "notepad", text: story.body ?? "", fired });
+  if (story.kind === "audio") return json({ openable: true, node, viewer: "chrome", url: `/player?src=${encodeURIComponent(rawUrl)}&name=${encodeURIComponent(node.name)}`, kind: story.kind, fired });
   return json({ openable: true, node, viewer: "chrome", url: rawUrl, kind: story.kind, fired });
 }

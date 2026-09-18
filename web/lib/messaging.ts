@@ -2,19 +2,38 @@
  * Messaging (WhatsApp-style) backend: contacts, history, sending, and LLM-driven
  * replies with realistic delivery/read/typing pacing.
  */
+import fs from "node:fs";
 import { db } from "./db";
-import { loadContent } from "./content";
+import { loadContent, contentPath, loadProfile } from "./content";
 import { publish } from "./bus";
-import { allFlags, isVisible, recordEvent, registerEffectHandler, revealedIds } from "./state";
+import { allFlags, isVisible, recordEvent, registerEffectHandler, revealedIds, presenceOverride } from "./state";
 import { chat, BudgetExceededError, NotConfiguredError } from "./llm/deepseek";
-import { loadCharacter } from "./llm/characters";
+import { loadCharacter, CharacterConfig } from "./llm/characters";
 
 export interface Contact {
-  id: string; name: string; phone?: string; about?: string;
+  id: string; name: string; phone?: string; about?: string; email?: string;
   avatar: { initials: string; color: string; src?: string };
   presence?: "online" | "offline" | "lastSeen"; lastSeen?: string;
   character?: string | null; hidden?: boolean; requires?: string[]; pinned?: boolean;
   isGroup?: boolean; participants?: string[];
+}
+
+/**
+ * Full system prompt for a character: shared world notes (characters/_world.md),
+ * the character's own prompt, and situation notes for every story flag currently set,
+ * so people "know" what the player has already found. `{now}` expands to the current date.
+ */
+export function buildSystemPrompt(character: CharacterConfig, opts: { channel: "whatsapp" | "email" } = { channel: "whatsapp" }): string {
+  const worldPath = contentPath("characters", "_world.md");
+  const world = fs.existsSync(worldPath) ? fs.readFileSync(worldPath, "utf8") : "";
+  const flags = allFlags();
+  const situations = Object.entries(character.situations ?? {}).filter(([k]) => !!flags[k]).map(([, v]) => v);
+  const now = new Date().toLocaleString("en-CA", { timeZone: loadProfile().timezone, dateStyle: "full", timeStyle: "short" });
+  const parts = [world.trim(), character.systemPrompt.trim()];
+  if (opts.channel === "email" && character.emailPrompt) parts.push(character.emailPrompt.trim());
+  if (situations.length) parts.push("What has happened so far (the person you are talking to has done these things on the computer):\n- " + situations.join("\n- "));
+  parts.push(`Current date and time where you are: ${now}.`);
+  return parts.filter(Boolean).join("\n\n").replace(/\{now\}/g, now);
 }
 interface ContactsFile { contacts: Contact[] }
 interface HistoryFile { chats: Record<string, { from: string; at: string; text: string; status?: string }[]> }
@@ -38,7 +57,10 @@ export function visibleContacts(): Contact[] {
   const { contacts } = loadContent<ContactsFile>("messaging/contacts.json");
   const flags = allFlags();
   const revealed = revealedIds("contact");
-  return contacts.filter((c) => isVisible(c, "contact", c.id, flags, revealed));
+  return contacts.filter((c) => isVisible(c, "contact", c.id, flags, revealed)).map((c) => {
+    const o = presenceOverride(c.id);
+    return o ? { ...c, presence: o.presence, lastSeen: o.lastSeen ?? c.lastSeen } : c;
+  });
 }
 
 export function getContact(id: string): Contact | null {
@@ -98,6 +120,8 @@ function myUnreadIds(chatId: string): number[] {
 export function deliverIncoming(chatId: string, from: string, text: string): Message {
   const m = insertMessage(chatId, from, text, "delivered");
   recordEvent("message.received", chatId, { from, id: m.id });
+  const c = getContact(chatId);
+  publish({ type: "ui.notify", app: "whatsapp", title: c?.name ?? from, text, props: { chatId } });
   return m;
 }
 
@@ -131,7 +155,7 @@ async function replyPipeline(contact: Contact, sent: Message): Promise<void> {
   const started = Date.now();
   let replyText: string | null = null;
   try {
-    const res = await chat({ messages: msgs, system: character.systemPrompt, model: character.model, temperature: character.temperature, maxTokens: character.maxTokens, characterId: character.id });
+    const res = await chat({ messages: msgs, system: buildSystemPrompt(character), model: character.model, temperature: character.temperature, maxTokens: character.maxTokens, characterId: character.id });
     replyText = res.content || null;
   } catch (e) {
     if (e instanceof BudgetExceededError || e instanceof NotConfiguredError) {

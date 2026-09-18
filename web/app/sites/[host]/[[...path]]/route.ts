@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import { contentPath } from "@/lib/content";
-import { resolveHost } from "@/lib/sites";
+import { resolveHost, hostInfo } from "@/lib/sites";
 import { mimeFor } from "@/lib/http";
 import { recordEvent } from "@/lib/state";
 export const dynamic = "force-dynamic";
@@ -37,8 +37,9 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ host: strin
     rel = path.join(rel, "index.html");
   }
   if (!fs.existsSync(full) || fs.statSync(full).isDirectory()) {
-    // try extensionless -> .html
+    // try extensionless -> .html; single-page hosts (the Gmail/Calendar clones) serve index.html for any path
     if (fs.existsSync(full + ".html")) full = full + ".html";
+    else if (hostInfo(canonical)?.spa && isMainNav && fs.existsSync(path.join(root, "index.html"))) { full = path.join(root, "index.html"); rel = "index.html"; }
     else {
       if (isMainNav) recordEvent("site.visited", `${canonical}${urlPath}`, { status: 404 });
       return new Response(NOT_FOUND(canonical, urlPath), { status: 404, headers: { "content-type": "text/html; charset=iso-8859-1", server: "Apache/2.4.58 (Ubuntu)" } });

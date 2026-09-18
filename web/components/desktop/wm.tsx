@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useCallback, useContext, useMemo, useReducer, useRef } from "react";
 
-export type AppId = "explorer" | "chrome" | "whatsapp" | "notepad" | "dialog";
+export type AppId = "explorer" | "chrome" | "whatsapp" | "notepad" | "terminal" | "dialog";
 
 export interface WinState {
   id: string;
@@ -101,6 +101,7 @@ const DEFAULTS: Record<AppId, { w: number; h: number; minW: number; minH: number
   chrome: { w: 1200, h: 760, minW: 500, minH: 300 },
   whatsapp: { w: 1090, h: 720, minW: 780, minH: 520 },
   notepad: { w: 900, h: 620, minW: 320, minH: 200 },
+  terminal: { w: 980, h: 560, minW: 400, minH: 220 },
   dialog: { w: 420, h: 220, minW: 200, minH: 100 },
 };
 

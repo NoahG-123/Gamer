@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./Taskbar.module.css";
 import { useWM, AppId } from "./wm";
 import { useMenu } from "./ContextMenu";
-import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon } from "@/components/icons/apps";
+import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon, TerminalAppIcon } from "@/components/icons/apps";
 import { Search, TaskView, Wifi, SpeakerMute, Speaker, Battery, ChevronUp, Gear, Cloud, Pin, Close } from "@/components/icons/fluent";
 import { Ico } from "@/lib/icons/Ico";
 import { useAsset } from "@/lib/client/assets";
@@ -15,6 +15,7 @@ export const APP_META: Record<AppId, { name: string; icon: (size: number) => Rea
   chrome: { name: "Google Chrome", icon: (s) => <ChromeIcon size={s} /> },
   whatsapp: { name: "WhatsApp", icon: (s) => <WhatsAppIcon size={s} /> },
   notepad: { name: "Notepad", icon: (s) => <NotepadIcon size={s} /> },
+  terminal: { name: "Terminal", icon: (s) => <TerminalAppIcon size={s} /> },
   dialog: { name: "", icon: () => null },
 };
 

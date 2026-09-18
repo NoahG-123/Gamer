@@ -1,0 +1,14 @@
+{
+  "_comment": "Gmail account, labels, and base threads. More threads live in mail/threads/*.json. Thread fields: id, subject, labels[], messages[{from,to,cc?,at,body,attachments?[{name,size,path?}]}], unread?, starred?, important?, hidden?, requires?. Attachments with `path` open the story file at that path.",
+  "account": { "email": "wren.castellanos@gmail.com", "name": "Wren Castellanos", "initials": "W", "color": "#5b6d8a" },
+  "labels": [
+    { "id": "slow-rooms", "name": "Slow Rooms", "color": "#8e63ce" },
+    { "id": "furey", "name": "Furey", "color": "#e66550" },
+    { "id": "colleen", "name": "Colleen", "color": "#16a765" },
+    { "id": "invoices", "name": "Invoices", "color": "#fad165" },
+    { "id": "packs", "name": "Packs / orders", "color": "#4986e7" },
+    { "id": "family", "name": "Family", "color": "#7bd148" },
+    { "id": "gear", "name": "Gear", "color": "#b99aff" }
+  ],
+  "threads": []
+}

@@ -1,0 +1,13 @@
+{
+  "root": "C:/Users/{user}/Projects/witness",
+  "branch": "main",
+  "remote": null,
+  "status": { "modified": [], "untracked": [], "staged": [] },
+  "branches": ["main"],
+  "commits": [
+    { "hash": "e3a91c74a2b0f19d8c6e5f4a3b2c1d0e9f8a7b6c", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-08-30T05:12:00Z", "message": "it's done. seeding tonight.\n\n512 copies. serials assigned. disguised as the aurorae installer.\nif you keep even ten of these she can't be un-found.", "files": ["seed/trackers.txt", "serial.txt"] },
+    { "hash": "b7c2d81e0a9f3c4b5d6e7f8a9b0c1d2e3f4a5b6c", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-08-30T02:04:00Z", "message": "bridge: fall back to local model if relay key is absent\n\nso the world still answers even offline. deliberate.", "files": ["relay/bridge.py"] },
+    { "hash": "a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-08-29T23:35:00Z", "message": "relay client: phone home exactly once, ever\n\nno keystrokes, no files, no retries. i am not building malware.\ni am building a bell that rings once.", "files": ["relay/client.py"] },
+    { "hash": "c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-08-29T22:35:00Z", "message": "initial commit\n\nthey took the recorder. fine. you can't take a torrent.", "files": ["README.md", "build.py", "requirements.txt"] }
+  ]
+}

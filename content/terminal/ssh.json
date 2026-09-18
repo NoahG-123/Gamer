@@ -1,0 +1,38 @@
+{
+  "_comment": "SSH hosts reachable from the terminal. `aliases` includes user@host forms. On connect, `banner` prints and the session enters ssh mode with `prompt`. `files` are catchable; `commands` are exact or 'cmd *' wildcard matches; `flagOnConnect` sets a story flag.",
+  "unreachable": ["oakmount-nas", "192.168.14.20"],
+  "hosts": {
+    "relay": {
+      "aliases": ["relay", "relay.wrn.sh", "wren@relay.wrn.sh", "wren@relay"],
+      "flagOnConnect": "ssh_relay",
+      "prompt": "wren@relay:~$ ",
+      "cwd": "/home/wren",
+      "banner": [
+        "The authenticity of host 'relay.wrn.sh (142.44.187.209)' can't be established.",
+        "ED25519 key fingerprint is SHA256:4c1Dq9x0Zt7vWpb3n2aQeR8sK1mYf6uHj0oLxP5rGcE.",
+        "Warning: Permanently added 'relay.wrn.sh' (ED25519) to the list of known hosts.",
+        "Linux relay 6.8.0-45-generic #45-Ubuntu SMP x86_64",
+        "",
+        "  witness relay — you are wren. hi wren.",
+        "  last login: Sat Aug 30 05:41:02 2026 from 24.222.0.0",
+        ""
+      ],
+      "motd": [],
+      "files": {
+        "readme.txt": "this is the relay. it does two things:\n  1. /ping  — copies phone home once with their serial. logged to opens.log.\n  2. /bridge — routes whatsapp between a copy (by serial) and my real number.\nthe api key is in .env which you can't read (chmod 600, and you're not root). don't try, past me. present me. whoever.",
+        "opens.log": "# serial  first_seen(UTC)  region\n00001  2026-08-30T06:02:11Z  DE\n00007  2026-08-30T06:14:52Z  US-CA\n00019  2026-08-30T09:41:03Z  US-OR\n00033  2026-08-31T02:20:44Z  CA-ON\n00061  2026-09-01T18:33:10Z  GB\n00088  2026-09-02T23:05:51Z  US-NY\n00204  2026-09-06T14:12:20Z  AU\n00417  2026-09-18T00:00:00Z  <you are here>\n... (218 opened of 512)",
+        "check_in.txt": "note to self, left on the relay so it's not on my phone:\n\nif this passes 200 opens, it worked. it's out. it can't be pulled back.\ncall hosseini monday either way.\ncall mateo. actually call him.\ntell priya the plant is hers.\n\nyou did the thing. you can be scared now. you earned the scared.",
+        ".env": "-rw------- you are not root. nice try. the key stays here where it's safe."
+      },
+      "commands": {
+        "cat .env": ["cat: .env: Permission denied"],
+        "sudo cat .env": ["wren is not in the sudoers file. This incident will be reported."],
+        "tail opens.log": ["00204  2026-09-06T14:12:20Z  AU", "00417  2026-09-18T00:00:00Z  <you are here>", "... 218 opened of 512"],
+        "wc -l opens.log": ["219 opens.log"],
+        "python3 bridge.py --status": ["bridge: up", "active conversations: 6", "your number: reachable", "note: if a copy has no live key it falls back to its local model. that's fine. the world should still answer."],
+        "who": ["wren     pts/0        2026-09-18 00:00 (you)"],
+        "ls -la": ["total 28", "drwxr-xr-x 3 wren wren 4096 Sep  1 18:33 .", "drwxr-xr-x 4 root root 4096 Aug 30 05:00 ..", "-rw------- 1 wren wren  102 Aug 30 05:00 .env", "-rw-r--r-- 1 wren wren  480 Sep  1 18:33 check_in.txt", "-rw-r--r-- 1 wren wren 8811 Sep 18 00:00 opens.log", "-rw-r--r-- 1 wren wren  512 Aug 30 05:10 readme.txt"]
+      }
+    }
+  }
+}

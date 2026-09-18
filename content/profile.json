@@ -1,37 +1,21 @@
 {
-  "_comment": "PLACEHOLDER. Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). `theme` dark|light. `dateFormat` yyyy-MM-dd or M/d/yyyy. Paths elsewhere use the {user} token.",
-  "username": "mtorres",
-  "displayName": "Marisol Torres",
-  "machineName": "DESKTOP-4K1Q7RV",
-  "timezone": "America/Chicago",
-  "locale": "en-US",
-  "accountEmail": "PLACEHOLDER@outlook.com",
+  "_comment": "Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). Paths elsewhere use the {user} token.",
+  "username": "wren",
+  "displayName": "Wren Castellanos",
+  "machineName": "WREN-THINKPAD",
+  "timezone": "America/Halifax",
+  "locale": "en-CA",
+  "accountEmail": "wren.castellanos@gmail.com",
   "wallpaper": "wallpaper.desktop",
   "accentColor": "#0067C0",
-  "taskbarPins": [
-    "explorer",
-    "chrome",
-    "whatsapp"
-  ],
-  "desktopIcons": [
-    "recycle-bin"
-  ],
+  "taskbarPins": ["explorer", "chrome", "whatsapp", "terminal"],
+  "desktopIcons": ["recycle-bin"],
   "recycleBinEmpty": false,
   "theme": "dark",
   "tempUnit": "C",
   "dateFormat": "yyyy-MM-dd",
   "laptop": true,
-  "inputLanguage": [
-    "ENG",
-    "US"
-  ],
-  "weather": {
-    "temp": 21,
-    "text": "Partly cloudy",
-    "icon": "sun-behind-cloud"
-  },
-  "trayIcons": [
-    "onedrive",
-    "whatsapp"
-  ]
+  "inputLanguage": ["ENG", "CA"],
+  "weather": { "temp": 17, "text": "Fog", "icon": "fog" },
+  "trayIcons": ["onedrive", "whatsapp"]
 }

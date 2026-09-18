@@ -1,46 +1,4 @@
 {
-  "_comment": "PLACEHOLDER. Real, openable files. `kind`: text (opens in Notepad), html/image/pdf (open in Chrome). `body` is inline text; `src` points into filesystem/assets/. `hidden` files appear only after a trigger reveals them by path. Dates/sizes here override dressing entries at the same path.",
-  "files": [
-    {
-      "path": "C:/Users/{user}/Desktop/read me first.txt",
-      "kind": "text",
-      "size": 611,
-      "created": "2026-03-02T21:14:09Z",
-      "modified": "2026-03-04T02:47:33Z",
-      "body": "[PLACEHOLDER STORY FILE — Desktop/read me first.txt]\r\n\r\nThis is a stand-in for a real, content-bearing text file. Opening it records a file.opened event and, per triggers.json, reveals a second placeholder file in Documents.\r\n\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\r\n"
-    },
-    {
-      "path": "C:/Users/{user}/Documents/placeholder notes.txt",
-      "kind": "text",
-      "hidden": true,
-      "size": 302,
-      "created": "2025-11-19T16:03:51Z",
-      "modified": "2025-11-19T16:41:02Z",
-      "body": "[PLACEHOLDER — REVEALED FILE]\r\n\r\nThis file was hidden until Desktop/read me first.txt was opened. That proves the reveal path works end to end.\r\n\r\nOpening this one unlocks a placeholder WhatsApp contact.\r\n"
-    },
-    {
-      "path": "C:/Users/{user}/Documents/placeholder page.html",
-      "kind": "html",
-      "size": 1044,
-      "created": "2025-08-07T13:22:10Z",
-      "modified": "2025-08-07T13:22:10Z",
-      "body": "<!doctype html><html><head><meta charset=\"utf-8\"><title>placeholder page</title></head><body style=\"font-family:Arial;padding:24px\"><h2>[PLACEHOLDER HTML FILE]</h2><p>Local HTML files open in Chrome with a file:/// address. Replace this with real story content.</p></body></html>"
-    },
-    {
-      "path": "C:/Users/{user}/Pictures/placeholder.png",
-      "kind": "image",
-      "size": 4181,
-      "created": "2024-06-30T19:55:41Z",
-      "modified": "2024-06-30T19:55:41Z",
-      "src": "placeholder.png"
-    },
-    {
-      "path": "C:/Users/{user}/Documents/Apartment/wifi.txt",
-      "kind": "text",
-      "size": 96,
-      "created": "2022-09-03T20:11:44Z",
-      "modified": "2023-01-15T00:02:19Z",
-      "body": "[PLACEHOLDER] overrides a dressing entry at the same path so it becomes openable.\r\nnetwork: PLACEHOLDER-5G\r\npw: placeholder\r\n"
-    }
-  ]
+  "_comment": "Base story files. The real content lives in filesystem/story/*.json (one file per topic) and is merged in by the vfs loader; long bodies live in filesystem/bodies/. Keep this list for anything that must load first. `kind`: text (Notepad), html/image/pdf/audio (Chrome / player). `hidden` files appear after a trigger reveals them by path. `requires` gates on flags.",
+  "files": []
 }

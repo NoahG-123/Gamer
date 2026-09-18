@@ -9,7 +9,11 @@ export type BusEvent =
   | { type: "contact.unlocked"; contactId: string }
   | { type: "fs.changed"; paths: string[] }
   | { type: "trigger.fired"; triggerId: string }
-  | { type: "flag"; key: string; value: unknown };
+  | { type: "flag"; key: string; value: unknown }
+  | { type: "mail.changed"; ids: string[] }
+  | { type: "calendar.changed"; ids: string[] }
+  | { type: "ui.open"; app: string; props: Record<string, unknown> }
+  | { type: "ui.notify"; app: string; title: string; text: string; props: Record<string, unknown> };
 
 type G = typeof globalThis & { __foundBus?: EventEmitter };
 

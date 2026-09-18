@@ -20,7 +20,8 @@
     "fetch:assets": "node scripts/fetch-assets.mjs",
     "extract:icons": "node scripts/extract-icons.mjs",
     "generate:wallpaper": "node scripts/make-wallpaper.mjs",
-    "make:icon": "node scripts/make-icon.mjs"
+    "make:icon": "node scripts/make-icon.mjs",
+    "make:audio": "node scripts/make-audio.mjs"
   },
   "dependencies": {
     "@fluentui/react-icons": "^2.0.341",

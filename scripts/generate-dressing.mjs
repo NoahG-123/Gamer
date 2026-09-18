@@ -14,7 +14,7 @@ const pad = (n, w = 2) => String(n).padStart(w, "0");
 
 // Dates: cluster activity into "eras" so timestamps look like a real machine.
 // Nothing on this machine is dated after the "current day" of the story.
-const NOW = Date.UTC(2026, 8, 16, 23, 30);
+const NOW = Date.UTC(2026, 7, 30, 13, 40);
 function dateBetween(y0, y1) {
   const t0 = Math.min(Date.UTC(y0, 0, 1), NOW - 86400000), t1 = Math.min(Date.UTC(y1, 11, 31), NOW);
   const d = new Date(t0 + rnd() * (t1 - t0));

@@ -5,6 +5,7 @@ import { Explorer } from "@/components/apps/explorer/Explorer";
 import { Chrome } from "@/components/apps/chrome/Chrome";
 import { WhatsApp } from "@/components/apps/whatsapp/WhatsApp";
 import { Notepad } from "@/components/apps/notepad/Notepad";
+import { Terminal } from "@/components/apps/terminal/Terminal";
 import { DialogWindow } from "./Dialogs";
 
 export const APP_COMPONENTS: Record<AppId, React.ComponentType<{ win: WinState }>> = {
@@ -12,5 +13,6 @@ export const APP_COMPONENTS: Record<AppId, React.ComponentType<{ win: WinState }
   chrome: Chrome,
   whatsapp: WhatsApp,
   notepad: Notepad,
+  terminal: Terminal,
   dialog: DialogWindow,
 };

@@ -15,15 +15,22 @@ type Condition =
   | { event: string; subject?: string }
   | { flag: string; value?: unknown }
   | { count: { event: string; subject?: string; min: number } }
+  /** True once the FIRST matching event (or the trigger/flag) is at least `minutes` old. */
+  | { since: { event?: string; subject?: string; trigger?: string; flag?: string; minutes: number } }
   | { all: Condition[] }
   | { any: Condition[] }
   | { not: Condition };
 
-type Effect =
+export type Effect =
   | { reveal: string }
   | { set_flag: { key: string; value: unknown } }
   | { unlock_contact: { id: string } }
   | { deliver_message: { chat: string; from: string; text: string; delayMs?: number } }
+  | { deliver_mail: { id: string; delayMs?: number } }
+  | { reveal_event: { id: string } }
+  | { open_app: { app: string; props?: Record<string, unknown>; delayMs?: number } }
+  | { notify: { app: string; title: string; text: string; delayMs?: number; props?: Record<string, unknown> } }
+  | { presence: { contact: string; presence: "online" | "offline" | "lastSeen"; lastSeen?: string } }
   | { log: { text: string } };
 
 export interface Trigger { id: string; when: Condition; then: Effect[]; repeat?: boolean }
@@ -88,11 +95,30 @@ export function isVisible(item: { hidden?: boolean; requires?: string[] }, kind:
   return true;
 }
 
+function firstEventAt(type: string, subject?: string): string | null {
+  const conn = db();
+  let row: { at: string } | undefined;
+  if (subject === undefined) row = conn.prepare("SELECT at FROM events WHERE type = ? ORDER BY id LIMIT 1").get(type) as { at: string } | undefined;
+  else if (subject.endsWith("*")) row = conn.prepare("SELECT at FROM events WHERE type = ? AND subject LIKE ? ORDER BY id LIMIT 1").get(type, subject.slice(0, -1).replace(/[%_]/g, "\\$&") + "%") as { at: string } | undefined;
+  else row = conn.prepare("SELECT at FROM events WHERE type = ? AND subject = ? ORDER BY id LIMIT 1").get(type, subject) as { at: string } | undefined;
+  return row?.at ?? null;
+}
+
+function evalSince(c: { event?: string; subject?: string; trigger?: string; flag?: string; minutes: number }): boolean {
+  let at: string | null = null;
+  if (c.trigger) at = (db().prepare("SELECT fired_at FROM fired_triggers WHERE trigger_id = ? ORDER BY rowid LIMIT 1").get(c.trigger) as { fired_at: string } | undefined)?.fired_at ?? null;
+  else if (c.flag) at = (db().prepare("SELECT set_at FROM flags WHERE key = ?").get(c.flag) as { set_at: string } | undefined)?.set_at ?? null;
+  else if (c.event) at = firstEventAt(c.event, c.subject);
+  if (!at) return false;
+  return Date.now() - new Date(at).getTime() >= c.minutes * 60_000;
+}
+
 function evalCondition(c: Condition): boolean {
   if ("all" in c) return c.all.every(evalCondition);
   if ("any" in c) return c.any.some(evalCondition);
   if ("not" in c) return !evalCondition(c.not);
   if ("count" in c) return countEvents(c.count.event, c.count.subject) >= c.count.min;
+  if ("since" in c) return evalSince(c.since);
   if ("flag" in c) {
     const v = getFlag(c.flag);
     if (c.value === undefined) return v !== undefined && v !== false && v !== null;
@@ -118,7 +144,44 @@ function applyEffect(effect: Effect, trigger: Trigger): void {
   }
   if ("unlock_contact" in effect) { reveal("contact", effect.unlock_contact.id); handlers["unlock_contact"]?.(effect, trigger); return; }
   if ("deliver_message" in effect) { handlers["deliver_message"]?.(effect, trigger); return; }
+  if ("deliver_mail" in effect) {
+    const { id, delayMs } = effect.deliver_mail;
+    setTimeout(() => { reveal("mail", id); publish({ type: "mail.changed", ids: [id] }); handlers["deliver_mail"]?.(effect, trigger); }, Math.max(0, delayMs ?? 0));
+    return;
+  }
+  if ("reveal_event" in effect) { reveal("calendar", effect.reveal_event.id); publish({ type: "calendar.changed", ids: [effect.reveal_event.id] }); return; }
+  if ("open_app" in effect) {
+    const { app, props, delayMs } = effect.open_app;
+    setTimeout(() => publish({ type: "ui.open", app, props: props ?? {} }), Math.max(0, delayMs ?? 0));
+    return;
+  }
+  if ("notify" in effect) {
+    const { app, title, text, delayMs, props } = effect.notify;
+    setTimeout(() => publish({ type: "ui.notify", app, title, text, props: props ?? {} }), Math.max(0, delayMs ?? 0));
+    return;
+  }
+  if ("presence" in effect) {
+    const { contact, presence, lastSeen } = effect.presence;
+    db().prepare("INSERT INTO kv(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(`presence:${contact}`, JSON.stringify({ presence, lastSeen }));
+    publish({ type: "presence", contactId: contact, presence, lastSeen });
+    return;
+  }
   if ("log" in effect) { recordEventRaw("trigger.log", trigger.id, { text: effect.log.text }); return; }
+}
+
+/** Presence override set by a trigger, if any. */
+export function presenceOverride(contactId: string): { presence: "online" | "offline" | "lastSeen"; lastSeen?: string } | null {
+  const row = db().prepare("SELECT value FROM kv WHERE key = ?").get(`presence:${contactId}`) as { value: string } | undefined;
+  return row ? JSON.parse(row.value) : null;
+}
+
+type G = typeof globalThis & { __foundClock?: ReturnType<typeof setInterval> };
+/** Periodic evaluation so `since` (time-based) triggers fire while the machine sits idle. */
+export function startClock(): void {
+  const g = globalThis as G;
+  if (g.__foundClock) return;
+  g.__foundClock = setInterval(() => { try { evaluateTriggers(); } catch (e) { console.error("[state] clock:", e); } }, 20_000);
+  if (typeof g.__foundClock === "object" && "unref" in g.__foundClock) g.__foundClock.unref();
 }
 
 let evaluating = false;

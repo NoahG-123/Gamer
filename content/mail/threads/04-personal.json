@@ -1,0 +1,89 @@
+{
+  "threads": [
+    {
+      "id": "mama-papa-recording",
+      "subject": "papá en la cocina",
+      "labels": ["sent", "family"],
+      "starred": true,
+      "messages": [
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Lucía Castellanos", "email": "lucia.castellanos58@gmail.com" }], "at": "2026-06-21T15:06:00Z", "body": "mamá, here it is. 2018, the kitchen in Moncton, he's arguing with the radio about the Oilers. I recorded it for a school thing and never used it. it's the only one where he laughs at himself.\n\nte quiero\nw", "attachments": [{ "name": "papa_cocina_2018-11-04.wav", "size": 41240112, "path": "C:/Users/{user}/Music/family/papa_cocina_2018-11-04.wav" }] },
+        { "from": { "name": "Lucía Castellanos", "email": "lucia.castellanos58@gmail.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-06-21T18:40:00Z", "body": "Lo escuché tres veces. Gracias mi amor. Se le oye la risa de siempre. No sabía que esto existía. Guárdalo bien.\n\nMamá" }
+      ]
+    },
+    {
+      "id": "priya-article",
+      "subject": "read this when you're not at work",
+      "labels": ["inbox", "colleen"],
+      "messages": [
+        { "from": { "name": "Priya Raman", "email": "priya.raman.lib@gmail.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-05-17T16:22:00Z", "body": "Pulled the Ledger's 1971 coverage from our microfilm and the 2021 piece. Links below (the Ledger digitized it, bless them). Read the mother's quotes. Then read the 2021 one. Then call me.\n\nhttps://harbourledger.ca/archive/1971-mahar\nhttps://harbourledger.ca/archive/1971-mahar-2\nhttps://harbourledger.ca/archive/2021-mahar\n\nAlso there's a Bernadette Mahar in the 1972 city directory at 1341 Barrington, which is now a parking lot, because of course it is.\n\nP" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Priya Raman", "email": "priya.raman.lib@gmail.com" }], "at": "2026-05-17T23:50:00Z", "body": "\"she had eleven dollars and a baby\"\n\ncalling you" }
+      ]
+    },
+    {
+      "id": "jonah-box",
+      "subject": "your box",
+      "labels": ["inbox"],
+      "messages": [
+        { "from": { "name": "Jonah Ferreira", "email": "jonah.ferreira@gmail.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2025-07-12T19:10:00Z", "body": "Found the last box of your stuff in the hall closet. Two hydrophones, the green sweater, the Zoom H1 you said was broken (it isn't), and the book about lighthouses I gave you that you never read. I'll leave it with Priya.\n\nI hope the new place is quiet. I know that matters to you.\n\nJ" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Jonah Ferreira", "email": "jonah.ferreira@gmail.com" }], "at": "2025-07-13T02:22:00Z", "body": "thank you. keep the sweater, it was always yours really.\n\nit's quiet. there's a fridge that does a thing at 3am. I've recorded it.\n\nw" }
+      ]
+    },
+    {
+      "id": "mateo-rehab",
+      "subject": "Fwd: Maison Jean Lapointe — confirmation de rendez-vous",
+      "labels": ["inbox", "family"],
+      "messages": [
+        { "from": { "name": "Mateo Castellanos", "email": "mateo.castellanos.mtl@gmail.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-07-14T20:05:00Z", "body": "so u know im actually going. tues 10am. dont tell mom.\n\n---------- Forwarded message ---------\nFrom: Maison Jean Lapointe <rdv@maisonjeanlapointe.org>\nDate: mar. 14 juil. 2026 à 15:58\nSubject: Confirmation de rendez-vous\n\nBonjour Mateo Castellanos,\n\nNous confirmons votre rendez-vous de suivi le mardi 21 juillet 2026 à 10 h 00 avec Mme Geneviève Roy, intervenante.\n\nMaison Jean Lapointe\n111 rue Normand, Montréal" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Mateo Castellanos", "email": "mateo.castellanos.mtl@gmail.com" }], "at": "2026-07-14T20:30:00Z", "body": "proud of you. never telling mom. 300 pierogi." }
+      ]
+    },
+    {
+      "id": "nocturne-2026",
+      "subject": "Nocturne 2026 — call for proposals",
+      "labels": ["inbox"],
+      "messages": [
+        { "from": { "name": "Nocturne: Art at Night", "email": "info@nocturnehalifax.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-04-02T14:00:00Z", "body": "Dear past participant,\n\nNocturne returns October 17, 2026. Proposals for independent projects are open until May 15. We'd love to see you back — your 2022 laundromat piece is still one people mention to us.\n\nProposal form: https://nocturnehalifax.ca/apply\n\nThe Nocturne team" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Nocturne: Art at Night", "email": "info@nocturnehalifax.ca" }], "at": "2026-05-14T03:12:00Z", "body": "hi — I was going to propose something about a care home at night (with permission, anonymized) but I don't think I can this year. next year, maybe. thank you for asking.\n\nwren" }
+      ]
+    },
+    {
+      "id": "nscc-alumni",
+      "subject": "NSCC Recording Arts alumni panel — Oct 22",
+      "labels": ["inbox"],
+      "messages": [
+        { "from": { "name": "Trevor MacLeod", "email": "trevor.macleod@nscc.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-18T15:44:00Z", "body": "Hi Wren,\n\nWould you be up for sitting on our alumni panel this October? Second-years always ask about location sound and you're the only grad I know who's actually making a living at it. 45 minutes, pizza, a small honorarium that I'm embarrassed to name.\n\nTrevor" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Trevor MacLeod", "email": "trevor.macleod@nscc.ca" }], "at": "2026-08-18T22:10:00Z", "body": "yes, if I'm around in October. I'll tell them to buy wind protection and to never, ever do a wedding.\n\nw" }
+      ]
+    },
+    {
+      "id": "landlord-lock",
+      "subject": "Lock changed",
+      "labels": ["inbox"],
+      "messages": [
+        { "from": { "name": "Dave Corkum", "email": "dcorkum.properties@gmail.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-30T12:40:00Z", "body": "Lock's changed, deadbolt too. Two keys in the envelope under your door. Police report number is 26-118402 if you need it for insurance, the constable left it with me since you'd gone.\n\nTake care of yourself.\nDave" }
+      ]
+    },
+    {
+      "id": "google-newdevice",
+      "subject": "Security alert",
+      "labels": ["inbox"],
+      "hidden": true,
+      "unread": true,
+      "important": true,
+      "messages": [
+        { "from": { "name": "Google", "email": "no-reply@accounts.google.com" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-09-01T00:00:00Z", "body": "New sign-in on Windows\n\nwren.castellanos@gmail.com\n\nWe noticed a new sign-in to your Google Account on a Windows device. If this was you, you don't need to do anything. If not, we'll help you secure your account.\n\nCheck activity\n\nYou received this email to let you know about important changes to your Google Account and services.\n© 2026 Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA" }
+      ]
+    },
+    {
+      "id": "witness-letter",
+      "subject": "to whoever has this",
+      "labels": ["inbox"],
+      "hidden": true,
+      "unread": true,
+      "starred": true,
+      "messages": [
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "undisclosed-recipients", "email": "undisclosed-recipients" }], "at": "2026-09-02T03:40:00Z", "body": "hi.\n\nif this is in the inbox, the thing I built worked, and you're one of the strangers who ended up with a copy of my laptop. sorry. and thank you.\n\nit's all real. I didn't tidy it. if I was going to ask people I've never met to hold something for me, they should get to see who's asking.\n\nwhat I'm asking is small: read the folder called Slow Rooms. keep a copy of what's in it somewhere that isn't Nova Scotia. and remember a name: Colleen Anne Mahar.\n\nif you want to talk, my old whatsapp still works from where I am. I'll know when you've been through things; the relay tells me. don't be weird about it.\n\nw" }
+      ]
+    }
+  ]
+}

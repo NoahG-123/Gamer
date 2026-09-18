@@ -217,7 +217,7 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "New", icon: <F.NewIcon />, children: [{ label: "Folder" }, { label: "Shortcut" }, { type: "sep" }, { label: "Bitmap image" }, { label: "Text Document" }, { label: "Compressed (zipped) Folder" }] },
       { type: "sep" },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter" },
-      { label: "Open in Terminal", icon: <F.Terminal /> },
+      { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: path }) },
       { type: "sep" },
       { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ] });

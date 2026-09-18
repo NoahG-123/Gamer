@@ -64,6 +64,24 @@ CREATE TABLE IF NOT EXISTS kv (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS mail_state (
+  thread_id TEXT PRIMARY KEY,
+  read INTEGER NOT NULL DEFAULT 0,
+  starred INTEGER,
+  labels TEXT,
+  trashed INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS mail_runtime (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread_id TEXT NOT NULL,
+  message TEXT NOT NULL,
+  at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE TABLE IF NOT EXISTS terminal_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  line TEXT NOT NULL,
+  at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
 `;
 
 type G = typeof globalThis & { __foundDb?: DatabaseSync; __foundDbPath?: string };
@@ -88,5 +106,5 @@ export function db(): DatabaseSync {
 /** Wipe all runtime state (used by tests and the debug reset endpoint). */
 export function resetDb(): void {
   const conn = db();
-  conn.exec("DELETE FROM events; DELETE FROM flags; DELETE FROM fired_triggers; DELETE FROM revealed; DELETE FROM messages; DELETE FROM chat_meta; DELETE FROM browser_history; DELETE FROM kv;");
+  conn.exec("DELETE FROM events; DELETE FROM flags; DELETE FROM fired_triggers; DELETE FROM revealed; DELETE FROM messages; DELETE FROM chat_meta; DELETE FROM browser_history; DELETE FROM kv; DELETE FROM mail_state; DELETE FROM mail_runtime; DELETE FROM terminal_history;");
 }

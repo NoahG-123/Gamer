@@ -9,3 +9,4 @@ web/out/
 data/
 .DS_Store
 tests/e2e/output/
+tsconfig.tsbuildinfo

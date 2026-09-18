@@ -1,26 +1,62 @@
 # Found
 
-A hidden-computer mystery. Double-clicking an unassuming executable drops you onto
-someone else's Windows desktop. This repository is the technical shell only: every
-piece of story content is placeholder data under `content/`.
+A hidden-computer experience. Double-clicking an unassuming executable
+(`recovered_00417.exe`, disguised as a cracked audio plugin) drops you onto
+someone else's Windows 11 desktop, filling your screen. It is not your computer.
+It belongs to **Wren Castellanos**, a field recordist in Halifax, Nova Scotia —
+and it is her whole digital life: Gmail, Google Calendar, WhatsApp, her code, her
+terminal history, her secrets. You explore. Over time you learn who she is, what
+she recorded, why she copied herself onto strangers' machines, and what she needs
+you to do. She can talk back.
+
+This repo is the engine *and* the world. The engine (`web/`, `electron/`) hardcodes
+no story; the world is entirely data under `content/`. Swap the content, get a
+different person.
+
+## The story, briefly (spoilers)
+
+On a documentary shoot in a care home, Wren recorded a man with dementia
+unknowingly confessing to a 1971 killing. His family's lawyer is trying to make her
+destroy the tape; someone broke into her apartment. So she packaged her entire
+laptop, disguised it, and seeded ~500 copies so the truth could not be erased —
+each copy phones a relay once and bridges its WhatsApp back to her real phone. You
+have copy #417. Opening the desktop `READ ME.txt` unlocks her. The confession is in
+an encrypted archive you must crack from the Terminal (`7z` / `gpg`; the passphrase
+is discoverable from her emails and an old newspaper). The story keeps moving after
+you arrive: new mail and messages land on a clock and in response to what you read.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
 | `electron/` | The app shell: one fullscreen frameless window, the local content server lifecycle, and the session-level URL intercept for story hosts. |
-| `web/` | Next.js app. Serves the desktop UI (`/`), the fake sites (`/sites/<host>/...`), file bodies (`/lf/...`), Chrome's New Tab Page, and the JSON API. |
-| `web/lib/` | Server modules: SQLite state engine and triggers, virtual filesystem, messaging + reply pacing, DeepSeek client with spend cap, asset manifest. |
-| `web/components/` | Desktop shell (window manager, taskbar, start menu, context menus, dialogs) and the apps: Explorer, Chrome, WhatsApp, Notepad viewer. |
-| `content/` | All data. See `content/README.md`. Replace freely; nothing in `web/` or `electron/` hardcodes story. |
-| `scripts/` | Generators (dressing files, wallpaper, icons), asset fetching, dev runner, packaging hooks. |
-| `tests/` | API tests and Electron end-to-end tests (Playwright). |
+| `web/` | Next.js app. Serves the desktop UI (`/`), the fake sites (`/sites/<host>/...`), file bodies (`/lf/...`), the audio player (`/player`), Chrome's New Tab Page, and the JSON API. |
+| `web/lib/` | Server modules: SQLite state engine + triggers (with time-based `since` conditions), virtual filesystem, messaging, mail, calendar, the PowerShell terminal emulator, DeepSeek client with spend cap, asset manifest, first-run Pexels fetch. |
+| `web/components/` | Desktop shell (window manager, taskbar, start menu, context menus, dialogs, notification toasts) and the apps: Explorer, Chrome, WhatsApp, Notepad, **Terminal**. Gmail and Calendar are full HTML apps served as story sites. |
+| `content/` | The whole world as data. See `content/README.md`. |
+| `scripts/` | Generators (dressing, audio, wallpaper, icons), Pexels fetch, dev runner, packaging hooks. |
+| `tests/` | API tests and the Electron end-to-end test (Playwright). |
+
+## Content map
+
+| Path | What it is |
+| --- | --- |
+| `content/profile.json` | The owner (Wren) and machine identity. |
+| `content/characters/*.json` | Per-person LLM config. `_world.md` is the shared brief every character sees; `situations` inject what you've discovered so people "know" what you've read. |
+| `content/messaging/` | WhatsApp contacts + seeded history. `wren` is hidden until you open the README. |
+| `content/mail/` | The Gmail mailbox: `mailbox.json` (account, labels) + `threads/*.json`. |
+| `content/calendar/events.json` | Calendar events, with weekly/daily/monthly recurrence. |
+| `content/filesystem/` | `story.json` + `story/*.json` (real, openable files; long bodies in `bodies/`), `story-dressing.json` (extra folders), generated `dressing.json` (unopenable filler). |
+| `content/repos/*.json` | Git histories the Terminal replays (`git log`, `git show`, …). |
+| `content/terminal/` | `secrets.json` (decryptable archives + passphrase hashes), `ssh.json` (reachable hosts), `scripts.json` (scripted program output). |
+| `content/sites/` | Story websites + the Gmail/Calendar single-page clones (`spa: true` in `hosts.json`). |
 
 ## Run
 
 ```bash
 npm install
-cp .env.example .env        # add DEEPSEEK_API_KEY (optional; without it contacts never reply)
+cp .env.example .env        # add your LLM key + PEXELS_API_KEY (both optional)
+npm run make:audio           # generate the story WAVs (committed, but regenerable)
 npm run dev                  # Next dev server + Electron pointed at it
 ```
 
@@ -29,6 +65,26 @@ Useful while developing:
 - `FOUND_WINDOWED=1 npm run dev` runs in a normal window instead of fullscreen.
 - `F12` toggles devtools in dev builds. `Ctrl+Shift+Alt+Q` quits anywhere (also `Alt+F4`).
 - `LLM_PROVIDER=mock` makes characters answer with canned text and no network.
+
+## The key (making the world come alive)
+
+Everything is fully explorable with no key at all — every file, email, calendar
+day, repo, terminal command and website works offline. The **key** turns the people
+on: without it, messages sit on one grey tick and nobody replies; with it, Wren and
+her friends answer in character over WhatsApp, and email replies arrive from the
+consultant and the victim's daughter.
+
+1. Put a key in `.env` next to the executable (or in the app's data folder):
+   `DEEPSEEK_API_KEY=sk-...` (default provider). Any OpenAI-compatible endpoint
+   works via `DEEPSEEK_API_BASE` + `LLM_DEFAULT_MODEL`, so you can point it at
+   another model later.
+2. `LLM_BUDGET_USD` (default 10) is a hard spend cap for the whole install; when
+   reached, characters simply stop reading messages. `deepseek-chat` is much cheaper
+   than `deepseek-reasoner` and is the default for these characters.
+3. `PEXELS_API_KEY` (optional) fills in stock imagery (wallpaper, backgrounds) on
+   first run. Photos of the story's *people* are intentionally left blank.
+
+So: add the key, download/run, and it starts as a stray file on your machine.
 
 ## Build and package
 

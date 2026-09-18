@@ -1,0 +1,12 @@
+{
+  "root": "C:/Users/{user}/Projects/transcribe",
+  "branch": "main",
+  "remote": null,
+  "status": { "modified": ["transcribe_local.py"], "untracked": ["2026-05-14_AF_03.json"], "staged": [] },
+  "branches": ["main"],
+  "commits": [
+    { "hash": "f0e1d2c3b4a5968778695a4b3c2d1e0f9a8b7c6d", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-08-09T22:05:00Z", "message": "keep everything local. no api keys anywhere in this repo, on purpose", "files": ["transcribe_local.py"] },
+    { "hash": "d9c8b7a6958473625140f3e2d1c0b9a8b7c6d5e4", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-05-16T12:10:00Z", "message": "align: word-timestamp helper so I can place the [inaudible] gaps by hand", "files": ["align.py"] },
+    { "hash": "a8b7c6d5e4f3021918273645a4b3c2d1e0f9a8b7", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-05-15T05:10:00Z", "message": "transcribe locally with whisper. the machine can't hear grief.", "files": ["transcribe_local.py"] }
+  ]
+}

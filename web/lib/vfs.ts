@@ -8,7 +8,7 @@ import path from "node:path";
 import { loadContent, loadProfile, contentPath } from "./content";
 import { allFlags, isVisible, revealedIds } from "./state";
 
-export type FileKind = "text" | "html" | "image" | "pdf";
+export type FileKind = "text" | "html" | "image" | "pdf" | "audio";
 
 export interface DressingEntry { path: string; dir?: boolean; size?: number; created: string; modified: string; hidden?: boolean; system?: boolean; dressing?: boolean }
 export interface StoryFile { path: string; kind: FileKind; size?: number; created: string; modified: string; body?: string; src?: string; hidden?: boolean; requires?: string[] }
@@ -69,9 +69,11 @@ let cacheKey = "";
 
 function buildIndex(): Index {
   const dressing = loadContent<DressingFile>("filesystem/dressing.json");
-  const story = loadContent<StoryFileList>("filesystem/story.json");
-  const key = JSON.stringify([dressing.entries.length, story.files.length, loadProfile().username]);
+  const story = loadStory();
+  const extra = fs.existsSync(contentPath("filesystem", "story-dressing.json")) ? loadContent<DressingFile>("filesystem/story-dressing.json") : { entries: [] };
+  const key = JSON.stringify([dressing.entries.length, extra.entries.length, story.files.length, loadProfile().username, storyMtime()]);
   if (cached && cacheKey === key) return cached;
+  dressing.entries = [...dressing.entries, ...extra.entries];
 
   const nodes = new Map<string, VfsNode>();
   const storyMap = new Map<string, StoryFile>();
@@ -122,6 +124,33 @@ function buildIndex(): Index {
 }
 
 function safeSize(p: string): number { try { return fs.statSync(p).size; } catch { return 0; } }
+
+/**
+ * Story files come from filesystem/story.json plus every filesystem/story/*.json
+ * (one file per topic keeps the world editable). Bodies may also be loaded from
+ * `bodyFile` (relative to filesystem/bodies/) so long documents live as plain files.
+ */
+function storyMtime(): number {
+  let m = 0;
+  const dir = contentPath("filesystem", "story");
+  if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)) m += fs.statSync(path.join(dir, f)).mtimeMs;
+  return m;
+}
+function loadStory(): StoryFileList {
+  const base = loadContent<StoryFileList>("filesystem/story.json");
+  const files = [...base.files];
+  const dir = contentPath("filesystem", "story");
+  if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) files.push(...loadContent<StoryFileList>(`filesystem/story/${f}`).files);
+  for (const f of files as (StoryFile & { bodyFile?: string })[]) {
+    if (f.bodyFile && f.body === undefined) {
+      const full = path.resolve(contentPath("filesystem", "bodies"), f.bodyFile);
+      f.body = fs.existsSync(full) ? fs.readFileSync(full, "utf8") : "";
+    }
+  }
+  return { files };
+}
+
+export function allStoryFiles(): StoryFile[] { return [...buildIndex().story.values()]; }
 
 function storyVisible(f: StoryFile | undefined, flags: Record<string, unknown>, revealed: Set<string>): boolean {
   if (!f) return true;

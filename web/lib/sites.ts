@@ -1,5 +1,5 @@
 import { loadContent } from "./content";
-export interface SiteHost { host: string; title?: string; aliases?: string[] }
+export interface SiteHost { host: string; title?: string; aliases?: string[]; spa?: boolean }
 interface HostsFile { hosts: SiteHost[] }
 export function storyHosts(): SiteHost[] { return loadContent<HostsFile>("sites/hosts.json").hosts; }
 /** Resolve a request host (with or without www.) to the canonical story host folder, or null. */
@@ -11,3 +11,4 @@ export function resolveHost(host: string): string | null {
   }
   return null;
 }
+export function hostInfo(host: string): SiteHost | null { return storyHosts().find((s) => s.host === host) ?? null; }

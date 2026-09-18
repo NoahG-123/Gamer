@@ -1,0 +1,27 @@
+{
+  "_comment": "Scripted output for python scripts run from the terminal. Matched by exact path. `runs[].argsMatch` is a regex on the args; first match wins. `flag`/`event` fire on run.",
+  "scripts": [
+    {
+      "path": "C:/Users/{user}/Projects/witness/relay/client.py",
+      "default": ["witness client 00417: already pinged (see ~/.witness_state). doing nothing.", "(it only ever phones home once. that was the whole point.)"]
+    },
+    {
+      "path": "C:/Users/{user}/Projects/witness/build.py",
+      "runs": [
+        { "argsMatch": "--help|-h", "lines": ["usage: build.py --serial-range LO HI --disguise NAME.exe", "packages the current user profile into witness copies. seeds separately.", "you already built these. 512 of them. they're out there. you don't need to run this again."] }
+      ],
+      "default": ["build.py: refusing to run. the copies exist. serial range 1-512 already built 2026-08-30.", "if you're a stranger poking at this: it's inert. it won't rebuild anything or touch your machine. read the source, it's right here."]
+    },
+    {
+      "path": "C:/Users/{user}/Projects/transcribe/transcribe_local.py",
+      "runs": [
+        { "argsMatch": "AF_03", "event": "ran_transcribe_af03", "lines": ["loading whisper large-v3 ... done (14.2s)", "transcribing 2026-05-14_AF_03.wav [47:12] ...", "  0%|          | 0/2832 [00:00<?, ?frames/s]", "this file is encrypted on disk. decrypt it first (the .7z on the desktop, or the .gpg here).", "the machine can't hear grief. you have to. — (that's just a print statement. but still.)"] }
+      ],
+      "default": ["usage: transcribe_local.py PATH_TO_WAV", "runs whisper locally. no cloud. that's the one rule."]
+    },
+    {
+      "path": "C:/Users/{user}/Projects/roomtone/denoise.py",
+      "default": ["denoise.py: spectral gate, institutional-floor preset", "usage: denoise.py IN.wav [OUT.wav]", "(needs numpy, scipy, soundfile — all installed)"]
+    }
+  ]
+}

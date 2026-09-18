@@ -11,7 +11,9 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ parts: str
   const f = getStoryFile(p);
   if (!f) return new Response("Not found", { status: 404 });
   const name = p.slice(p.lastIndexOf("/") + 1);
-  const headers = { "content-type": mimeFor(name), "cache-control": "no-store" };
+  // A story file's declared kind wins over its extension (an .html "letter" named .pdf still renders as a page).
+  const mime = f.kind === "html" ? "text/html; charset=utf-8" : f.kind === "text" ? "text/plain; charset=utf-8" : mimeFor(name);
+  const headers = { "content-type": mime, "cache-control": "no-store" };
   if (f.body !== undefined) return new Response(f.body, { headers });
   if (f.src) {
     const full = assetPath(f.src);
