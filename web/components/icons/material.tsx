@@ -1,0 +1,68 @@
+"use client";
+/** Google Material icons for the Chrome clone, via react-icons/md. */
+import React from "react";
+import * as Md from "react-icons/md";
+import type { IconType } from "react-icons";
+
+type P = { size?: number; className?: string; style?: React.CSSProperties };
+const m = (C: IconType) => ({ size = 20, className, style }: P) => <C size={size} className={className} style={{ display: "block", ...style }} />;
+
+export const MArrowBack = m(Md.MdArrowBack);
+export const MArrowForward = m(Md.MdArrowForward);
+export const MRefresh = m(Md.MdRefresh);
+export const MClose = m(Md.MdClose);
+export const MAdd = m(Md.MdAdd);
+export const MExpandMore = m(Md.MdExpandMore);
+export const MMoreVert = m(Md.MdMoreVert);
+export const MStar = m(Md.MdOutlineStarBorder);
+export const MStarFilled = m(Md.MdStar);
+export const MExtension = m(Md.MdOutlineExtension);
+export const MAccount = m(Md.MdOutlineAccountCircle);
+export const MSearch = m(Md.MdSearch);
+export const MMic = m(Md.MdMic);
+export const MTune = m(Md.MdTune);
+export const MLock = m(Md.MdLock);
+export const MInfo = m(Md.MdOutlineInfo);
+export const MShare = m(Md.MdOutlineShare);
+export const MFolder = m(Md.MdOutlineFolder);
+export const MGlobe = m(Md.MdLanguage);
+export const MHistory = m(Md.MdHistory);
+export const MDownload = m(Md.MdOutlineFileDownload);
+export const MBookmarks = m(Md.MdOutlineBookmarkBorder);
+export const MOpenInNew = m(Md.MdOpenInNew);
+export const MZoomIn = m(Md.MdZoomIn);
+export const MPrint = m(Md.MdPrint);
+export const MCast = m(Md.MdCast);
+export const MTranslate = m(Md.MdTranslate);
+export const MCode = m(Md.MdOutlineCode);
+export const MInspect = m(Md.MdOutlineCode);
+export const MImageSearch = m(Md.MdOutlineImageSearch);
+export const MDevices = m(Md.MdDevices);
+export const MQr = m(Md.MdQrCode);
+export const MSave = m(Md.MdSaveAlt);
+export const MCheck = m(Md.MdCheck);
+export const MChevronRight = m(Md.MdChevronRight);
+export const MGoogleLens = m(Md.MdOutlinePhotoCamera);
+export const MTabSearch = m(Md.MdKeyboardArrowDown);
+export const MKey = m(Md.MdKey);
+export const MIncognito = m(Md.MdOutlineVisibilityOff);
+export const MSettings = m(Md.MdOutlineSettings);
+export const MHelp = m(Md.MdHelpOutline);
+export const MDelete = m(Md.MdDeleteOutline);
+export const MPerson = m(Md.MdPerson);
+export const MTab = m(Md.MdTab);
+export const MWindow = m(Md.MdTab);
+export const MFind = m(Md.MdSearch);
+export const MExit = m(Md.MdOutlineLogout);
+export const MPlus = m(Md.MdAdd);
+export const MEdit = m(Md.MdOutlineEdit);
+export const MNewTab = m(Md.MdTab);
+export const MCut = m(Md.MdContentCut);
+export const MCopy = m(Md.MdContentCopy);
+export const MPaste = m(Md.MdContentPaste);
+export const MSpellcheck = m(Md.MdSpellcheck);
+export const MApps = m(Md.MdApps);
+export const MSparkle = m(Md.MdAutoAwesome);
+export const MSpinner = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" style={{ animation: "chrome-spin 1s linear infinite", display: "block" }}><circle cx="12" cy="12" r="9" fill="none" stroke="#8ab4f8" strokeWidth="2.5" strokeDasharray="20 40" strokeLinecap="round" /></svg>
+);

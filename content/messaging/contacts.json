@@ -1,0 +1,192 @@
+{
+  "_comment": "WhatsApp contacts. `character` links to characters/<id>.json for LLM-driven replies. `email` lets the same character answer email. `hidden` contacts appear after a trigger `unlock_contact` effect.",
+  "contacts": [
+    {
+      "id": "priya",
+      "name": "Priya",
+      "phone": "+1 (902) 471-0388",
+      "about": "catalogued.",
+      "email": "priya.raman.lib@gmail.com",
+      "avatar": {
+        "initials": "P",
+        "color": "#7a6fb0"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-30T13:02:00Z",
+      "character": "priya",
+      "pinned": true
+    },
+    {
+      "id": "mateo",
+      "name": "Mateo",
+      "phone": "+1 (514) 806-2291",
+      "about": "one day at a time. also cook.",
+      "avatar": {
+        "initials": "M",
+        "color": "#c0673f"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-30T04:15:00Z",
+      "character": "mateo",
+      "pinned": true
+    },
+    {
+      "id": "mama",
+      "name": "Mam\u00e1",
+      "phone": "+1 (506) 384-7712",
+      "about": "Dios es bueno",
+      "avatar": {
+        "initials": "L",
+        "color": "#6b8f5e"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-30T12:20:00Z",
+      "character": "lucia"
+    },
+    {
+      "id": "jonah",
+      "name": "Jonah",
+      "phone": "+1 (902) 830-1174",
+      "about": "Available",
+      "avatar": {
+        "initials": "J",
+        "color": "#4f7ea3"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-29T23:48:00Z",
+      "character": "jonah"
+    },
+    {
+      "id": "nadia",
+      "name": "Nadia Bishara",
+      "phone": "+1 (902) 456-9020",
+      "about": "Harbourlight",
+      "avatar": {
+        "initials": "NB",
+        "color": "#a35c7a"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-28T21:10:00Z",
+      "character": null
+    },
+    {
+      "id": "colin",
+      "name": "Colin Tremblay",
+      "phone": "+1 (902) 431-0177",
+      "about": "producer / therapist",
+      "avatar": {
+        "initials": "CT",
+        "color": "#5d7d8a"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-27T17:33:00Z",
+      "character": null
+    },
+    {
+      "id": "ilse",
+      "name": "Ilse (camera)",
+      "phone": "+1 (902) 412-0730",
+      "about": "\ud83c\udfa5",
+      "avatar": {
+        "initials": "I",
+        "color": "#8a7a5d"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-26T14:00:00Z",
+      "character": null
+    },
+    {
+      "id": "liam",
+      "name": "Liam (forum)",
+      "phone": "+1 (902) 895-3346",
+      "about": "Available",
+      "avatar": {
+        "initials": "L",
+        "color": "#6f6f6f"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-22T02:14:00Z",
+      "character": null
+    },
+    {
+      "id": "landlord",
+      "name": "Dave (landlord)",
+      "phone": "+1 (902) 209-8801",
+      "about": "",
+      "avatar": {
+        "initials": "D",
+        "color": "#8c8c6a"
+      },
+      "presence": "lastSeen",
+      "lastSeen": "2026-08-30T00:20:00Z",
+      "character": null
+    },
+    {
+      "id": "slowrooms",
+      "name": "slow rooms crew",
+      "isGroup": true,
+      "participants": [
+        "nadia",
+        "colin",
+        "ilse",
+        "me"
+      ],
+      "avatar": {
+        "initials": "SR",
+        "color": "#7d6b8f"
+      },
+      "character": null
+    },
+    {
+      "id": "castellanos",
+      "name": "Castellanos \ud83c\udfe0",
+      "isGroup": true,
+      "participants": [
+        "mama",
+        "mateo",
+        "me"
+      ],
+      "avatar": {
+        "initials": "C",
+        "color": "#6b8f5e"
+      },
+      "character": null
+    },
+    {
+      "id": "wren",
+      "name": "+1 (506) 999-0417",
+      "phone": "+1 (506) 999-0417",
+      "about": "",
+      "avatar": {
+        "initials": "?",
+        "color": "#5a5a5a"
+      },
+      "presence": "online",
+      "character": "wren",
+      "hidden": true
+    },
+    {
+      "id": "kavanagh",
+      "name": "Paul Kavanagh",
+      "email": "pkavanagh@eastlink.ca",
+      "avatar": {
+        "initials": "PK",
+        "color": "#555"
+      },
+      "character": "kavanagh",
+      "hidden": true,
+      "_comment": "email-only character; never unlocked in WhatsApp"
+    },
+    {
+      "id": "maureen",
+      "name": "Maureen Mahar-Lyle",
+      "email": "mmaharlyle@gmail.com",
+      "avatar": {
+        "initials": "MM",
+        "color": "#555"
+      },
+      "character": "maureen",
+      "hidden": true
+    }
+  ]
+}

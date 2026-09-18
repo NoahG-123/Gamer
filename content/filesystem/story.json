@@ -1,0 +1,4 @@
+{
+  "_comment": "Base story files. The real content lives in filesystem/story/*.json (one file per topic) and is merged in by the vfs loader; long bodies live in filesystem/bodies/. Keep this list for anything that must load first. `kind`: text (Notepad), html/image/pdf/audio (Chrome / player). `hidden` files appear after a trigger reveals them by path. `requires` gates on flags.",
+  "files": []
+}

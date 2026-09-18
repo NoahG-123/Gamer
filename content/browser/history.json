@@ -1,0 +1,21 @@
+{
+  "_comment": "Omnibox history: what shows when typing in the address bar. Live visits are also recorded at runtime.",
+  "entries": [
+    { "url": "https://mail.google.com/mail/u/0/#inbox", "title": "Inbox - wren.castellanos@gmail.com - Gmail", "visits": 611 },
+    { "url": "https://calendar.google.com/calendar/u/0/r", "title": "Google Calendar", "visits": 214 },
+    { "url": "https://harbourledger.ca/archive/1971-mahar", "title": "Waterfront woman, 21, missing after night out - The Harbour Ledger", "visits": 47 },
+    { "url": "https://harbourledger.ca/archive/2021-mahar", "title": "Fifty years later, Colleen Mahar's daughter is still asking", "visits": 38 },
+    { "url": "https://harbourledger.ca/archive/1971-mahar-2", "title": "Police: missing Mahar woman likely went to Toronto", "visits": 22 },
+    { "url": "https://fureymarine.ca/history", "title": "Our History - Furey Marine Services", "visits": 19 },
+    { "url": "https://harbourlightfilms.ca/slow-rooms", "title": "Slow Rooms - Harbourlight Films", "visits": 31 },
+    { "url": "https://fieldrecordists.net/t/room-tone-vocal-artifact", "title": "Voice-like tonal artifact in institutional room tone", "visits": 28 },
+    { "url": "https://www.google.com/search?q=colleen+mahar+halifax+1971", "title": "colleen mahar halifax 1971 - Google Search", "visits": 40 },
+    { "url": "https://www.google.com/search?q=northwest+arm+dingle+depth+chart", "title": "northwest arm dingle depth chart - Google Search", "visits": 12 },
+    { "url": "https://www.google.com/search?q=can+dementia+patient+statement+be+used+as+evidence", "title": "can dementia patient statement be used as evidence - Google Search", "visits": 15 },
+    { "url": "https://www.google.com/search?q=how+to+seed+a+torrent+anonymously", "title": "how to seed a torrent anonymously - Google Search", "visits": 9 },
+    { "url": "https://www.canada.ca/en/services/policing.html", "title": "Report a crime - Canada.ca", "visits": 6 },
+    { "url": "https://www.reaper.fm/", "title": "REAPER | Audio Production Without Limits", "visits": 88 },
+    { "url": "https://www.youtube.com/", "title": "YouTube", "visits": 203 },
+    { "url": "https://www.reddit.com/r/fieldrecording/", "title": "r/fieldrecording", "visits": 51 }
+  ]
+}

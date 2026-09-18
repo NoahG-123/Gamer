@@ -1,0 +1,21 @@
+{
+  "_comment": "Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). Paths elsewhere use the {user} token.",
+  "username": "wren",
+  "displayName": "Wren Castellanos",
+  "machineName": "WREN-THINKPAD",
+  "timezone": "America/Halifax",
+  "locale": "en-CA",
+  "accountEmail": "wren.castellanos@gmail.com",
+  "wallpaper": "wallpaper.desktop",
+  "accentColor": "#0067C0",
+  "taskbarPins": ["explorer", "chrome", "whatsapp", "terminal"],
+  "desktopIcons": ["recycle-bin"],
+  "recycleBinEmpty": false,
+  "theme": "dark",
+  "tempUnit": "C",
+  "dateFormat": "yyyy-MM-dd",
+  "laptop": true,
+  "inputLanguage": ["ENG", "CA"],
+  "weather": { "temp": 17, "text": "Fog", "icon": "fog" },
+  "trayIcons": ["onedrive", "whatsapp"]
+}

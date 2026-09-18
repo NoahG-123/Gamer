@@ -1,0 +1,29 @@
+{
+  "_comment": "Google Calendar clone data. calendars[] and events[]. Recurrence: {freq, interval?, byDay?, until?, count?, exceptions?}. Hidden events appear after a reveal_event trigger. Times are UTC; Halifax is UTC-3 in summer.",
+  "calendars": [
+    { "id": "wren", "name": "Wren", "color": "#7986cb", "initials": "W", "avatarColor": "#5b6d8a" },
+    { "id": "work", "name": "Slow Rooms / work", "color": "#8e63ce" },
+    { "id": "personal", "name": "Personal", "color": "#33b679" },
+    { "id": "health", "name": "Appointments", "color": "#e67c73" }
+  ],
+  "events": [
+    { "id": "shift-recording", "calendar": "work", "title": "Oakmount — shoot day", "start": "2026-03-02T13:00:00Z", "end": "2026-03-02T21:00:00Z", "location": "Oakmount Manor, Bedford", "description": "East wing. Call 9. Be gentle with everyone including yourself. —N", "recurrence": { "freq": "weekly", "byDay": ["MO", "WE", "FR"], "until": "2026-07-18T00:00:00Z", "exceptions": ["2026-07-22"] } },
+    { "id": "night-ambience", "calendar": "work", "title": "Night ambience — east corridor", "start": "2026-03-05T02:00:00Z", "end": "2026-03-05T04:30:00Z", "location": "Oakmount Manor", "description": "Tues/Thurs after 10 (UTC+3 → shows late). Sign in at the desk. Chasing the corridor hum.", "recurrence": { "freq": "weekly", "byDay": ["TU", "TH"], "until": "2026-07-11T00:00:00Z" } },
+    { "id": "af03-session", "calendar": "work", "title": "Interview — Rm 17 (A. Furey)", "start": "2026-05-14T23:00:00Z", "end": "2026-05-15T00:00:00Z", "location": "Oakmount Manor, Rm 17", "description": "1:1, no camera. He's calmer that way." },
+    { "id": "kav-meeting", "calendar": "work", "title": "Meeting — Colin, Nadia, Paul (do not put subject in title)", "start": "2026-05-19T13:00:00Z", "end": "2026-05-19T14:00:00Z", "location": "Harbourlight office", "description": "AF_03. Bring the original card." },
+    { "id": "reno", "calendar": "work", "title": "East wing corridor closed — duct/ceiling", "start": "2026-07-13T00:00:00Z", "end": "2026-07-19T00:00:00Z", "allDay": true, "description": "Facilities. My hum, probably. One clean 'before' recording on the 9th." },
+    { "id": "alden-funeral", "calendar": "personal", "title": "A. Furey — funeral", "start": "2026-07-27T17:00:00Z", "end": "2026-07-27T18:30:00Z", "location": "J. Albert Walker Funeral Home, Bedford", "description": "I don't know if I should go. I'm not going. I'm going to record the harbour instead. He'd get that." },
+    { "id": "lawyer-deadline", "calendar": "work", "title": "Hanley & Roche 14-day deadline", "start": "2026-09-02T00:00:00Z", "end": "2026-09-03T00:00:00Z", "allDay": true, "color": "#e67c73", "description": "Marguerite is replying, not me. Do NOT reply to them yourself. (you already did, once, idiot)" },
+    { "id": "hrp-interview", "calendar": "health", "title": "Statement — Det. Hosseini (HRP)", "start": "2026-09-04T17:00:00Z", "end": "2026-09-04T18:30:00Z", "location": "HRP, Gottingen St", "description": "Historical case unit. Bring nothing, say everything." },
+    { "id": "wrap-drinks", "calendar": "personal", "title": "Slow Rooms wrap drinks", "start": "2026-08-28T22:30:00Z", "end": "2026-08-29T01:00:00Z", "location": "Seahorse Tavern, Argyle St", "description": "Nadia picked the Seahorse. She doesn't know it's where Colleen was last seen. I couldn't tell her. I'll have one drink and go." },
+    { "id": "dentist", "calendar": "health", "title": "Dentist — cleaning", "start": "2026-09-09T14:00:00Z", "end": "2026-09-09T15:00:00Z", "location": "North End Dental", "description": "reschedule, I'm not in the city" },
+    { "id": "gym", "calendar": "personal", "title": "pool (lengths)", "start": "2026-03-03T11:00:00Z", "end": "2026-03-03T12:00:00Z", "location": "Needham Pool", "recurrence": { "freq": "weekly", "byDay": ["TU", "SA"], "until": "2026-08-25T00:00:00Z" } },
+    { "id": "call-mom", "calendar": "personal", "title": "call mamá", "start": "2026-03-08T22:00:00Z", "end": "2026-03-08T22:30:00Z", "recurrence": { "freq": "weekly", "byDay": ["SU"], "until": "2026-12-31T00:00:00Z" } },
+    { "id": "papa-anniversary", "calendar": "personal", "title": "papá — 7 years", "start": "2026-09-19T00:00:00Z", "end": "2026-09-20T00:00:00Z", "allDay": true, "description": "play the kitchen recording. call mamá. don't be alone." },
+    { "id": "mateo-bday", "calendar": "personal", "title": "Mateo's birthday 🎂", "start": "2026-10-30T00:00:00Z", "end": "2026-10-31T00:00:00Z", "allDay": true },
+    { "id": "nscc-panel", "calendar": "work", "title": "NSCC alumni panel", "start": "2026-10-22T18:00:00Z", "end": "2026-10-22T19:30:00Z", "location": "NSCC Waterfront", "description": "tell them: buy wind protection. never do a wedding." },
+    { "id": "amb-master-due", "calendar": "work", "title": "AMB_MASTER due to office", "start": "2026-10-01T00:00:00Z", "end": "2026-10-02T00:00:00Z", "allDay": true, "description": "already delivered early (Aug 28). folder AMB_MASTER. done." },
+    { "id": "future-checkin", "calendar": "wren", "title": "?", "start": "2026-09-18T20:00:00Z", "end": "2026-09-18T20:30:00Z", "hidden": true, "description": "if 200 copies have opened by now, it worked. call Hosseini. call Mateo, actually call him. tell Priya the plant is hers." },
+    { "id": "arm-survey", "calendar": "wren", "title": "(Hosseini) NW Arm — dive unit inquiry", "start": "2026-09-24T13:00:00Z", "end": "2026-09-24T14:00:00Z", "hidden": true, "description": "Paul says it isn't a no. near the Dingle tower. deep off the rocks. he said that. 'deeper than people think'." }
+  ]
+}

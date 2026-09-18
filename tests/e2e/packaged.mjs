@@ -1,0 +1,23 @@
+// Boots the packaged executable (spawns its own bundled content server) and checks the desktop appears.
+import { _electron as electron } from "playwright";
+import fs from "node:fs";
+import path from "node:path";
+import assert from "node:assert/strict";
+const exe = process.argv[2] || ["release/linux-unpacked/recovered_00417", "release/linux-unpacked/found"].find((p) => fs.existsSync(p));
+assert.ok(exe, "packaged executable path required");
+const out = path.resolve("tests/e2e/output"); fs.mkdirSync(out, { recursive: true });
+const app = await electron.launch({ executablePath: exe, args: ["--no-sandbox"], env: { ...process.env, LLM_PROVIDER: "mock", FOUND_WINDOWED: "1" }, timeout: 180000 });
+const page = await app.firstWindow({ timeout: 180000 });
+await page.waitForSelector("[data-taskbar]", { timeout: 120000 });
+await new Promise((r) => setTimeout(r, 1500));
+const origin = await page.evaluate(() => location.origin);
+assert.match(origin, /^http:\/\/127\.0\.0\.1:\d+$/);
+const prof = await page.evaluate(() => fetch("/api/profile").then((r) => r.json()));
+assert.equal(prof.profile.username, "mtorres");
+const list = await page.evaluate(() => fetch("/api/fs/list?path=C:/Users/mtorres/Desktop&record=0").then((r) => r.json()));
+assert.ok(list.children.length > 3);
+const isElectron = await page.evaluate(() => !!window.__host?.isElectron);
+assert.equal(isElectron, true);
+await page.screenshot({ path: `${out}/packaged-desktop.png` });
+console.log("packaged app OK at", origin, "| userData:", await app.evaluate(({ app }) => app.getPath("userData")));
+await app.close();

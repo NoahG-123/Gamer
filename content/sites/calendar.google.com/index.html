@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Google Calendar</title>
+<link rel="icon" href="/sites/calendar.google.com/favicon.svg">
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:"Google Sans",Roboto,"Segoe UI",Arial,sans-serif;font-size:14px;color:#1f1f1f;background:#f8fafd}
+button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+#top{height:64px;display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid #dadce0;background:#f8fafd}
+.logo{display:flex;align-items:center;gap:8px;width:220px}.logo .ic{width:40px;height:40px;border-radius:8px;background:#fff;border:1px solid #dadce0;display:flex;align-items:center;justify-content:center;color:#1a73e8;font-weight:500;font-size:14px}.logo span{font-size:22px;color:#5f6368}
+.today{border:1px solid #dadce0;border-radius:4px;height:36px;padding:0 12px;background:#fff}.nav{width:36px;height:36px;border-radius:50%;font-size:18px;color:#444746}.nav:hover{background:#e8eaed}
+.title{font-size:22px;margin-left:12px;font-weight:400}
+.right{margin-left:auto;display:flex;align-items:center;gap:8px}.sel{border:1px solid #dadce0;border-radius:4px;height:36px;padding:0 12px;background:#fff;display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#7b5cd6;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:500;margin-left:12px}
+#main{display:flex;height:calc(100% - 64px)}
+#side{width:256px;padding:12px 16px;flex:none;overflow:auto}
+.create{height:48px;border-radius:16px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);padding:0 20px 0 14px;display:flex;align-items:center;gap:12px;font-weight:500;margin-bottom:16px}.create b{font-size:24px;color:#1a73e8;font-weight:400}
+.mini{font-size:10px;width:100%}.mini th{font-weight:500;color:#70757a;padding:4px 0}.mini td{text-align:center;padding:2px 0}.mini td span{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:50%}.mini td span.t{background:#1a73e8;color:#fff}.mini td.o{color:#70757a}.mini td span:hover{background:#e8eaed;cursor:pointer}
+.mh{display:flex;align-items:center;font-size:14px;font-weight:500;padding:4px 0 8px 4px}.mh span{flex:1}.mh button{color:#444746;width:24px}
+.cals{margin-top:18px}.cals h4{font-size:14px;font-weight:500;margin:8px 0 4px 4px}.cal{display:flex;align-items:center;gap:10px;padding:6px 4px;font-size:13px}.cal .sw{width:18px;height:18px;border-radius:4px;display:inline-block}
+#grid{flex:1;display:flex;flex-direction:column;background:#fff;margin:0 16px 16px 0;border-radius:16px;overflow:hidden;border:1px solid #dadce0}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #dadce0}.dow div{text-align:center;font-size:11px;color:#70757a;padding:8px 0;text-transform:uppercase;font-weight:500}
+.weeks{flex:1;display:grid;grid-auto-rows:1fr}
+.week{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #dadce0}.week:last-child{border-bottom:0}
+.day{border-right:1px solid #dadce0;padding:4px 4px 2px 4px;overflow:hidden;min-height:0;display:flex;flex-direction:column}.day:last-child{border-right:0}
+.day .n{font-size:12px;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;align-self:center;margin-bottom:2px}.day.o .n{color:#70757a}.day.t .n{background:#1a73e8;color:#fff}
+.ev{font-size:12px;line-height:18px;border-radius:4px;padding:0 6px;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;color:#fff}.ev.tm{background:none!important;color:#1f1f1f}.ev.tm i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}.ev:hover{filter:brightness(.95)}
+.more{font-size:12px;color:#3c4043;padding:0 6px;cursor:pointer}
+#pop{position:fixed;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.3),0 4px 8px 3px rgba(0,0,0,.15);width:448px;padding:8px 8px 20px 8px;display:none;z-index:10}
+#pop .x{display:flex;justify-content:flex-end;gap:4px}#pop .x button{width:36px;height:36px;border-radius:50%;color:#444746}#pop .x button:hover{background:#e8eaed}
+#pop h3{margin:0 0 4px 0;padding:0 16px 0 52px;font-size:22px;font-weight:400;position:relative}#pop h3 i{position:absolute;left:20px;top:8px;width:16px;height:16px;border-radius:4px}
+#pop .dt,#pop .row{padding:6px 16px 6px 52px;color:#3c4043;font-size:14px;position:relative}#pop .row::before{content:attr(data-ic);position:absolute;left:22px;top:6px;color:#5f6368}
+#pop .desc{white-space:pre-wrap;line-height:1.5;max-height:260px;overflow:auto}
+.dayview{display:none}
+.agenda{flex:1;overflow:auto;padding:16px 24px}.ag{display:flex;gap:24px;padding:12px 0;border-bottom:1px solid #eee}.ag .d{width:80px;color:#3c4043;font-weight:500;flex:none}.ag .d small{display:block;color:#70757a;font-weight:400}.ag .items{flex:1}.ag .it{display:flex;gap:12px;padding:6px 8px;border-radius:6px;cursor:pointer}.ag .it:hover{background:#f1f3f4}.ag .it i{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}.ag .it .tm{width:120px;color:#5f6368;flex:none}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="logo"><div class="ic" id="todayNum">18</div><span>Calendar</span></div>
+  <button class="today" onclick="goToday()">Today</button><button class="nav" onclick="shift(-1)">‹</button><button class="nav" onclick="shift(1)">›</button><span class="title" id="title"></span>
+  <div class="right"><button class="nav" title="Search">⌕</button><button class="nav" title="Support">?</button><button class="nav" title="Settings">⚙</button><div class="sel" id="modeSel"><span id="modeLabel">Month</span> ▾</div><div class="avatar" id="av"></div></div>
+</div>
+<div id="main">
+  <div id="side">
+    <button class="create"><b>+</b> Create ▾</button>
+    <div class="mh"><span id="miniTitle"></span><button onclick="miniShift(-1)">‹</button><button onclick="miniShift(1)">›</button></div>
+    <table class="mini" id="mini"></table>
+    <div class="cals"><h4>My calendars</h4><div id="calList"></div><h4>Other calendars</h4><div class="cal"><span class="sw" style="background:#0b8043"></span>Holidays in Canada</div><div class="cal"><span class="sw" style="background:#616161"></span>Birthdays</div></div>
+  </div>
+  <div id="grid"><div class="dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div><div class="weeks" id="weeks"></div><div class="agenda" id="agenda" style="display:none"></div></div>
+</div>
+<div id="pop"><div class="x"><button title="Edit">✎</button><button title="Delete">🗑</button><button title="Email guests">✉</button><button title="Options">⋮</button><button onclick="hidePop()" title="Close">✕</button></div><h3 id="pt"><i id="pi"></i></h3><div class="dt" id="pd"></div><div class="row" id="pl" data-ic="⌖" style="display:none"></div><div class="row desc" id="pdesc" data-ic="≡" style="display:none"></div><div class="row" id="pg" data-ic="👥" style="display:none"></div><div class="row" id="pc" data-ic="▦"></div></div>
+<script>
+const $=s=>document.querySelector(s);const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+let cur=new Date(),mini=new Date(),cals=[],events=[],mode="month";const TODAY=new Date();
+$("#todayNum").textContent=TODAY.getDate();
+function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function colorOf(e){const c=cals.find(x=>x.id===e.calendar);return e.color||(c?c.color:"#039be5")}
+async function load(from,to){const r=await fetch(`/api/calendar?from=${from.toISOString()}&to=${to.toISOString()}&record=0`,{cache:"no-store"});const d=await r.json();cals=d.calendars;events=d.events;$("#calList").innerHTML=cals.map(c=>`<div class="cal"><span class="sw" style="background:${c.color}"></span>${esc(c.name)}</div>`).join("");$("#av").textContent=(cals[0]&&cals[0].initials)||"WC";$("#av").style.background=(cals[0]&&cals[0].avatarColor)||"#7b5cd6"}
+function fmtT(iso){return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}).replace(":00","").toLowerCase().replace(" ","")}
+async function render(){const y=cur.getFullYear(),m=cur.getMonth();const first=new Date(y,m,1);const start=new Date(y,m,1-first.getDay());const end=new Date(start);end.setDate(start.getDate()+42);await load(start,end);$("#title").textContent=cur.toLocaleDateString("en-US",{month:"long",year:"numeric"});document.title="Google Calendar - "+$("#title").textContent;
+if(mode==="agenda"){renderAgenda();return}$("#weeks").style.display="grid";$("#agenda").style.display="none";
+const byDay={};for(const e of events){const s=new Date(e.start),en=new Date(e.end);for(let d=new Date(s.getFullYear(),s.getMonth(),s.getDate());d<en;d.setDate(d.getDate()+1)){const k=key(d);(byDay[k]=byDay[k]||[]).push(e);if(!e.allDay)break}}
+let html="";const d=new Date(start);for(let w=0;w<6;w++){html+='<div class="week">';for(let i=0;i<7;i++){const k=key(d);const list=(byDay[k]||[]).sort((a,b)=>(b.allDay-a.allDay)||a.start.localeCompare(b.start));const cls=(d.getMonth()!==m?"o":"")+(k===key(TODAY)?" t":"");html+=`<div class="day ${cls}"><div class="n">${d.getDate()===1?d.toLocaleDateString("en-US",{month:"short"})+" ":""}${d.getDate()}</div>`;const max=4;list.slice(0,max).forEach(e=>{html+=e.allDay?`<div class="ev" style="background:${colorOf(e)}" data-id="${e.id}">${esc(e.title)}</div>`:`<div class="ev tm" data-id="${e.id}"><i style="background:${colorOf(e)}"></i>${fmtT(e.start)} ${esc(e.title)}</div>`});if(list.length>max)html+=`<div class="more">${list.length-max} more</div>`;html+="</div>";d.setDate(d.getDate()+1)}html+="</div>"}$("#weeks").innerHTML=html;renderMini()}
+function renderAgenda(){$("#weeks").style.display="none";const a=$("#agenda");a.style.display="block";const groups={};for(const e of events){const k=key(new Date(e.start));(groups[k]=groups[k]||[]).push(e)}a.innerHTML=Object.keys(groups).sort().map(k=>{const d=new Date(k+"T12:00:00");return `<div class="ag"><div class="d">${d.getDate()} ${d.toLocaleDateString("en-US",{month:"short"})}<small>${d.toLocaleDateString("en-US",{weekday:"long"})}</small></div><div class="items">${groups[k].map(e=>`<div class="it" data-id="${e.id}"><i style="background:${colorOf(e)}"></i><span class="tm">${e.allDay?"All day":fmtT(e.start)+" – "+fmtT(e.end)}</span><span>${esc(e.title)}</span></div>`).join("")}</div></div>`}).join("")||'<div style="color:#70757a">No events this month.</div>'}
+function renderMini(){const y=mini.getFullYear(),m=mini.getMonth();$("#miniTitle").textContent=mini.toLocaleDateString("en-US",{month:"long",year:"numeric"});const first=new Date(y,m,1);const d=new Date(y,m,1-first.getDay());let h="<tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>";for(let w=0;w<6;w++){h+="<tr>";for(let i=0;i<7;i++){h+=`<td class="${d.getMonth()!==m?"o":""}"><span class="${key(d)===key(TODAY)?"t":""}" data-d="${key(d)}">${d.getDate()}</span></td>`;d.setDate(d.getDate()+1)}h+="</tr>"}$("#mini").innerHTML=h}
+function shift(n){cur=new Date(cur.getFullYear(),cur.getMonth()+n,1);mini=new Date(cur);render()}function miniShift(n){mini=new Date(mini.getFullYear(),mini.getMonth()+n,1);renderMini()}function goToday(){cur=new Date();mini=new Date();render()}
+document.addEventListener("click",e=>{const ev=e.target.closest("[data-id]");if(ev){showPop(ev.dataset.id,ev);return}const md=e.target.closest("[data-d]");if(md){cur=new Date(md.dataset.d+"T12:00:00");render();return}if(!e.target.closest("#pop"))hidePop()});
+$("#modeSel").addEventListener("click",()=>{mode=mode==="month"?"agenda":"month";$("#modeLabel").textContent=mode==="month"?"Month":"Schedule";render()});
+function showPop(id,el){const e=events.find(x=>x.id===id);if(!e)return;const c=cals.find(x=>x.id===e.calendar);$("#pt").childNodes[1]&&$("#pt").removeChild($("#pt").childNodes[1]);$("#pt").appendChild(document.createTextNode(e.title));$("#pi").style.background=colorOf(e);const s=new Date(e.start),en=new Date(e.end);$("#pd").textContent=e.allDay?s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}):s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" ⋅ "+fmtT(e.start)+" – "+fmtT(e.end);$("#pl").style.display=e.location?"block":"none";$("#pl").textContent=e.location||"";$("#pdesc").style.display=e.description?"block":"none";$("#pdesc").textContent=e.description||"";$("#pg").style.display=e.guests&&e.guests.length?"block":"none";$("#pg").textContent=e.guests?e.guests.length+" guests: "+e.guests.join(", "):"";$("#pc").textContent=c?c.name:e.calendar;const p=$("#pop");p.style.display="block";const r=el.getBoundingClientRect();let left=r.right+8;if(left+448>window.innerWidth)left=Math.max(8,r.left-456);let top=Math.min(r.top,window.innerHeight-p.offsetHeight-16);p.style.left=left+"px";p.style.top=Math.max(8,top)+"px";fetch("/api/state/events",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"calendar.opened",subject:e.seriesId||e.id})}).catch(()=>{})}
+function hidePop(){$("#pop").style.display="none"}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")hidePop()});
+try{const es=new EventSource("/api/events");es.onmessage=m=>{try{const ev=JSON.parse(m.data);if(ev.type==="calendar.changed"||ev.type==="trigger.fired")render()}catch(_){}}}catch(_){}
+render();
+</script>
+</body>
+</html>

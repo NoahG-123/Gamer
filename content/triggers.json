@@ -1,0 +1,85 @@
+{
+  "_comment": "Story triggers. Conditions: {event,subject?} (recorded ≥once; subject '*' = prefix), {flag,value?}, {count,event,subject?,min}, {since:{event?|trigger?|flag?, subject?, minutes}} (time-based; the clock re-evaluates while idle), all/any/not. Effects: reveal (file path), reveal_event {id}, unlock_contact {id}, deliver_message {chat,from,text,delayMs?}, deliver_mail {id,delayMs?}, set_flag, open_app {app,props,delayMs?}, notify {app,title,text,delayMs?,props}, presence {contact,presence,lastSeen?}, log. Subjects use {user}.",
+  "triggers": [
+
+    { "id": "flag-read-readme",
+      "when": { "any": [ { "event": "file.opened", "subject": "C:/Users/{user}/Desktop/READ ME.txt" }, { "event": "file.opened", "subject": "C:/Users/{user}/Projects/witness/README.md" }, { "event": "file.opened", "subject": "C:/Users/{user}/Projects/witness/serial.txt" } ] },
+      "then": [ { "set_flag": { "key": "read_witness_readme", "value": true } } ] },
+
+    { "id": "flag-decrypted",
+      "when": { "flag": "decrypted_excerpt" },
+      "then": [ { "set_flag": { "key": "read_transcript", "value": true } }, { "log": { "text": "excerpt decrypted" } } ] },
+
+    { "id": "flag-read-derek",
+      "when": { "any": [ { "event": "mail.read", "subject": "furey-request" }, { "event": "mail.read", "subject": "furey-lawyer" }, { "event": "file.opened", "subject": "C:/Users/{user}/Documents/Legal/HR_Furey_Castellanos_2026-08-19.pdf" } ] },
+      "then": [ { "set_flag": { "key": "read_derek_mail", "value": true } } ] },
+
+    { "id": "flag-read-breakin",
+      "when": { "any": [ { "event": "file.opened", "subject": "C:/Users/{user}/Documents/notes/things i can't say to anyone.txt" }, { "event": "chat.opened", "subject": "landlord" } ] },
+      "then": [ { "set_flag": { "key": "read_breakin", "value": true } } ] },
+
+    { "id": "flag-read-maureen",
+      "when": { "any": [ { "event": "mail.read", "subject": "maureen-letter" }, { "event": "mail.read", "subject": "maureen-followup" } ] },
+      "then": [ { "set_flag": { "key": "read_maureen_letter", "value": true } } ] },
+
+    { "id": "flag-heard-hum",
+      "when": { "any": [ { "event": "file.opened", "subject": "C:/Users/{user}/Documents/Slow Rooms/ambience/RT_east_corridor_before.wav" }, { "event": "file.opened", "subject": "C:/Users/{user}/Documents/notes/the hum.txt" }, { "event": "site.visited", "subject": "fieldrecordists.net*" } ] },
+      "then": [ { "set_flag": { "key": "heard_hum", "value": true } } ] },
+
+    { "id": "flag-ssh-relay", "when": { "event": "terminal.ssh", "subject": "relay" }, "then": [ { "set_flag": { "key": "ssh_relay", "value": true } } ] },
+    { "id": "flag-read-mateo", "when": { "event": "chat.opened", "subject": "mateo" }, "then": [ { "set_flag": { "key": "read_mateo_thread", "value": true } } ] },
+    { "id": "flag-read-jonah", "when": { "event": "chat.opened", "subject": "jonah" }, "then": [ { "set_flag": { "key": "read_jonah", "value": true } } ] },
+
+    { "id": "unlock-wren-after-readme",
+      "when": { "all": [ { "flag": "read_witness_readme" } ] },
+      "then": [
+        { "unlock_contact": { "id": "wren" } },
+        { "presence": { "contact": "wren", "presence": "online" } },
+        { "notify": { "app": "whatsapp", "title": "+1 (506) 999-0417", "text": "hi. you found the read me. that's the hard part.", "delayMs": 45000, "props": { "chatId": "wren" } } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "hi.", "delayMs": 46000 } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "the relay told me #417 got opened and somebody's been reading. so it's you.", "delayMs": 52000 } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "you don't have to say anything. i just wanted to be the one who said hi first. it felt rude otherwise. leaving my whole life on your computer and not saying hi.", "delayMs": 60000 } }
+      ] },
+
+    { "id": "wren-nudge-if-quiet",
+      "when": { "all": [ { "flag": "read_witness_readme" }, { "since": { "trigger": "unlock-wren-after-readme", "minutes": 8 } }, { "not": { "event": "message.sent", "subject": "wren" } } ] },
+      "then": [
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "you can just keep looking around if you want. i'm not going anywhere. i'm a computer now, apparently. ha.", "delayMs": 1000 } }
+      ] },
+
+    { "id": "wren-after-decrypt",
+      "when": { "all": [ { "flag": "decrypted_excerpt" }, { "flag": "read_witness_readme" } ] },
+      "then": [
+        { "notify": { "app": "whatsapp", "title": "+1 (506) 999-0417", "text": "you got into the archive.", "delayMs": 30000, "props": { "chatId": "wren" } } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "you got in.", "delayMs": 31000 } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "so you've heard him now. or read him. the ring part.", "delayMs": 38000 } },
+        { "deliver_message": { "chat": "wren", "from": "wren", "text": "i've been trying to figure out for months what a person is supposed to do with that. i still don't know. mostly i just didn't want to be the only one who'd heard it. so. thank you for hearing it.", "delayMs": 50000 } }
+      ] },
+
+    { "id": "mail-maureen-followup",
+      "when": { "all": [ { "flag": "read_maureen_letter" }, { "since": { "flag": "read_maureen_letter", "minutes": 6 } } ] },
+      "then": [ { "deliver_mail": { "id": "maureen-followup", "delayMs": 500 } } ] },
+
+    { "id": "mail-kav-update",
+      "when": { "all": [ { "flag": "decrypted_excerpt" }, { "since": { "flag": "decrypted_excerpt", "minutes": 12 } } ] },
+      "then": [ { "deliver_mail": { "id": "kav-update", "delayMs": 500 } } ] },
+
+    { "id": "mail-google-alert",
+      "when": { "since": { "event": "boot", "minutes": 3 } },
+      "then": [ { "deliver_mail": { "id": "google-newdevice", "delayMs": 1000 } } ] },
+
+    { "id": "mail-witness-letter",
+      "when": { "flag": "read_witness_readme" },
+      "then": [ { "deliver_mail": { "id": "witness-letter", "delayMs": 4000 } } ] },
+
+    { "id": "reveal-future-calendar",
+      "when": { "all": [ { "flag": "read_witness_readme" }, { "since": { "flag": "read_witness_readme", "minutes": 15 } } ] },
+      "then": [ { "reveal_event": { "id": "future-checkin" } }, { "reveal_event": { "id": "arm-survey" } } ] },
+
+    { "id": "priya-vouches",
+      "when": { "all": [ { "count": { "event": "message.sent", "subject": "wren", "min": 4 } }, { "event": "message.sent", "subject": "priya" } ] },
+      "then": [ { "set_flag": { "key": "talked_priya", "value": true } } ] },
+
+    { "id": "mark-talked-mateo", "when": { "event": "message.sent", "subject": "mateo" }, "then": [ { "set_flag": { "key": "talked_mateo", "value": true } } ] }
+  ]
+}

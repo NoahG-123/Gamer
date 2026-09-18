@@ -1,0 +1,9 @@
+.desktop { position: fixed; inset: 0; background: #0b1a3a center / cover no-repeat; overflow: hidden; color: var(--text); }
+.icons { position: absolute; top: 0; left: 0; bottom: 48px; display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; padding: 4px 0 0 2px; gap: 0; }
+.icon { width: 76px; height: 90px; margin: 1px 0 6px 0; display: flex; flex-direction: column; align-items: center; padding-top: 6px; border-radius: 3px; border: 1px solid transparent; }
+.icon:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255,255,255,.18); }
+.iconSel, .iconSel:hover { background: rgba(255, 255, 255, 0.22); border-color: rgba(255, 255, 255, 0.32); }
+.iconImg { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 1px 1px rgba(0,0,0,.35)); }
+.iconLabel { margin-top: 4px; max-width: 72px; font-size: 12px; line-height: 15px; color: #fff; text-align: center; text-shadow: 0 0 2px rgba(0,0,0,.9), 0 1px 3px rgba(0,0,0,.8); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+.windows { position: absolute; inset: 0; bottom: 48px; pointer-events: none; }
+.windows > * { pointer-events: auto; }

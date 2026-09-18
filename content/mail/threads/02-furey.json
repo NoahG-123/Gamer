@@ -1,0 +1,35 @@
+{
+  "threads": [
+    {
+      "id": "furey-request",
+      "subject": "Recordings of my father",
+      "labels": ["inbox", "furey"],
+      "important": true,
+      "messages": [
+        { "from": { "name": "Derek Furey", "email": "derek@fureymarine.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-03T21:02:00Z", "body": "Ms. Castellanos,\n\nI understand from the staff at Oakmount that you recorded a number of conversations with my late father during the production of the documentary. As his son and substitute decision-maker I would like copies of all such recordings for the family, and I would ask that the production delete its own copies once we have them. Dad was not himself in his last year and I don't think it's right for any of that to be out in the world.\n\nI'm happy to come by and collect a drive.\n\nRegards,\nDerek Furey\nPresident, Furey Marine Services Ltd.\n902-468-3300" },
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Derek Furey", "email": "derek@fureymarine.ca" }], "at": "2026-08-03T23:40:00Z", "body": "Mr. Furey,\n\nI'm sorry for your loss. Your father was very kind to me.\n\nThe recordings belong to the production, not to me, so I've passed your request to Harbourlight's producer, Colin Tremblay, who will be in touch. I'd add that the consent your father's care team and you signed doesn't provide for copies to go to family, and that the recordings are covered by the film's participant agreement. I know that's not the answer you wanted.\n\nWren Castellanos" },
+        { "from": { "name": "Derek Furey", "email": "derek@fureymarine.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-06T12:15:00Z", "body": "Ms. Castellanos,\n\nI've heard from Mr. Tremblay and I have to say I'm disappointed. I'm not asking for anything unreasonable. I'm asking for my father's voice.\n\nI'll also say, because I'd rather be straight with you: I've been told by a friend at Oakmount that one of the night staff heard Dad say some very confused things to you in May, and that you were upset afterward. Dad had a lot of stories. Some of them were about people who've been dead a long time and can't speak for themselves. I don't want my father remembered for what a disease made him say.\n\nPlease reconsider.\n\nDerek Furey" },
+        { "from": { "name": "Derek Furey", "email": "derek@fureymarine.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-12T22:48:00Z", "body": "I've been to your website. I know what you do. I know you sell recordings. If one second of my father ends up in a 'sample pack' or in that film or anywhere else, you'll be hearing from my lawyer, and so will Harbourlight, and so will Oakmount.\n\nI'm asking you one more time to do the decent thing.\n\nD. Furey" }
+      ]
+    },
+    {
+      "id": "furey-lawyer",
+      "subject": "Hanley & Roche — Furey Estate / Recordings of Alden Furey — DEMAND",
+      "labels": ["inbox", "furey"],
+      "important": true,
+      "starred": true,
+      "messages": [
+        { "from": { "name": "Siobhan Roche", "email": "sroche@hanleyroche.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "cc": [{ "name": "Colin Tremblay", "email": "colin@harbourlightfilms.ca" }], "at": "2026-08-19T17:55:00Z", "body": "Ms. Castellanos,\n\nPlease see the attached correspondence on behalf of our client, Mr. Derek Furey, in his capacity as executor of the Estate of Alden Furey.\n\nWe would ask for your written response within fourteen (14) days of the date of this letter.\n\nSiobhan Roche\nHanley & Roche, Barristers & Solicitors\n1801 Hollis St, Suite 1400, Halifax NS\n902-429-6100", "attachments": [{ "name": "HR_Furey_Castellanos_2026-08-19.pdf", "size": 148902, "path": "C:/Users/{user}/Documents/Legal/HR_Furey_Castellanos_2026-08-19.pdf" }] },
+        { "from": { "name": "Colin Tremblay", "email": "colin@harbourlightfilms.ca" }, "to": [{ "email": "wren.castellanos@gmail.com" }], "at": "2026-08-19T19:20:00Z", "body": "Do not reply to this. Our counsel (Marguerite Doiron at Stewart McKelvey) is replying on behalf of the production and will name you as a contractor covered by our agreement. Short version of her view: a demand to destroy material that may be evidence of a criminal offence is not one anyone should comply with, and they know it. It's a pressure letter.\n\nHang in there.\n\nC" }
+      ]
+    },
+    {
+      "id": "furey-final",
+      "subject": "Re: Recordings of my father",
+      "labels": ["sent", "furey"],
+      "messages": [
+        { "from": { "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }, "to": [{ "name": "Derek Furey", "email": "derek@fureymarine.ca" }], "at": "2026-08-28T20:31:00Z", "body": "Mr. Furey,\n\nI'm writing to you directly because I think you should hear this from a person and not a law firm, and because I think you deserve to know where things stand.\n\nI haven't sold your father's voice and I never will. It isn't in the film. It won't be.\n\nBut on May 14 your father told me, in detail, what happened to Colleen Mahar in October 1971. He wasn't confused when he said it. He was somewhere else, but he was clear. I've listened to it more times than I want to admit. I believe him.\n\nA copy of that section and its transcript is now with Paul Kavanagh, a retired RCMP sergeant, who has passed it to the Halifax Regional Police historical case unit. Another copy is with Colleen Mahar's daughter. So there is nothing left for anyone to collect from me, and nothing for a letter to make disappear. You can stop.\n\nI'm sorry. I am. He said you didn't know. I believe that too.\n\nWren Castellanos" }
+      ]
+    }
+  ]
+}

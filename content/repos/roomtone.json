@@ -1,0 +1,14 @@
+{
+  "root": "C:/Users/{user}/Projects/roomtone",
+  "branch": "main",
+  "remote": "git@github.com:wrenc/roomtone.git",
+  "status": { "modified": [], "untracked": [], "staged": [] },
+  "branches": ["main", "wip-adaptive-gate"],
+  "tags": ["v1.0", "v1.1"],
+  "stash": ["WIP on main: adaptive threshold experiment that made everything sound underwater"],
+  "commits": [
+    { "hash": "1a2b3c4d5e6f70819a2b3c4d5e6f7081a2b3c4d5", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2026-05-02T14:00:00Z", "message": "denoise: lower the floor another 6dB on the institutional set", "files": ["denoise.py"] },
+    { "hash": "2b3c4d5e6f70819a2b3c4d5e6f7081a2b3c4d5e6", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2024-11-02T14:00:00Z", "message": "slate: write bext chunk metadata (loc/date/mic/gain)", "files": ["slate.py"] },
+    { "hash": "3c4d5e6f70819a2b3c4d5e6f7081a2b3c4d5e6f7", "author": "Wren Castellanos", "email": "wren.castellanos@gmail.com", "date": "2023-02-10T10:30:00Z", "message": "initial: the scripts I keep re-pasting from old projects", "files": ["denoise.py", "slate.py", "README.md"] }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "_comment": "Chrome bookmarks bar. `folder` entries hold `children`.",
+  "bar": [
+    { "id": "bm-gmail", "title": "Gmail", "url": "https://mail.google.com/mail/u/0/#inbox" },
+    { "id": "bm-cal", "title": "Calendar", "url": "https://calendar.google.com/calendar/u/0/r" },
+    { "id": "bm-drive", "title": "Drive", "url": "https://drive.google.com/" },
+    { "id": "bm-site", "title": "wrencastellanos.com", "url": "https://wrencastellanos.com/" },
+    { "id": "bm-folder-slowrooms", "title": "Slow Rooms", "folder": true, "children": [
+      { "id": "bm-hl", "title": "Harbourlight Films", "url": "https://harbourlightfilms.ca/slow-rooms" },
+      { "id": "bm-ledger-71", "title": "Ledger — Mahar 1971", "url": "https://harbourledger.ca/archive/1971-mahar" },
+      { "id": "bm-ledger-21", "title": "Ledger — Mahar 2021", "url": "https://harbourledger.ca/archive/2021-mahar" },
+      { "id": "bm-furey", "title": "Furey Marine", "url": "https://fureymarine.ca/history" }
+    ] },
+    { "id": "bm-forum", "title": "fieldrecordists", "url": "https://fieldrecordists.net/" },
+    { "id": "bm-folder-audio", "title": "audio", "folder": true, "children": [
+      { "id": "bm-reaper", "title": "REAPER", "url": "https://www.reaper.fm/" },
+      { "id": "bm-sd", "title": "Sound Devices", "url": "https://www.sounddevices.com/" }
+    ] }
+  ]
+}

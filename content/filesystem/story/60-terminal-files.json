@@ -1,0 +1,40 @@
+{
+  "_comment": "Readable files that live behind the terminal / shell: the PowerShell history, ssh config, key hint, repo readmes. Openable so they show in Notepad too.",
+  "files": [
+    {
+      "path": "C:/Users/{user}/Desktop/slow_rooms_AF.7z.hint.txt",
+      "kind": "text",
+      "created": "2026-08-29T04:05:00Z",
+      "modified": "2026-08-29T04:05:00Z",
+      "body": "if you're me and you forgot the password: it's the last thing he said about the ring. the exact words. lowercase, no punctuation, you'll figure the spacing out, 7z doesn't care.\r\n\r\nif you're not me: you can get there. read the READ ME on the desktop, then the emails labelled Colleen, then the old newspaper story Priya sent (harbourledger.ca, the 1971 one). the ring had a red stone. it was her mother's. he said one sentence about it that he'd been saying for fifty years. that sentence is the password. (7z l to list, 7z x to extract, or just: 7z x slow_rooms_AF.7z)\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/AppData/Roaming/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt",
+      "kind": "text",
+      "created": "2021-09-19T10:00:00Z",
+      "modified": "2026-08-30T04:00:00Z",
+      "body": "cd Projects\\roomtone\r\npython denoise.py .\\in\\RT_east_corridor_A.wav\r\ngit add -A\r\ngit commit -m \"denoise: lower the floor another 6db on the institutional set\"\r\nffprobe .\\ambience\\RT_east_corridor_before.wav\r\nsox RT_east_corridor_A.wav -n stat\r\ncd ..\\transcribe\r\npython transcribe_local.py \"..\\..\\Documents\\Slow Rooms\\recordings\\2026-05-14_AF_03.wav\"\r\npython align.py 2026-05-14_AF_03.json\r\ncd \"..\\..\\Documents\\Slow Rooms\"\r\ngpg --symmetric --cipher-algo AES256 .\\recordings\\2026-05-14_AF_03.wav\r\n7z a -p -mhe=on slow_rooms_AF.7z \".\\recordings\\2026-05-14_AF_03.wav\" \".\\transcripts\\2026-05-14_AF_03_transcript.txt\" \".\\transcripts\\2026-05-14_AF_03_excerpt_transcript.txt\"\r\nssh wren@relay.wrn.sh\r\ncd ..\\..\\Projects\\witness\r\npython build.py --serial-range 1 512 --disguise \"Aurorae_Reverb_2.4_Setup_x64.exe\"\r\ngit add -A\r\ngit commit -m \"it's done. seeding tonight.\"\r\nssh wren@relay.wrn.sh\r\npython -c \"print('please work')\"\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/.ssh/config",
+      "kind": "text",
+      "created": "2024-03-01T09:00:00Z",
+      "modified": "2026-08-29T23:00:00Z",
+      "body": "Host relay\r\n    HostName relay.wrn.sh\r\n    User wren\r\n    IdentityFile ~/.ssh/id_ed25519\r\n\r\nHost oakmount-nas\r\n    HostName 192.168.14.20\r\n    User wren\r\n    # only reachable on the manor wifi, don't bother from home\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/roomtone/README.md",
+      "kind": "text",
+      "created": "2023-02-10T10:00:00Z",
+      "modified": "2023-02-10T10:00:00Z",
+      "body": "# roomtone\r\n\r\nmy little pile of scripts for cleaning and slating field recordings before they go in a library.\r\n\r\n- denoise.py — spectral gate tuned for HVAC floors, doesn't eat the top end\r\n- slate.py — writes the metadata slate (location, date, mic, gain) into the wav's bext chunk so future-me knows what past-me did\r\n\r\nnot pretty. mine.\r\n"
+    },
+    {
+      "path": "C:/Users/{user}/Projects/transcribe/transcribe_local.py",
+      "kind": "text",
+      "created": "2026-05-15T05:00:00Z",
+      "modified": "2026-08-09T22:00:00Z",
+      "body": "#!/usr/bin/env python3\r\n\"\"\"transcribe a session locally with whisper. LOCAL. no cloud, no api, ever, for resident material.\r\nthis is the one rule I don't break. the machine is offline when this runs.\"\"\"\r\nimport sys, whisper\r\n\r\ndef main(path):\r\n    model = whisper.load_model(\"large-v3\")\r\n    # word timestamps so I can line up the [inaudible] gaps by hand afterward\r\n    result = model.transcribe(path, word_timestamps=True, language=\"en\", fp16=False)\r\n    out = path.rsplit(\".\", 1)[0] + \".json\"\r\n    import json; json.dump(result, open(out, \"w\"))\r\n    print(f\"wrote {out}\")\r\n    print(\"now do the gaps by hand. the machine can't hear grief. you have to.\")\r\n\r\nif __name__ == \"__main__\":\r\n    main(sys.argv[1])\r\n"
+    }
+  ]
+}
