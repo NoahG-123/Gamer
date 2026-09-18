@@ -240,14 +240,10 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "Open", icon: <F.Folder />, onClick: () => open(n), shortcut: "Enter" },
       { label: "Open in new tab", icon: <span />, onClick: () => newTab(n.path) },
       { label: "Open in new window", icon: <span />, onClick: () => os.openFolder(n.path) },
-      { label: "Pin to Quick access", icon: <F.Pin /> },
-      { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
       { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
       { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: n.path }) },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
-      { type: "sep" },
-      { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ] : [
       iconRow, { type: "sep" },
       { label: "Open", icon: <F.OpenWith />, onClick: () => open(n), shortcut: "Enter" },
@@ -260,12 +256,9 @@ export function Explorer({ win }: { win: WinState }) {
         { label: "Windows Media Player", onClick: () => void os.openWith(n.path, "player") },
       ] },
       ...(/^(jpg|jpeg|png|bmp|webp|heic)$/.test(n.ext) ? [{ label: "Set as desktop background", icon: <F.ImageIcon />, onClick: () => os.fs.setWallpaper(n.path) } as MenuItem] : []),
-      { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
       { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
-      { type: "sep" },
-      { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ];
     menu.open({ x: e.clientX, y: e.clientY, items });
   };
@@ -288,10 +281,7 @@ export function Explorer({ win }: { win: WinState }) {
       ...(os.fs.clipboard ? [{ label: "Paste", icon: <F.Paste />, shortcut: "Ctrl+V", onClick: doPaste } as MenuItem] : []),
       ...(inBin ? [{ label: "Empty Recycle Bin", icon: <F.Delete />, onClick: doEmptyBin } as MenuItem] : []),
       { type: "sep" },
-      { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter" },
       { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: path }) },
-      { type: "sep" },
-      { label: "Show more options", icon: <span />, shortcut: "Shift+F10" },
     ] });
   };
 
@@ -417,6 +407,14 @@ export function Explorer({ win }: { win: WinState }) {
           </div>
           <div className={styles.content} ref={bodyRef} onClick={() => setSelected(new Set())} onContextMenu={bgMenu}>
             {path === SPECIAL.pc && <ThisPCView drives={drives} home={home} quick={quick} navigate={navigate} selected={selected} click={click} />}
+            {path === SPECIAL.net && (
+              <div className={styles.netPane}>
+                <A.NetworkIcon size={48} />
+                <b>Network discovery is turned off</b>
+                <span>Network computers and devices are not visible. Turn on network discovery in Network &amp; internet settings.</span>
+                <button className={styles.netBtn} onClick={() => os.launch("settings", { page: "network" })}>Open Network &amp; internet settings</button>
+              </div>
+            )}
             {path === SPECIAL.home && <HomeView home={home} quick={quick} recent={recent} navigate={navigate} open={open} click={click} selected={selected} fileMenu={fileMenu} />}
             {listLike && tab.view === "details" && (
               <div className={styles.details}>

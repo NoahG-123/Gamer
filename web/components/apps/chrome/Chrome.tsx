@@ -202,15 +202,10 @@ export function Chrome({ win }: { win: WinState }) {
     const i = tabs.findIndex((x) => x.id === t.id);
     chromeMenu(e.clientX, e.clientY, [
       { label: "New tab to the right", icon: <M.MTab />, shortcut: "Ctrl+T", onClick: () => openTab(undefined, { after: t.id }) },
-      { label: "Add tab to reading list", icon: <span /> },
-      { label: "Add tab to new group", icon: <span /> },
-      { label: "Move tab to new window", icon: <span /> },
       { type: "sep" },
       { label: "Reload", icon: <M.MRefresh />, shortcut: "Ctrl+R", onClick: () => panes.current.get(t.id)?.reload() },
       { label: "Duplicate", icon: <span />, onClick: () => openTab(t.url, { after: t.id }) },
       { label: t.pinned ? "Unpin" : "Pin", icon: <span />, onClick: () => update(t.id, { pinned: !t.pinned }) },
-      { label: "Mute site", icon: <span /> },
-      { label: "Send to your devices", icon: <M.MDevices /> },
       { type: "sep" },
       { label: "Close", icon: <M.MClose />, shortcut: "Ctrl+W", onClick: () => closeTab(t.id) },
       { label: "Close other tabs", icon: <span />, disabled: tabs.length < 2, onClick: () => tabs.filter((x) => x.id !== t.id).forEach((x) => closeTab(x.id)) },
@@ -225,9 +220,7 @@ export function Chrome({ win }: { win: WinState }) {
       chromeMenu(x, y, [
         { label: "Open link in new tab", icon: <span />, onClick: () => openTab(p.linkURL!, { background: true, after: t.id }) },
         { label: "Open link in new window", icon: <span />, onClick: () => openTab(p.linkURL!) },
-        { label: "Open link in Incognito window", icon: <M.MIncognito /> },
         { type: "sep" },
-        { label: "Save link as...", icon: <span /> },
         { label: "Copy link address", icon: <span />, onClick: () => navigator.clipboard?.writeText(p.linkURL!).catch(() => {}) },
         { type: "sep" },
         { label: "Inspect", icon: <M.MInspect />, onClick: () => inspect(t.id) },
@@ -251,13 +244,7 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Forward", icon: <span />, shortcut: "Alt+Right Arrow", disabled: !t.canForward, onClick: () => pane?.goForward() },
       { label: "Reload", icon: <span />, shortcut: "Ctrl+R", onClick: () => pane?.reload() },
       { type: "sep" },
-      { label: "Save as...", icon: <span />, shortcut: "Ctrl+S" },
-      { label: "Print...", icon: <span />, shortcut: "Ctrl+P" },
-      { label: "Cast...", icon: <span /> },
-      { label: "Search with Google Lens", icon: <span /> },
-      { label: "Send to your devices", icon: <span /> },
-      { label: "Create QR Code for this page", icon: <span /> },
-      { label: "Translate to English", icon: <span /> },
+      { label: "Find...", icon: <span />, shortcut: "Ctrl+F", onClick: () => setFind("") },
       { type: "sep" },
       { label: "View page source", icon: <span />, shortcut: "Ctrl+U", onClick: () => viewSource(t.id) },
       { label: "Inspect", icon: <span />, shortcut: "Ctrl+Shift+I", onClick: () => inspect(t.id) },
@@ -268,10 +255,9 @@ export function Chrome({ win }: { win: WinState }) {
     chromeMenu(r.right - 300, r.bottom + 4, [
       { label: "New tab", icon: <M.MTab />, shortcut: "Ctrl+T", onClick: () => openTab() },
       { label: "New window", icon: <M.MWindow />, shortcut: "Ctrl+N", onClick: () => openTab() },
-      { label: "New Incognito window", icon: <M.MIncognito />, shortcut: "Ctrl+Shift+N" },
       { type: "sep" },
-      { label: os.profile.displayName, icon: <M.MAccount />, children: [{ label: "Manage your Google Account" }, { type: "sep" }, { label: "Customize profile" }, { label: "Add new profile" }] },
-      { label: "Passwords and autofill", icon: <M.MKey />, children: [{ label: "Google Password Manager" }, { label: "Payment methods" }, { label: "Addresses and more" }] },
+      { label: os.profile.displayName, icon: <M.MAccount />, children: [{ label: "Manage your Google Account", onClick: () => openTab("https://myaccount.google.com/") }] },
+      { label: "Passwords and autofill", icon: <M.MKey />, children: [{ label: "No saved passwords", disabled: true }] },
       { label: "History", icon: <M.MHistory />, children: [{ label: "History", shortcut: "Ctrl+H", onClick: () => openChromePage("history") }, { type: "sep" }, ...history.slice(0, 8).map((h) => ({ label: h.title || h.url, onClick: () => openTab(h.url) }))] },
       { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J", onClick: () => openChromePage("downloads") },
       { label: "Bookmarks", icon: <M.MBookmarks />, children: [
@@ -279,7 +265,7 @@ export function Chrome({ win }: { win: WinState }) {
         { type: "sep" },
         ...bookmarks.filter((b) => b.url).slice(0, 10).map((b) => ({ label: b.title, onClick: () => b.url && openTab(b.url) })),
       ] },
-      { label: "Tab groups", icon: <span />, children: [{ label: "No tab groups", disabled: true }] },
+
       { label: "Extensions", icon: <M.MExtension />, children: [{ label: "No extensions are installed", disabled: true }] },
       { label: "Delete browsing data...", icon: <M.MDelete />, shortcut: "Ctrl+Shift+Del", onClick: async () => { await fetch("/api/browser/history", { method: "DELETE" }); loadBrowserData(); setNote("Browsing data deleted"); setTimeout(() => setNote(null), 2500); } },
       { type: "sep" },
@@ -293,7 +279,7 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Copy link", icon: <M.MShare />, disabled: !display, onClick: () => navigator.clipboard?.writeText(display).catch(() => {}) },
       { label: "More tools", icon: <span />, children: [{ label: "Name window..." }, { label: "Reading mode" }, { label: "Performance" }, { label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
       { type: "sep" },
-      { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome" }, { label: "What's new" }, { label: "Help center" }, { label: "Report an issue...", shortcut: "Alt+Shift+I" }] },
+      { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome", onClick: () => { setNote("Google Chrome is up to date — Version 138.0.7204.101 (Official Build) (64-bit)"); setTimeout(() => setNote(null), 4000); } }] },
       { label: "Settings", icon: <M.MSettings />, onClick: () => os.launch("settings") },
       { label: "Exit", icon: <M.MExit />, onClick: () => wm.close(win.id) },
     ], 300);
@@ -311,9 +297,7 @@ export function Chrome({ win }: { win: WinState }) {
       { type: "sep" },
       { label: "Bookmark manager", icon: <span /> }, { label: "Show apps shortcut", icon: <span /> }, { label: "Show tab groups", icon: <span />, checked: true }, { label: "Show bookmarks bar", icon: <span />, shortcut: "Ctrl+Shift+B", checked: true },
     ] : [
-      { label: "Add page...", icon: <span /> }, { label: "Add folder...", icon: <span /> },
-      { type: "sep" },
-      { label: "Bookmark manager", icon: <span /> }, { label: "Show apps shortcut", icon: <span /> }, { label: "Show tab groups", icon: <span />, checked: true }, { label: "Show bookmarks bar", icon: <span />, shortcut: "Ctrl+Shift+B", checked: true },
+      { label: "Bookmark this tab...", icon: <span />, shortcut: "Ctrl+D", disabled: !display, onClick: toggleBookmark },
     ]);
   };
   const folderMenu = (e: React.MouseEvent, b: Bookmark) => {

@@ -65,17 +65,26 @@ function bedSample(bed: BedName, i: number): number {
   }
 }
 
-/** The hum: 92 Hz fundamental, 0.16 Hz swell, drifting 470/1180 Hz partials. */
+/**
+ * The hum: a 92 Hz fundamental with a 0.16 Hz swell and two formant-like partials that
+ * drift slowly around 470 Hz and 1180 Hz.
+ *
+ * The partials are integrated properly rather than written as `f(t) · t`: a frequency
+ * that wobbles has to have its phase accumulated, or the tone runs away as the recording
+ * gets longer instead of drifting a few Hz either side. They also sit clearly above the
+ * noise floor, because the notes in the world describe measuring them.
+ */
 function humSample(t: number, i: number, amount: number): number {
   if (amount <= 0) return 0;
   const swell = 0.6 + 0.4 * Math.sin(2 * Math.PI * 0.16 * t);
-  const f1 = 470 + 40 * Math.sin(2 * Math.PI * 0.05 * t);
-  const f2 = 1180 + 90 * Math.sin(2 * Math.PI * 0.037 * t + 1);
+  const w1 = 2 * Math.PI * 0.05, w2 = 2 * Math.PI * 0.037;
+  const phase1 = 2 * Math.PI * (470 * t + (40 / w1) * (1 - Math.cos(w1 * t)));
+  const phase2 = 2 * Math.PI * (1180 * t - (90 / w2) * (Math.cos(w2 * t + 1) - Math.cos(1)));
   let v = Math.sin(2 * Math.PI * 92 * t) * 0.6;
   v += Math.sin(2 * Math.PI * 184 * t) * 0.15;
-  v += Math.sin(2 * Math.PI * f1 * t) * 0.05 * 0.8;
-  v += Math.sin(2 * Math.PI * f2 * t) * 0.03 * 0.8;
-  v += noiseAt(i, 11) * 0.04;
+  v += Math.sin(phase1) * 0.17;
+  v += Math.sin(phase2) * 0.11;
+  v += noiseAt(i, 11) * 0.028;
   return v * swell * 0.18 * amount;
 }
 

@@ -23,7 +23,7 @@ export type DialogKind = "open-with" | "cant-run" | "shortcut" | "bad-zip" | "pr
 export function dialogForFile(name: string, ext: string): { kind: DialogKind; w: number; h: number } {
   if (ext === "exe" || ext === "msi" || ext === "com" || ext === "bat" || ext === "jar") return { kind: "cant-run", w: 428, h: 178 };
   if (ext === "lnk" || ext === "url") return { kind: "shortcut", w: 440, h: 190 };
-  if (ext === "zip" || ext === "rar" || ext === "7z") return { kind: "bad-zip", w: 440, h: 170 };
+  if (ext === "zip") return { kind: "bad-zip", w: 440, h: 170 };
   return { kind: "open-with", w: 460, h: 560 };
 }
 
@@ -39,6 +39,9 @@ const PHOTOS: AppChoice = { label: "Photos", icon: <A.PhotosIcon size={28} />, o
 const MORE: AppChoice[] = [VLC, PAINT, PHOTOS, REAPER, NOTEPAD, CHROME];
 
 function appsFor(ext: string): AppChoice[] {
+  // 7-Zip on this machine is the command-line build (Settings lists it, the shell has `7z`),
+  // so there is no window for it to open in.
+  if (["7z", "rar", "tar", "gz", "iso"].includes(ext)) return [NOTEPAD, CHROME];
   if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "tif", "svg"].includes(ext)) return [PHOTOS, PAINT, CHROME, EDGE];
   if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "odt", "rtf", "csv"].includes(ext)) return [CHROME, EDGE, NOTEPAD, NPP];
   if (["mp3", "mp4", "mkv", "mov", "m4a", "wav", "avi", "webm", "flac", "aif", "aiff"].includes(ext)) return [VLC, REAPER, CHROME, EDGE];

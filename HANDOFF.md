@@ -68,14 +68,19 @@ referenced them except as fallbacks.
 
 Recordings are rendered while they play (bed + spoken lines at real timecodes), so the
 ambient signature described in the world is preserved exactly and voices sit over it.
-**33 of 54 lines are generated so far.** The provider allows only a handful of speech
-requests per model per day; the script rotates across every speech and live-audio model,
-does the most important lines first, and stops cleanly when the day is spent.
+**All 54 lines are generated and committed.** The provider allows only a handful of plain
+speech requests per model per day, so the script also speaks through the live-audio models,
+which have their own allowance; it does the most important lines first and stops cleanly
+when a day is spent, resuming next time.
 
-    npm run fetch:voices     # run again on later days; it resumes and skips what exists
+    npm run fetch:voices     # only needed if lines are added or changed
 
-Missing lines are simply room tone at that moment — nothing breaks. A generated clip was
-transcribed back to confirm the words are right.
+A generated clip was transcribed back to confirm it says the right words. Measured off the
+finished audio, the room tone still carries its described signature: a 92 Hz fundamental
+and drifting partials at 466-474 Hz and 1090-1268 Hz, around 25x above the noise floor.
+While checking that, a real bug turned up and was fixed — the drifting partials were
+written as `f(t) · t`, which makes the frequency run away as a recording gets longer
+instead of wobbling a few Hz; the phase is now integrated properly.
 
 ## Known environment limits (not code problems)
 
@@ -93,5 +98,4 @@ transcribed back to confirm the words are right.
 
 ## Remaining
 
-- Run `npm run fetch:voices` on later days until all 54 lines exist.
-- Nothing else outstanding.
+Nothing outstanding.

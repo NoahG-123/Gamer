@@ -182,7 +182,7 @@ function DesktopInner() {
     e.preventDefault();
     menu.open({ x: e.clientX, y: e.clientY, items: [
       { label: "View", icon: <ViewIcon />, children: [{ label: "Large icons" }, { label: "Medium icons", checked: true }, { label: "Small icons" }, { type: "sep" }, { label: "Auto arrange icons" }, { label: "Align icons to grid", checked: true }, { type: "sep" }, { label: "Show desktop icons", checked: true }] },
-      { label: "Sort by", icon: <Sort />, children: [{ label: "Name" }, { label: "Size" }, { label: "Item type" }, { label: "Date modified" }] },
+      { label: "Sort by", icon: <Sort />, children: [{ label: "Name", checked: true }, { label: "Size" }, { label: "Item type" }, { label: "Date modified" }] },
       { label: "Refresh", icon: <Refresh />, onClick: () => setRefreshTick((t) => t + 1) },
       { type: "sep" },
       { label: "New", icon: <NewIcon />, children: [
@@ -197,8 +197,6 @@ function DesktopInner() {
       { label: "Personalize", icon: <Personalize />, onClick: () => launch("settings", { page: "personalisation" }) },
       { type: "sep" },
       { label: "Open in Terminal", icon: <Terminal />, onClick: () => launch("terminal", { cwd: `${home}/Desktop` }) },
-      { type: "sep" },
-      { label: "Show more options", shortcut: "Shift+F10", icon: <ChevronRight style={{ visibility: "hidden" }} /> },
     ] });
   };
 
