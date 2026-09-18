@@ -1,6 +1,7 @@
 // API-level tests for the content server (state engine, filesystem, sites, messaging, mail,
-// calendar, terminal, LLM plumbing). Requires a running server with LLM_PROVIDER=mock:
-//   LLM_PROVIDER=mock npx next dev web -p 4127
+// calendar, terminal, settings, downloads, LLM plumbing). Requires a running server with
+// the mock model provider and replies scheduled immediately:
+//   LLM_PROVIDER=mock FOUND_FAST_REPLIES=1 npx next dev web -p 4127
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
 
@@ -26,6 +27,113 @@ test("profile is Wren's machine; filesystem lists deep tree", async () => {
   const root = await j("/api/fs/list?path=C:");
   assert.ok(root.body.children.some((c) => c.name === "Windows"));
   assert.ok(!root.body.children.some((c) => c.name === "pagefile.sys"), "hidden system files hidden by default");
+});
+
+test("filler files open into something readable, never a blank window", async () => {
+  const samples = [
+    `${home}/Documents/Recipes/banana bread.txt`,
+    `${home}/Desktop/stuff to print.txt`,
+    `${home}/Desktop/desktop.ini`,
+  ];
+  for (const path of samples) {
+    const r = await post("/api/fs/open", { path });
+    assert.equal(r.body.viewer, "notepad", path);
+    assert.ok(r.body.text.trim().length > 40, `${path} opened with ${r.body.text.length} characters`);
+  }
+  // The same file reads the same every time it is opened.
+  const a = await post("/api/fs/open", { path: samples[0] });
+  const b = await post("/api/fs/open", { path: samples[0] });
+  assert.equal(a.body.text, b.body.text);
+  // And it is served the same way through the file URL the browser uses.
+  const served = await fetch(`${B}${"/lf/" + encodeURIComponent(samples[0]).replace(/%2F/g, "/")}`);
+  assert.match(served.headers.get("content-type"), /text\/plain/);
+  assert.match(served.headers.get("content-disposition") ?? "", /^inline/);
+  assert.equal((await served.text()).trim(), a.body.text.trim());
+});
+
+test("saving, creating, renaming, deleting and restoring really change the machine", async () => {
+  const dir = `${home}/Desktop`;
+  const made = await post("/api/fs/mutate", { op: "new", parent: dir, kind: "text" });
+  assert.equal(made.status, 200);
+  const path = made.body.path;
+  await post("/api/fs/mutate", { op: "save", path, text: "written by the test suite" });
+  const opened = await post("/api/fs/open", { path });
+  assert.equal(opened.body.text, "written by the test suite");
+
+  const renamed = await post("/api/fs/mutate", { op: "rename", path, name: "suite-notes.txt" });
+  const path2 = renamed.body.path;
+  assert.equal((await post("/api/fs/open", { path: path2 })).body.text, "written by the test suite", "a renamed file keeps its contents");
+
+  await post("/api/fs/mutate", { op: "delete", paths: [path2] });
+  assert.equal((await post("/api/fs/open", { path: path2 })).status, 404, "deleted files are gone from the filesystem");
+  const bin = await j("/api/fs/mutate");
+  assert.ok(bin.body.items.some((i) => i.path === path2 && i.deletedHere), "and are in the Recycle Bin");
+  await post("/api/fs/mutate", { op: "restore", paths: [path2] });
+  assert.equal((await post("/api/fs/open", { path: path2 })).body.text, "written by the test suite", "restoring brings them back");
+  await post("/api/fs/mutate", { op: "delete", paths: [path2], permanent: true });
+
+  // A story file can be deleted and restored without losing anything.
+  const story = `${home}/Desktop/to do.txt`;
+  const before = (await post("/api/fs/open", { path: story })).body.text;
+  await post("/api/fs/mutate", { op: "delete", paths: [story] });
+  assert.equal((await post("/api/fs/open", { path: story })).status, 404);
+  await post("/api/fs/mutate", { op: "restore", paths: [story] });
+  assert.equal((await post("/api/fs/open", { path: story })).body.text, before);
+});
+
+test("the terminal writes, moves and deletes files for real", async () => {
+  const cwd = `${home}/Documents`;
+  await post("/api/terminal", { line: "mkdir suite-tmp", cwd });
+  await post("/api/terminal", { line: "echo written from the shell > suite-tmp/a.txt", cwd });
+  const shown = await post("/api/terminal", { line: "cat suite-tmp/a.txt", cwd });
+  assert.match(shown.body.lines.map((l) => l.text).join("\n"), /written from the shell/);
+  await post("/api/terminal", { line: "cp suite-tmp/a.txt suite-tmp/b.txt", cwd });
+  const listed = await j(`/api/fs/list?path=${encodeURIComponent(cwd + "/suite-tmp")}`);
+  assert.deepEqual(listed.body.children.map((c) => c.name).sort(), ["a.txt", "b.txt"]);
+  const refuse = await post("/api/terminal", { line: "rm suite-tmp", cwd });
+  assert.match(refuse.body.lines.map((l) => l.text).join("\n"), /not empty/);
+  await post("/api/terminal", { line: "rm -rf suite-tmp", cwd });
+  assert.equal((await j(`/api/fs/list?path=${encodeURIComponent(cwd + "/suite-tmp")}`)).status, 404);
+});
+
+test("settings persist and are what the shell reads", async () => {
+  const before = await j("/api/settings");
+  assert.equal(typeof before.body.settings.volume, "number");
+  const set = await post("/api/settings", { volume: 71, muted: false, wifi: false, theme: "light" });
+  assert.equal(set.body.settings.volume, 71);
+  assert.equal(set.body.settings.wifi, false);
+  const again = await j("/api/settings");
+  assert.equal(again.body.settings.volume, 71);
+  assert.equal(again.body.settings.theme, "light");
+  // Airplane mode owns the radios.
+  const air = await post("/api/settings", { airplane: true });
+  assert.equal(air.body.settings.airplane, true);
+  await post("/api/settings", { airplane: false, wifi: true, theme: "dark", muted: true, volume: 34 });
+});
+
+test("recordings are rendered on demand, seekable, and the right length", async () => {
+  const path = `${home}/Documents/Slow Rooms/recordings/2026-03-14_AF_01.wav`;
+  const url = `${B}/lf/${encodeURIComponent(path).replace(/%2F/g, "/")}`;
+  const head = await fetch(url, { headers: { range: "bytes=0-43" } });
+  assert.equal(head.status, 206);
+  assert.equal(head.headers.get("accept-ranges"), "bytes");
+  const header = Buffer.from(await head.arrayBuffer());
+  assert.equal(header.subarray(0, 4).toString("ascii"), "RIFF");
+  assert.equal(header.subarray(8, 12).toString("ascii"), "WAVE");
+  const total = Number(head.headers.get("content-range").split("/")[1]);
+  assert.ok(total > 20 * 60 * 22050 * 2, "a recording of the length the story gives it");
+  // Seeking into the middle returns audio, not a re-read of the start.
+  const mid = await fetch(url, { headers: { range: `bytes=${Math.floor(total / 2)}-${Math.floor(total / 2) + 4095}` } });
+  assert.equal(mid.status, 206);
+  assert.equal((await mid.arrayBuffer()).byteLength, 4096);
+});
+
+test("browsing history is real and searchable", async () => {
+  const all = await j("/api/browser/history");
+  assert.ok(all.body.visits.length > 20, "seeded visits are dated and listed");
+  assert.ok(all.body.visits.every((v) => v.at && v.url));
+  const sorted = [...all.body.visits].map((v) => v.at);
+  assert.deepEqual(sorted, [...sorted].sort().reverse(), "newest first");
 });
 
 test("dressing files open into something plausible; the README opens and unlocks Wren", async () => {
@@ -128,7 +236,7 @@ test("messaging: send -> delivered -> read -> typing -> LLM reply (mock)", async
   const sent = await post("/api/messages/priya", { text: "hello from the test suite" });
   assert.equal(sent.status, 200);
   assert.equal(sent.body.message.status, "sent");
-  const deadline = Date.now() + 25000;
+  const deadline = Date.now() + 40000;
   while (Date.now() < deadline && !events.some((e) => e.type === "message" && e.message?.sender === "priya" && e.message.text.includes("mock"))) await sleep(200);
   ctrl.abort(); await stream;
   const types = events.map((e) => e.type + (e.status ? ":" + e.status : "") + (e.typing !== undefined ? ":" + e.typing : ""));

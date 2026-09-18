@@ -27,14 +27,15 @@
       "created": "2018-11-04T23:10:00Z",
       "modified": "2018-11-04T23:10:00Z",
       "src": "audio/papa.wav",
-      "size": 41240112
+      "size": 41240112,
+      "render": "papa"
     },
     {
       "path": "C:/Users/{user}/Pictures/2021/moncton kitchen.jpg",
       "kind": "image",
       "created": "2021-12-25T18:30:00Z",
       "modified": "2021-12-25T18:30:00Z",
-      "src": "placeholder.png"
+      "src": "photos/kitchen.png"
     }
   ]
 }

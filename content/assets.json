@@ -1,10 +1,10 @@
 {
-  "_comment": "Central image manifest. Every image the UI shows is looked up here by key. `kind`: stock (fetched from Pexels on first run when PEXELS_API_KEY is set), generated (built by a script), person (portraits fetched by `npm run fetch:people` from randomuser.me; a neutral silhouette shows until the file exists), text. `fallback` shows while `file` is missing.",
+  "_comment": "Central image manifest. Every image the UI shows is looked up here by key. `kind`: stock (fetched from Pexels on first run when PEXELS_API_KEY is set), generated (composed by scripts/make-images.mjs), person (portraits fetched by `npm run fetch:people` from randomuser.me; a neutral silhouette shows until the file exists), text. `fallback` shows while `file` is missing.",
   "assets": {
     "wallpaper.desktop": {
       "kind": "stock",
       "file": "stock/wallpaper-desktop.jpg",
-      "fallback": "generated/bloom-dark.jpg",
+      "fallback": "generated/harbour-fog.png",
       "pexels": {
         "query": "foggy harbour at night long exposure",
         "orientation": "landscape",
@@ -19,7 +19,8 @@
         "query": "halifax nova scotia waterfront",
         "orientation": "landscape",
         "size": "small"
-      }
+      },
+      "fallback": "generated/harbour-fog-light.png"
     },
     "chrome.ntpBackground": {
       "kind": "stock",
@@ -29,7 +30,8 @@
         "query": "atlantic coast fog rocks",
         "orientation": "landscape",
         "size": "large2x"
-      }
+      },
+      "fallback": "generated/harbour-fog.png"
     },
     "chrome.ntpBackgroundCredit": {
       "kind": "text",
@@ -43,7 +45,8 @@
         "query": "field recorder microphone",
         "orientation": "landscape",
         "size": "medium"
-      }
+      },
+      "fallback": "generated/harbour-fog-light.png"
     },
     "pic.family": {
       "kind": "stock",
@@ -53,7 +56,8 @@
         "query": "empty kitchen morning light",
         "orientation": "landscape",
         "size": "large"
-      }
+      },
+      "fallback": "generated/harbour-fog-light.png"
     },
     "people.owner": {
       "kind": "person",

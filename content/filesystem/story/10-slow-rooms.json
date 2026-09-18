@@ -23,7 +23,10 @@
       "src": "audio/af03_locked.wav",
       "size": 118211840,
       "hidden": true,
-      "requires": ["decrypted_excerpt"]
+      "requires": [
+        "decrypted_excerpt"
+      ],
+      "render": "af03"
     },
     {
       "path": "C:/Users/{user}/Documents/Slow Rooms/recordings/2026-03-14_AF_01.wav",
@@ -31,7 +34,8 @@
       "created": "2026-03-14T20:40:00Z",
       "modified": "2026-03-14T20:40:00Z",
       "src": "audio/af01.wav",
-      "size": 61440000
+      "size": 61440000,
+      "render": "af01"
     },
     {
       "path": "C:/Users/{user}/Documents/Slow Rooms/recordings/2026-04-02_AF_02.wav",
@@ -39,7 +43,8 @@
       "created": "2026-04-02T20:12:00Z",
       "modified": "2026-04-02T20:12:00Z",
       "src": "audio/af02.wav",
-      "size": 74240000
+      "size": 74240000,
+      "render": "af02"
     },
     {
       "path": "C:/Users/{user}/Documents/Slow Rooms/ambience/RT_east_corridor_before.wav",
@@ -47,13 +52,16 @@
       "created": "2026-07-09T03:20:00Z",
       "modified": "2026-07-09T03:20:00Z",
       "src": "audio/hum.wav",
-      "size": 96000000
+      "size": 96000000,
+      "render": "hum"
     },
     {
       "path": "C:/Users/{user}/Documents/Slow Rooms/transcripts/2026-05-14_AF_03_transcript.txt",
       "kind": "text",
       "hidden": true,
-      "requires": ["decrypted_excerpt"],
+      "requires": [
+        "decrypted_excerpt"
+      ],
       "created": "2026-05-15T05:30:00Z",
       "modified": "2026-08-10T02:00:00Z",
       "bodyFile": "af03_transcript.txt"
@@ -62,7 +70,9 @@
       "path": "C:/Users/{user}/Documents/Slow Rooms/transcripts/2026-05-14_AF_03_excerpt_transcript.txt",
       "kind": "text",
       "hidden": true,
-      "requires": ["decrypted_excerpt"],
+      "requires": [
+        "decrypted_excerpt"
+      ],
       "created": "2026-08-09T23:00:00Z",
       "modified": "2026-08-09T23:00:00Z",
       "bodyFile": "af03_excerpt.txt"

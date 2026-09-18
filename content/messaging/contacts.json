@@ -14,7 +14,19 @@
       "presence": "lastSeen",
       "lastSeen": "2026-08-30T13:02:00Z",
       "character": "priya",
-      "pinned": true
+      "pinned": true,
+      "responsiveness": {
+        "typical": [
+          1,
+          12
+        ],
+        "instant": 0.45,
+        "distracted": 0.08,
+        "asleep": [
+          0.5,
+          7
+        ]
+      }
     },
     {
       "id": "mateo",
@@ -28,11 +40,28 @@
       "presence": "lastSeen",
       "lastSeen": "2026-08-30T04:15:00Z",
       "character": "mateo",
-      "pinned": true
+      "pinned": true,
+      "responsiveness": {
+        "typical": [
+          0.5,
+          9
+        ],
+        "instant": 0.5,
+        "distracted": 0.1,
+        "asleep": [
+          4,
+          11
+        ],
+        "busy": [
+          17,
+          23
+        ],
+        "tzOffset": -1
+      }
     },
     {
       "id": "mama",
-      "name": "Mam\u00e1",
+      "name": "Mamá",
       "phone": "+1 (506) 384-7712",
       "about": "Dios es bueno",
       "avatar": {
@@ -41,7 +70,19 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-30T12:20:00Z",
-      "character": "lucia"
+      "character": "lucia",
+      "responsiveness": {
+        "typical": [
+          5,
+          70
+        ],
+        "instant": 0.15,
+        "distracted": 0.15,
+        "asleep": [
+          22,
+          6.5
+        ]
+      }
     },
     {
       "id": "jonah",
@@ -54,7 +95,23 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-29T23:48:00Z",
-      "character": "jonah"
+      "character": "jonah",
+      "responsiveness": {
+        "typical": [
+          20,
+          180
+        ],
+        "instant": 0.08,
+        "distracted": 0.25,
+        "asleep": [
+          23,
+          6.5
+        ],
+        "busy": [
+          7,
+          19
+        ]
+      }
     },
     {
       "id": "nadia",
@@ -67,7 +124,23 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-28T21:10:00Z",
-      "character": null
+      "character": "nadia",
+      "responsiveness": {
+        "typical": [
+          30,
+          300
+        ],
+        "instant": 0.05,
+        "distracted": 0.2,
+        "asleep": [
+          23,
+          7
+        ],
+        "busy": [
+          9,
+          18
+        ]
+      }
     },
     {
       "id": "colin",
@@ -80,20 +153,48 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-27T17:33:00Z",
-      "character": null
+      "character": "colin",
+      "responsiveness": {
+        "typical": [
+          25,
+          240
+        ],
+        "instant": 0.05,
+        "distracted": 0.2,
+        "asleep": [
+          23,
+          7
+        ],
+        "busy": [
+          9,
+          17
+        ]
+      }
     },
     {
       "id": "ilse",
       "name": "Ilse (camera)",
       "phone": "+1 (902) 412-0730",
-      "about": "\ud83c\udfa5",
+      "about": "🎥",
       "avatar": {
         "initials": "I",
         "color": "#8a7a5d"
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-26T14:00:00Z",
-      "character": null
+      "character": "ilse",
+      "responsiveness": {
+        "typical": [
+          15,
+          180
+        ],
+        "instant": 0.12,
+        "distracted": 0.15,
+        "asleep": [
+          1,
+          8
+        ]
+      }
     },
     {
       "id": "liam",
@@ -106,7 +207,19 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-22T02:14:00Z",
-      "character": null
+      "character": "liam",
+      "responsiveness": {
+        "typical": [
+          60,
+          900
+        ],
+        "instant": 0.04,
+        "distracted": 0.35,
+        "asleep": [
+          0,
+          9
+        ]
+      }
     },
     {
       "id": "landlord",
@@ -119,7 +232,19 @@
       },
       "presence": "lastSeen",
       "lastSeen": "2026-08-30T00:20:00Z",
-      "character": null
+      "character": "dave",
+      "responsiveness": {
+        "typical": [
+          45,
+          600
+        ],
+        "instant": 0.05,
+        "distracted": 0.3,
+        "asleep": [
+          21,
+          6.5
+        ]
+      }
     },
     {
       "id": "slowrooms",
@@ -135,11 +260,23 @@
         "initials": "SR",
         "color": "#7d6b8f"
       },
-      "character": null
+      "character": null,
+      "responsiveness": {
+        "typical": [
+          10,
+          150
+        ],
+        "instant": 0.1,
+        "distracted": 0.2,
+        "asleep": [
+          23,
+          7
+        ]
+      }
     },
     {
       "id": "castellanos",
-      "name": "Castellanos \ud83c\udfe0",
+      "name": "Castellanos 🏠",
       "isGroup": true,
       "participants": [
         "mama",
@@ -150,7 +287,19 @@
         "initials": "C",
         "color": "#6b8f5e"
       },
-      "character": null
+      "character": null,
+      "responsiveness": {
+        "typical": [
+          5,
+          90
+        ],
+        "instant": 0.2,
+        "distracted": 0.12,
+        "asleep": [
+          22,
+          6.5
+        ]
+      }
     },
     {
       "id": "wren",
@@ -163,7 +312,19 @@
       },
       "presence": "online",
       "character": "wren",
-      "hidden": true
+      "hidden": true,
+      "responsiveness": {
+        "typical": [
+          1,
+          18
+        ],
+        "instant": 0.35,
+        "distracted": 0.1,
+        "asleep": [
+          2,
+          8
+        ]
+      }
     },
     {
       "id": "kavanagh",
@@ -175,7 +336,19 @@
       },
       "character": "kavanagh",
       "hidden": true,
-      "_comment": "email-only character; never unlocked in WhatsApp"
+      "_comment": "email-only character; never unlocked in WhatsApp",
+      "responsiveness": {
+        "typical": [
+          45,
+          420
+        ],
+        "instant": 0.02,
+        "distracted": 0.2,
+        "asleep": [
+          22,
+          6
+        ]
+      }
     },
     {
       "id": "maureen",
@@ -186,7 +359,19 @@
         "color": "#555"
       },
       "character": "maureen",
-      "hidden": true
+      "hidden": true,
+      "responsiveness": {
+        "typical": [
+          60,
+          720
+        ],
+        "instant": 0.02,
+        "distracted": 0.25,
+        "asleep": [
+          22,
+          6.5
+        ]
+      }
     }
   ]
 }

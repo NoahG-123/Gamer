@@ -19,11 +19,12 @@
     "package:linux": "npm run build && electron-builder --linux dir --config electron-builder.yml",
     "fetch:assets": "node scripts/fetch-assets.mjs",
     "extract:icons": "node scripts/extract-icons.mjs",
-    "generate:wallpaper": "node scripts/make-wallpaper.mjs",
     "make:icon": "node scripts/make-icon.mjs",
     "make:audio": "node scripts/make-audio.mjs",
     "fetch:people": "node scripts/fetch-people.mjs",
-    "play": "node scripts/play.mjs"
+    "play": "node scripts/play.mjs",
+    "fetch:voices": "node scripts/fetch-voices.mjs",
+    "make:images": "node scripts/make-images.mjs"
   },
   "dependencies": {
     "@fluentui/react-icons": "^2.0.341",

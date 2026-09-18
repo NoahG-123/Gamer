@@ -72,6 +72,9 @@ function DesktopInner() {
 
   const onLive = useCallback((ev: LiveEvent) => {
     if (ev.type === "fs.changed" || ev.type === "flag" || ev.type === "trigger.fired") setRefreshTick((t) => t + 1);
+    // Something on this machine opened up that was not open before.
+    if (ev.type === "fs.changed" && ev.reason === "revealed") sys.play("discovery");
+    if (ev.type === "contact.unlocked") sys.play("unlock");
     if (ev.type === "ui.open") launch(String(ev.app) as AppId, (ev.props as Record<string, unknown>) ?? {});
     if (ev.type === "ui.notify") {
       const t: Toast = { id: Date.now() + Math.random(), app: String(ev.app), title: String(ev.title), text: String(ev.text), props: (ev.props as Record<string, unknown>) ?? {}, at: Date.now() };

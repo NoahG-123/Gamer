@@ -7,7 +7,9 @@ import fs from "node:fs";
 import { db } from "./db";
 import { loadContent, contentPath } from "./content";
 import { publish } from "./bus";
-import { allFlags, isVisible, recordEvent, revealedIds, registerEffectHandler } from "./state";
+import { allFlags, isVisible, recordEvent, revealedIds, registerEffectHandler, onTick } from "./state";
+import { enqueue, dueReplies, markDone, scheduleFor } from "./replies";
+import { getSettings } from "./settings";
 import { chat, BudgetExceededError, NotConfiguredError } from "./llm/deepseek";
 import { loadCharacter } from "./llm/characters";
 import { buildSystemPrompt } from "./messaging";
@@ -127,33 +129,52 @@ function parseAddress(s: string): Address {
   return m ? { name: m[1].trim() || undefined, email: m[2].trim() } : { email: s.trim() };
 }
 
-const replyDelays = new Map<string, number>();
-
-/** LLM email reply from a contact whose character config has an `email` address. */
+/**
+ * A reply to an email the player sent. The moment it lands is stored, not held in memory,
+ * so someone who takes four hours to answer still answers if the machine is closed and
+ * opened again — and the model is only asked when the reply is actually due.
+ */
 async function emailReplyPipeline(threadId: string, to: Address, subject: string, sent: MailMessage): Promise<void> {
-  const contacts = loadContent<{ contacts: { id: string; name: string; email?: string; character?: string | null }[] }>("messaging/contacts.json").contacts;
+  const contacts = loadContent<{ contacts: { id: string; name: string; email?: string; character?: string | null; responsiveness?: Parameters<typeof scheduleFor>[0] }[] }>("messaging/contacts.json").contacts;
   const contact = contacts.find((c) => c.email && c.email.toLowerCase() === to.email.toLowerCase() && c.character);
   if (!contact) return;
   const character = loadCharacter(contact.character!);
   if (!character) return;
+  const [lo, hi] = character.emailDelayMinutes ?? [8, 90];
+  const due = scheduleFor(contact.responsiveness ?? { typical: [lo, hi], instant: 0.02, distracted: 0.25, asleep: [23, 7] });
+  enqueue({ chatId: threadId, sender: contact.id, dueAt: due, kind: "mail", meta: { contactId: contact.id, subject, replyTo: sent.from.email } });
+}
+
+async function writeEmailReply(threadId: string, contactId: string, subject: string, replyTo: string): Promise<void> {
+  const contacts = loadContent<{ contacts: { id: string; name: string; email?: string; character?: string | null }[] }>("messaging/contacts.json").contacts;
+  const contact = contacts.find((c) => c.id === contactId);
+  const character = contact?.character ? loadCharacter(contact.character) : null;
+  if (!contact?.email || !character) return;
   const thread = getThread(threadId);
-  const history = (thread?.messages ?? []).slice(-12).map((m) => ({ role: m.from.email === sent.from.email ? ("user" as const) : ("assistant" as const), content: `Subject: ${thread?.subject ?? subject}\n\n${m.body}` }));
-  if (!history.length) history.push({ role: "user", content: `Subject: ${subject}\n\n${sent.body}` });
-  const system = buildSystemPrompt(character, { channel: "email" });
+  const history = (thread?.messages ?? []).slice(-12).map((m) => ({ role: m.from.email === replyTo ? ("user" as const) : ("assistant" as const), content: `Subject: ${thread?.subject ?? subject}\n\n${m.body}` }));
+  if (!history.length) return;
   let text: string | null = null;
   try {
-    const res = await chat({ messages: history, system, model: character.model, temperature: character.temperature, maxTokens: Math.max(character.maxTokens ?? 300, 500), characterId: character.id });
+    const res = await chat({ messages: history, system: buildSystemPrompt(character, { channel: "email" }), model: character.model, temperature: character.temperature, maxTokens: Math.max(character.maxTokens ?? 300, 500), characterId: character.id });
     text = res.content || null;
   } catch (e) {
     if (!(e instanceof BudgetExceededError || e instanceof NotConfiguredError)) console.error("[mail] LLM error:", (e as Error).message);
     return;
   }
   if (!text) return;
-  // People answer email slowly. Second and later replies in a burst come a little faster.
-  const n = (replyDelays.get(contact.id) ?? 0) + 1; replyDelays.set(contact.id, n);
-  const [lo, hi] = character.emailDelayMinutes ?? [2, 9];
-  const delay = (lo + Math.random() * (hi - lo)) * 60_000 / Math.min(n, 3);
-  setTimeout(() => { try { receiveMail(threadId, { from: { name: contact.name, email: contact.email! }, to: [sent.from], body: text! }); } catch (e) { console.error("[mail] reply failed:", e); } }, delay);
+  receiveMail(threadId, { from: { name: contact.name, email: contact.email }, to: [{ email: replyTo }], body: text });
 }
+
+/** Called by the clock: send any email replies whose time has come. */
+export function runDueMail(): void {
+  const s = getSettings();
+  if (!s.wifi || s.airplane) return; // nothing arrives while this machine is off the network
+  for (const p of dueReplies()) {
+    if (p.kind !== "mail") continue;
+    markDone(p.id);
+    void writeEmailReply(p.chatId, String(p.meta.contactId ?? p.sender), String(p.meta.subject ?? ""), String(p.meta.replyTo ?? "")).catch((e) => console.error("[mail] reply failed:", e));
+  }
+}
+onTick(runDueMail);
 
 registerEffectHandler("deliver_mail", () => { /* reveal already published; nothing else needed */ });

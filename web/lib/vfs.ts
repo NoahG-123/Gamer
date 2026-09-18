@@ -14,7 +14,7 @@ import { dressingKind } from "./synth";
 export type FileKind = "text" | "html" | "image" | "pdf" | "audio";
 
 export interface DressingEntry { path: string; dir?: boolean; size?: number; created: string; modified: string; hidden?: boolean; system?: boolean; dressing?: boolean }
-export interface StoryFile { path: string; kind: FileKind; size?: number; created: string; modified: string; body?: string; src?: string; hidden?: boolean; requires?: string[] }
+export interface StoryFile { path: string; kind: FileKind; size?: number; created: string; modified: string; body?: string; src?: string; /** Id in content/audio/recordings.json: the file is rendered while it plays rather than stored. */ render?: string; hidden?: boolean; requires?: string[] }
 
 export interface VfsNode {
   name: string;

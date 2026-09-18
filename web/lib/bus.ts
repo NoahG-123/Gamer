@@ -7,7 +7,7 @@ export type BusEvent =
   | { type: "typing"; chatId: string; typing: boolean }
   | { type: "presence"; contactId: string; presence: string; lastSeen?: string }
   | { type: "contact.unlocked"; contactId: string }
-  | { type: "fs.changed"; paths: string[] }
+  | { type: "fs.changed"; paths: string[]; reason?: "revealed" | "changed" }
   | { type: "trigger.fired"; triggerId: string }
   | { type: "flag"; key: string; value: unknown }
   | { type: "mail.changed"; ids: string[] }

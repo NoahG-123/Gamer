@@ -4,6 +4,7 @@ import { getStoryFile, assetPath, getNode, resolveText, contentSeed } from "@/li
 import { getOverlay } from "@/lib/fsmut";
 import { mimeFor } from "@/lib/http";
 import { dressingKind, synthWav, synthPng, synthPdf, junkText } from "@/lib/synth";
+import { getRecording, recordingBytes, recordingStream } from "@/lib/audio";
 export const dynamic = "force-dynamic";
 
 /**
@@ -23,6 +24,25 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ parts: stri
   const headers: Record<string, string> = { "cache-control": "no-store", "content-disposition": `inline; filename="${name.replace(/"/g, "")}"` };
 
   const f = getStoryFile(p);
+  if (f?.render) {
+    // A recording: generated as it plays, so any point in it can be reached instantly.
+    const rec = getRecording(f.render);
+    if (rec) {
+      const total = recordingBytes(rec);
+      const range = req.headers.get("range");
+      const m = range?.match(/bytes=(\d*)-(\d*)/);
+      const start = m && m[1] ? Math.min(Number(m[1]), total - 1) : 0;
+      const end = m && m[2] ? Math.min(Number(m[2]), total - 1) : total - 1;
+      const common = { "content-type": "audio/wav", "accept-ranges": "bytes", "cache-control": "no-store", "content-disposition": headers["content-disposition"] };
+      if (m) {
+        return new Response(recordingStream(rec, start, end), {
+          status: 206,
+          headers: { ...common, "content-range": `bytes ${start}-${end}/${total}`, "content-length": String(end - start + 1) },
+        });
+      }
+      return new Response(recordingStream(rec, 0, total - 1), { headers: { ...common, "content-length": String(total) } });
+    }
+  }
   if (f) {
     // A story file's declared kind wins over its extension (an .html "letter" named .pdf still renders as a page).
     headers["content-type"] = f.kind === "html" ? "text/html; charset=utf-8" : f.kind === "text" ? "text/plain; charset=utf-8" : mimeFor(name);

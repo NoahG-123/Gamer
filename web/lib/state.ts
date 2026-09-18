@@ -77,7 +77,7 @@ export function isRevealed(kind: string, id: string): boolean {
 
 export function reveal(kind: string, id: string): void {
   db().prepare("INSERT OR IGNORE INTO revealed(kind, id) VALUES (?, ?)").run(kind, id);
-  if (kind === "file") publish({ type: "fs.changed", paths: [id] });
+  if (kind === "file") publish({ type: "fs.changed", paths: [id], reason: "revealed" });
   if (kind === "contact") publish({ type: "contact.unlocked", contactId: id });
 }
 
@@ -175,12 +175,21 @@ export function presenceOverride(contactId: string): { presence: "online" | "off
   return row ? JSON.parse(row.value) : null;
 }
 
-type G = typeof globalThis & { __foundClock?: ReturnType<typeof setInterval> };
-/** Periodic evaluation so `since` (time-based) triggers fire while the machine sits idle. */
+type G = typeof globalThis & { __foundClock?: ReturnType<typeof setInterval>; __foundTicks?: (() => void)[] };
+/** Other modules (messaging, mail) ask to be woken by the same clock, without importing each other. */
+export function onTick(fn: () => void): void {
+  const g = globalThis as G;
+  g.__foundTicks = g.__foundTicks ?? [];
+  if (!g.__foundTicks.includes(fn)) g.__foundTicks.push(fn);
+}
+/** Periodic evaluation so `since` (time-based) triggers fire, and due replies land, while the machine sits idle. */
 export function startClock(): void {
   const g = globalThis as G;
   if (g.__foundClock) return;
-  g.__foundClock = setInterval(() => { try { evaluateTriggers(); } catch (e) { console.error("[state] clock:", e); } }, 20_000);
+  g.__foundClock = setInterval(() => {
+    try { evaluateTriggers(); } catch (e) { console.error("[state] clock:", e); }
+    for (const fn of g.__foundTicks ?? []) { try { fn(); } catch (e) { console.error("[state] tick:", e); } }
+  }, 20_000);
   if (typeof g.__foundClock === "object" && "unref" in g.__foundClock) g.__foundClock.unref();
 }
 
