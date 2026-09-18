@@ -228,3 +228,32 @@ export function voiceStatus(): { total: number; present: number } {
   }
   return { total, present };
 }
+
+/**
+ * A waveform summary: the loudest positive and negative value in each bucket across the
+ * whole recording. Sampled rather than exhaustive, so even a 47-minute file draws at once.
+ */
+export function peakBuckets(rec: Recording, buckets: number): [number, number][] {
+  const total = Math.floor(rec.seconds * SR);
+  const per = Math.max(1, Math.floor(total / buckets));
+  const step = Math.max(1, Math.floor(per / 220)); // sample each bucket rather than read all of it
+  const clips = clipsFor(rec);
+  const out: [number, number][] = [];
+  for (let b = 0; b < buckets; b++) {
+    const from = b * per;
+    const to = Math.min(total, from + per);
+    let lo = 0, hi = 0;
+    const active = clips.filter((c) => c.start < to && c.start + c.samples.length > from);
+    for (let i = from; i < to; i += step) {
+      let v = bedSample(rec.bed, i);
+      for (const c of active) {
+        const j = i - c.start;
+        if (j >= 0 && j < c.samples.length) v += c.samples[j] * 0.9;
+      }
+      if (v > hi) hi = v;
+      if (v < lo) lo = v;
+    }
+    out.push([Number(lo.toFixed(3)), Number(hi.toFixed(3))]);
+  }
+  return out;
+}

@@ -204,6 +204,12 @@ export function Explorer({ win }: { win: WinState }) {
     setSelected(new Set());
   };
   const doEmptyBin = () => os.fs.confirm({ title: "Delete Multiple Items", text: `Are you sure you want to permanently delete these ${items.length} items?`, ok: "Yes", onOk: async () => { await api.emptyBin(); refresh(); } });
+  const shareMenu = (x: number, y: number, n: VfsNode) => menu.open({ x, y, items: [
+    { label: "Send with WhatsApp", icon: <A.WhatsAppIcon size={16} />, onClick: () => os.launch("whatsapp", { share: n.name }) },
+    { label: "Send with Gmail", icon: <A.GmailIcon size={16} />, onClick: () => os.openUrl("https://mail.google.com/mail/u/0/#inbox?compose=new") },
+    { type: "sep" },
+    { label: "Copy as path", icon: <F.Link />, onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
+  ] });
   const showProperties = (n: VfsNode) => wm.open("dialog", { props: { kind: "properties", name: n.name, ext: n.ext, path: n.path, node: n }, w: 400, h: 520, resizable: false });
 
   // ---- context menus ----
@@ -214,7 +220,7 @@ export function Explorer({ win }: { win: WinState }) {
       { icon: <F.Cut />, label: "Cut", onClick: () => doCopy(n, true) },
       { icon: <F.Copy />, label: "Copy", onClick: () => doCopy(n) },
       { icon: <F.Rename />, label: "Rename", onClick: () => os.fs.rename(n) },
-      { icon: <F.Share />, label: "Share" },
+      { icon: <F.Share />, label: "Share", onClick: () => shareMenu(e.clientX, e.clientY, n) },
       { icon: <F.Delete />, label: "Delete", onClick: () => doDelete(n) },
     ] };
     if (inBin) {
@@ -237,7 +243,6 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "Pin to Quick access", icon: <F.Pin /> },
       { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
-      { label: "Compress to...", icon: <F.Zip />, children: [{ label: "ZIP File" }, { label: "7z File" }, { label: "TAR File" }, { type: "sep" }, { label: "Additional options" }] },
       { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
       { label: "Open in Terminal", icon: <F.Terminal />, onClick: () => os.launch("terminal", { cwd: n.path }) },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
@@ -249,13 +254,14 @@ export function Explorer({ win }: { win: WinState }) {
       { label: "Open with", icon: <span />, children: [
         { label: "Notepad", onClick: () => void os.openWith(n.path, "notepad") },
         { label: "Google Chrome", onClick: () => void os.openWith(n.path, "chrome") },
-        { label: "VLC media player", onClick: () => void os.openWith(n.path, "player") },
-        { label: "Photos", onClick: () => void os.openWith(n.path, "image") },
+        { label: "Photos", onClick: () => os.launch("photos", { path: n.path, nonce: Date.now() }) },
+        { label: "Paint", onClick: () => os.launch("paint", { path: n.path, nonce: Date.now() }) },
+        { label: "REAPER", onClick: () => os.launch("audio", { path: n.path, nonce: Date.now() }) },
+        { label: "Windows Media Player", onClick: () => void os.openWith(n.path, "player") },
       ] },
       ...(/^(jpg|jpeg|png|bmp|webp|heic)$/.test(n.ext) ? [{ label: "Set as desktop background", icon: <F.ImageIcon />, onClick: () => os.fs.setWallpaper(n.path) } as MenuItem] : []),
       { label: "Add to Favorites", icon: <F.Star /> },
       { type: "sep" },
-      { label: "Compress to...", icon: <F.Zip />, children: [{ label: "ZIP File" }, { label: "7z File" }, { label: "TAR File" }, { type: "sep" }, { label: "Additional options" }] },
       { label: "Copy as path", icon: <F.Link />, shortcut: "Ctrl+Shift+C", onClick: () => navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}) },
       { label: "Properties", icon: <F.Properties />, shortcut: "Alt+Enter", onClick: () => showProperties(n) },
       { type: "sep" },
@@ -351,7 +357,7 @@ export function Explorer({ win }: { win: WinState }) {
           <button className={styles.cmdIcon} title="Rename (F2)" disabled={selected.size !== 1 || inBin} onClick={() => { const n = sorted.find((x) => selected.has(x.path)); if (n) os.fs.rename(n); }}><F.Rename size={18} /></button>
           {inBin
             ? <button className={styles.cmdText} disabled={!selected.size} onClick={() => void doRestore()}><F.RestoreIcon size={16} /><span>Restore</span></button>
-            : <button className={styles.cmdIcon} title="Share" disabled={!selected.size}><F.Share size={18} /></button>}
+            : <button className={styles.cmdIcon} title="Share" disabled={selected.size !== 1} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); const n = sorted.find((x) => selected.has(x.path)); if (n) shareMenu(r.left, r.bottom + 4, n); }}><F.Share size={18} /></button>}
           <button className={styles.cmdIcon} title="Delete (Delete)" disabled={!selected.size} onClick={() => doDelete()}><F.Delete size={18} /></button>
           {inBin && <button className={styles.cmdText} disabled={!items.length} onClick={doEmptyBin}><F.Delete size={16} /><span>Empty Recycle Bin</span></button>}
           <div className={styles.vsep} />

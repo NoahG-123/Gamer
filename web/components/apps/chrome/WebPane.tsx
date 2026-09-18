@@ -10,6 +10,7 @@ export interface PaneEvents {
   onFavicon?: (url: string | null) => void;
   onContextMenu?: (params: { x: number; y: number; linkURL?: string; srcURL?: string; selectionText?: string; isEditable?: boolean; mediaType?: string }) => void;
   onFocus?: () => void;
+  onFound?: (active: number, total: number) => void;
 }
 
 export interface PaneHandle {
@@ -24,10 +25,14 @@ export interface PaneHandle {
   focus: () => void;
   /** Chromium id of this tab, used to open devtools on it. */
   webContentsId: () => number | null;
+  setZoom: (factor: number) => void;
+  find: (text: string, forward?: boolean) => void;
+  stopFind: () => void;
 }
 
 type WebviewEl = HTMLElement & {
   loadURL: (u: string) => Promise<void>; reload: () => void; stop: () => void; goBack: () => void; goForward: () => void; canGoBack: () => boolean; canGoForward: () => boolean; getURL: () => string; src: string; focus: () => void; getWebContentsId: () => number;
+  setZoomFactor: (f: number) => void; findInPage: (t: string, o?: { forward?: boolean; findNext?: boolean }) => number; stopFindInPage: (a: string) => void;
 };
 
 /**
@@ -42,6 +47,7 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
   const ev = useRef(events); ev.current = events;
   const iframeUrl = useRef(resolveForFrame(initialUrl));
   const canBackRef = useRef(false);
+  const firstFind = useRef(false);
 
   React.useImperativeHandle(ref, () => ({
     loadURL: (u) => { if (h.isElectron) wvRef.current?.loadURL(u).catch(() => {}); else { iframeUrl.current = resolveForFrame(u); if (ifRef.current) ifRef.current.src = iframeUrl.current; ev.current.onStartLoading?.(); ev.current.onNavigate?.(u, false); canBackRef.current = true; } },
@@ -54,6 +60,9 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
     getURL: () => (h.isElectron ? wvRef.current?.getURL() ?? "" : iframeUrl.current),
     focus: () => { if (h.isElectron) wvRef.current?.focus(); else ifRef.current?.focus(); },
     webContentsId: () => { try { return h.isElectron ? wvRef.current?.getWebContentsId() ?? null : null; } catch { return null; } },
+    setZoom: (factor) => { try { if (h.isElectron) wvRef.current?.setZoomFactor(factor); else if (ifRef.current?.contentDocument) ifRef.current.contentDocument.body.style.zoom = String(factor); } catch { /* page not ready */ } },
+    find: (text, forward = true) => { try { if (h.isElectron && text) wvRef.current?.findInPage(text, { forward, findNext: !firstFind.current }); firstFind.current = true; } catch { /* page not ready */ } },
+    stopFind: () => { try { firstFind.current = false; if (h.isElectron) wvRef.current?.stopFindInPage("clearSelection"); } catch { /* page not ready */ } },
   }), [h.isElectron, resolveForFrame]);
 
   useEffect(() => {
@@ -71,6 +80,7 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
       on("page-favicon-updated", (e: { favicons: string[] }) => ev.current.onFavicon?.(e.favicons?.[0] ?? null)),
       on("context-menu", (e: { params: { x: number; y: number; linkURL: string; srcURL: string; selectionText: string; isEditable: boolean; mediaType: string } }) => ev.current.onContextMenu?.(e.params)),
       on("focus", () => ev.current.onFocus?.()),
+      on("found-in-page", (e: { result: { activeMatchOrdinal: number; matches: number } }) => ev.current.onFound?.(e.result.activeMatchOrdinal, e.result.matches)),
     ];
     return () => offs.forEach((f) => f());
   }, [h.isElectron]);

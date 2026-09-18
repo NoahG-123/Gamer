@@ -27,20 +27,21 @@ export function dialogForFile(name: string, ext: string): { kind: DialogKind; w:
   return { kind: "open-with", w: 460, h: 560 };
 }
 
-interface AppChoice { label: string; icon: React.ReactNode; open: OpenWith | "store" }
+interface AppChoice { label: string; icon: React.ReactNode; open: OpenWith | "store" | "photos" | "paint" | "audio" }
 const CHROME: AppChoice = { label: "Google Chrome", icon: <A.ChromeIcon size={28} />, open: "chrome" };
 const EDGE: AppChoice = { label: "Microsoft Edge", icon: <A.EdgeIcon size={28} />, open: "chrome" };
 const NOTEPAD: AppChoice = { label: "Notepad", icon: <A.NotepadIcon size={28} />, open: "notepad" };
 const NPP: AppChoice = { label: "Notepad++ : a free (GNU) source code editor", icon: <A.NotepadPlusIcon size={28} />, open: "notepad" };
-const VLC: AppChoice = { label: "VLC media player", icon: <A.VlcIcon size={28} />, open: "player" };
-const PAINT: AppChoice = { label: "Paint", icon: <A.PaintIcon size={28} />, open: "image" };
-const PHOTOS: AppChoice = { label: "Photos", icon: <A.PhotosIcon size={28} />, open: "image" };
-const MORE: AppChoice[] = [{ label: "WordPad", icon: <A.WordIcon size={28} />, open: "notepad" }, VLC, PAINT, { label: "Windows Media Player Legacy", icon: <A.GenericAppIcon size={28} />, open: "player" }];
+const VLC: AppChoice = { label: "Windows Media Player", icon: <A.VlcIcon size={28} />, open: "player" };
+const REAPER: AppChoice = { label: "REAPER", icon: <A.GenericAppIcon size={28} />, open: "audio" };
+const PAINT: AppChoice = { label: "Paint", icon: <A.PaintIcon size={28} />, open: "paint" };
+const PHOTOS: AppChoice = { label: "Photos", icon: <A.PhotosIcon size={28} />, open: "photos" };
+const MORE: AppChoice[] = [VLC, PAINT, PHOTOS, REAPER, NOTEPAD, CHROME];
 
 function appsFor(ext: string): AppChoice[] {
   if (["jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "tif", "svg"].includes(ext)) return [PHOTOS, PAINT, CHROME, EDGE];
   if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "odt", "rtf", "csv"].includes(ext)) return [CHROME, EDGE, NOTEPAD, NPP];
-  if (["mp3", "mp4", "mkv", "mov", "m4a", "wav", "avi", "webm"].includes(ext)) return [VLC, CHROME, EDGE];
+  if (["mp3", "mp4", "mkv", "mov", "m4a", "wav", "avi", "webm", "flac", "aif", "aiff"].includes(ext)) return [VLC, REAPER, CHROME, EDGE];
   return [NOTEPAD, NPP, CHROME];
 }
 
@@ -102,6 +103,7 @@ export function DialogWindow({ win }: { win: WinState }) {
         <OpenWithList apps={appsFor(ext)} ext={ext} onChoose={(c) => {
           close();
           if (c.open === "store") os.openUrl(`https://apps.microsoft.com/search?query=${encodeURIComponent("." + ext)}`);
+          else if (c.open === "photos" || c.open === "paint" || c.open === "audio") os.launch(c.open, { path, nonce: Date.now() });
           else os.openWith(path, c.open);
         }} />
       </div>

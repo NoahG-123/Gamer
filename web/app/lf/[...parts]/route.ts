@@ -61,6 +61,11 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ parts: stri
   // A file that arrived through the browser's download manager: real bytes in the app's data folder.
   const ov = getOverlay(node.path);
   if (ov?.disk && fs.existsSync(ov.disk)) return new Response(new Uint8Array(fs.readFileSync(ov.disk)), { headers: { ...headers, "content-type": mimeFor(name) } });
+  // Something the player drew or captured: stored as a data URL, served as the image it is.
+  if (ov?.body?.startsWith("data:")) {
+    const m = ov.body.match(/^data:([^;]+);base64,(.*)$/s);
+    if (m) return new Response(new Uint8Array(Buffer.from(m[2], "base64")), { headers: { ...headers, "content-type": m[1] } });
+  }
 
   // Text the player saved (or filler text) is served as itself.
   if (!as || as === "text") {

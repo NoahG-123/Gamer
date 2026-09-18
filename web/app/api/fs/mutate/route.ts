@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * merged on top of it, so they survive restarts exactly like a real disk would.
  */
 type Op =
-  | { op: "save"; path: string; text: string }
+  | { op: "save"; path: string; text: string; kind?: string }
   | { op: "new"; parent: string; kind: "text" | "folder"; name?: string }
   | { op: "rename"; path: string; name: string }
   | { op: "delete"; paths: string[]; permanent?: boolean }
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       const p = normalizePath(body.path);
       const parent = parentPath(p);
       if (!parent || !getNode(parent)?.dir) return bad("the folder this file lives in no longer exists", 409);
-      writeFile(p, body.text ?? "");
+      writeFile(p, body.text ?? "", { kind: body.kind ?? "text" });
       recordEvent("file.saved", p, { length: (body.text ?? "").length });
       return json({ ok: true, path: p, node: getNode(p) });
     }

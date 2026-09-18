@@ -15,7 +15,13 @@ function filterBookmarks(list: Bookmark[], flags: Record<string, unknown>, revea
 export async function GET() {
   const flags = allFlags();
   const revealed = revealedIds("generic");
-  const bookmarks = filterBookmarks(loadContent<BookmarksFile>("browser/bookmarks.json").bar, flags, revealed);
+  const stored = db().prepare("SELECT key, value FROM kv WHERE key IN ('bookmarks:added','bookmarks:removed')").all() as { key: string; value: string }[];
+  const added = JSON.parse(stored.find((r) => r.key === "bookmarks:added")?.value ?? "[]") as Bookmark[];
+  const gone = new Set(JSON.parse(stored.find((r) => r.key === "bookmarks:removed")?.value ?? "[]") as string[]);
+  const bookmarks = [
+    ...filterBookmarks(loadContent<BookmarksFile>("browser/bookmarks.json").bar, flags, revealed).filter((b) => !b.url || !gone.has(b.url)),
+    ...added,
+  ];
   const seeded = loadContent<HistoryFile>("browser/history.json").entries;
   const runtime = db().prepare("SELECT url, title, COUNT(*) AS visits, MAX(at) AS last FROM browser_history GROUP BY url ORDER BY last DESC LIMIT 300").all() as { url: string; title: string; visits: number; last: string }[];
   const merged = new Map<string, { url: string; title: string; visits: number }>();

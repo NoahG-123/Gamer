@@ -205,7 +205,7 @@ export function Settings({ win }: { win: WinState }) {
           <h2 className={styles.h2}>Accounts</h2>
           <Row icon={<A.UserAvatar size={20} />} title={os.profile.displayName} sub={os.profile.accountEmail} right={<span className={styles.value}>Administrator</span>} />
           <div className={styles.group}>Sign-in options</div>
-          <Row title="Password" sub="Signing in requires the account password" right={<span className={styles.value}>Set</span>} />
+          <Row title="Password" sub="This account signs in automatically. Locking the screen does not ask for one." right={<span className={styles.value}>Not required</span>} />
           <Row title="Windows Hello" sub="This device does not have a camera or fingerprint reader." right={<span className={styles.value}>Unavailable</span>} />
           <div className={styles.note}>Changing the password for this account is not available from here.</div>
         </>

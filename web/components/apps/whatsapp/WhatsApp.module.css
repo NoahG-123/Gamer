@@ -78,3 +78,15 @@
 .input::placeholder { color: var(--wa-text-2); }
 .sendBtn { color: var(--wa-text); }
 .inactive .landing { opacity: .98; }
+
+.emojiPicker { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; padding: 8px 12px; background: var(--wa-panel, #202c33); border-top: 1px solid rgba(255,255,255,.07); max-height: 180px; overflow: auto; }
+.emojiBtn { all: unset; display: flex; align-items: center; justify-content: center; height: 30px; border-radius: 4px; cursor: default; font-size: 18px; }
+.emojiBtn:hover { background: rgba(255,255,255,.08); }
+.notice { padding: 10px 16px; background: rgba(0,0,0,.35); color: #d6dbdf; font-size: 12.5px; border-top: 1px solid rgba(255,255,255,.06); cursor: default; }
+.newChat { flex: 1; overflow: auto; }
+.newChatHead { padding: 12px 16px 8px; font-size: 13px; color: #8696a0; }
+.newChatRow { all: unset; display: flex; align-items: center; gap: 12px; padding: 8px 14px; cursor: default; width: calc(100% - 28px); }
+.newChatRow:hover { background: rgba(255,255,255,.04); }
+.newChatRow span { display: flex; flex-direction: column; min-width: 0; }
+.newChatRow b { font-size: 14px; font-weight: 400; }
+.newChatRow small { font-size: 12px; color: #8696a0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

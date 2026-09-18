@@ -13,26 +13,22 @@ import { ALL_APPS, AppEntry } from "./Panels";
 interface Tile { label: string; icon: React.ReactNode; app?: AppId; url?: string }
 
 const TILES: Tile[] = [
-  { label: "Spotify", icon: <A.SpotifyIcon size={32} /> },
-  { label: "Microsoft Edge", icon: <A.EdgeIcon size={32} /> },
-  { label: "Word", icon: <A.WordIcon size={32} /> },
-  { label: "Excel", icon: <A.ExcelIcon size={32} /> },
-  { label: "PowerPoint", icon: <A.PowerPointIcon size={32} /> },
-  { label: "Gmail", icon: <A.GmailIcon size={32} />, app: "chrome", url: "https://mail.google.com/mail/u/0/#inbox" },
-  { label: "Google Calendar", icon: <A.CalendarIcon size={32} />, app: "chrome", url: "https://calendar.google.com/calendar/u/0/r" },
-  { label: "Microsoft Store", icon: <A.StoreIcon size={32} /> },
-  { label: "Photos", icon: <A.PhotosIcon size={32} /> },
-  { label: "Settings", icon: <A.SettingsIcon size={32} /> },
   { label: "Google Chrome", icon: <A.ChromeIcon size={32} />, app: "chrome" },
   { label: "WhatsApp", icon: <A.WhatsAppIcon size={32} />, app: "whatsapp" },
-  { label: "Xbox", icon: <A.XboxIcon size={32} /> },
-  { label: "Calculator", icon: <A.CalculatorIcon size={32} /> },
-  { label: "Clock", icon: <A.ClockIcon size={32} /> },
-  { label: "Notepad", icon: <A.NotepadIcon size={32} />, app: "notepad" },
-  { label: "Terminal", icon: <A.TerminalAppIcon size={32} />, app: "terminal" },
-  { label: "REAPER", icon: <A.GenericAppIcon size={32} /> },
-  { label: "Paint", icon: <A.PaintIcon size={32} /> },
+  { label: "Gmail", icon: <A.GmailIcon size={32} />, app: "chrome", url: "https://mail.google.com/mail/u/0/#inbox" },
+  { label: "Google Calendar", icon: <A.CalendarIcon size={32} />, app: "chrome", url: "https://calendar.google.com/calendar/u/0/r" },
   { label: "File Explorer", icon: <A.ExplorerAppIcon size={32} />, app: "explorer" },
+  { label: "Terminal", icon: <A.TerminalAppIcon size={32} />, app: "terminal" },
+  { label: "REAPER", icon: <A.GenericAppIcon size={32} />, app: "audio" },
+  { label: "Notepad", icon: <A.NotepadIcon size={32} />, app: "notepad" },
+  { label: "Photos", icon: <A.PhotosIcon size={32} />, app: "photos" },
+  { label: "Paint", icon: <A.PaintIcon size={32} />, app: "paint" },
+  { label: "Settings", icon: <A.SettingsIcon size={32} />, app: "settings" },
+  { label: "Calculator", icon: <A.CalculatorIcon size={32} />, app: "calculator" },
+  { label: "Clock", icon: <A.ClockIcon size={32} />, app: "clock" },
+  { label: "Microsoft Edge", icon: <A.EdgeIcon size={32} />, app: "chrome" },
+  { label: "Microsoft Store", icon: <A.StoreIcon size={32} />, app: "chrome", url: "https://apps.microsoft.com/" },
+  { label: "Task Manager", icon: <A.GenericAppIcon size={32} />, app: "taskmgr" },
 ];
 
 function whenLabel(iso: string): string {
@@ -52,7 +48,7 @@ function whenLabel(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
 }
 
-export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, onSearch }: { open: boolean; displayName: string; onLaunch: (app: AppId, props?: Record<string, unknown>) => void; onOpenFile: (n: VfsNode) => void; onClose: () => void; onSearch: (q: string) => void }) {
+export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, onSearch, onLock }: { open: boolean; displayName: string; onLaunch: (app: AppId, props?: Record<string, unknown>) => void; onOpenFile: (n: VfsNode) => void; onClose: () => void; onSearch: (q: string) => void; onLock: () => void }) {
   const [recent, setRecent] = useState<VfsNode[]>([]);
   const [phonePane, setPhonePane] = useState(false);
   const [allApps, setAllApps] = useState(false);
@@ -71,7 +67,7 @@ export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, on
   const powerMenu = (e: React.MouseEvent) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     menu.open({ x: r.left, y: r.top - 4, anchorBottom: true, items: [
-      { label: "Sleep", onClick: onClose },
+      { label: "Sleep", onClick: () => { onClose(); onLock(); } },
       { label: "Shut down", onClick: () => { onClose(); host().quit(); } },
       { label: "Restart", onClick: () => { onClose(); window.location.reload(); } },
     ] });
@@ -79,7 +75,9 @@ export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, on
   const userMenu = (e: React.MouseEvent) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     menu.open({ x: r.left, y: r.top - 4, anchorBottom: true, items: [
-      { label: "Change account settings" }, { label: "Lock" }, { label: "Sign out", onClick: () => { onClose(); host().quit(); } },
+      { label: "Change account settings", onClick: () => { onClose(); onLaunch("settings", { page: "accounts" }); } },
+      { label: "Lock", onClick: () => { onClose(); onLock(); } },
+      { label: "Sign out", onClick: () => { onClose(); onLock(); } },
     ] });
   };
 

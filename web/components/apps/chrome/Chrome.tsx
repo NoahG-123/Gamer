@@ -65,14 +65,21 @@ export function Chrome({ win }: { win: WinState }) {
   const [omniText, setOmniText] = useState("");
   const [omniFocus, setOmniFocus] = useState(false);
   const [ddIndex, setDdIndex] = useState(-1);
+  const [zoom, setZoom] = useState(1);
+  const [find, setFind] = useState<string | null>(null);
+  const [findHits, setFindHits] = useState({ active: 0, total: 0 });
+  const [note, setNote] = useState<string | null>(null);
   const omniRef = useRef<HTMLInputElement>(null);
   const active = wm.activeId === win.id;
   const handledNonce = useRef<unknown>(null);
 
-  useEffect(() => {
-    api.hosts().then((d) => setStoryHosts(d.match)).catch(() => {});
+  const loadBrowserData = useCallback(() => {
     api.browser().then((d) => { setBookmarks(d.bookmarks); setHistory(d.history); }).catch(() => {});
   }, []);
+  useEffect(() => {
+    api.hosts().then((d) => setStoryHosts(d.match)).catch(() => {});
+    loadBrowserData();
+  }, [loadBrowserData]);
 
   /** Where the iframe fallback (non-Electron) should really load a URL. Electron's session intercept does this natively. */
   const resolveForFrame = useCallback((url: string) => {
@@ -181,6 +188,11 @@ export function Chrome({ win }: { win: WinState }) {
     else if (e.ctrlKey && e.key.toLowerCase() === "j") { e.preventDefault(); openChromePage("downloads"); }
     else if (e.ctrlKey && e.key.toLowerCase() === "u") { e.preventDefault(); if (activeTab) viewSource(activeTab.id); }
     else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") { e.preventDefault(); if (activeTab) inspect(activeTab.id); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); setFind((f) => (f === null ? "" : f)); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "d") { e.preventDefault(); void toggleBookmark(); }
+    else if (e.ctrlKey && (e.key === "+" || e.key === "=")) { e.preventDefault(); applyZoom(zoom * 1.1); }
+    else if (e.ctrlKey && e.key === "-") { e.preventDefault(); applyZoom(zoom / 1.1); }
+    else if (e.ctrlKey && e.key === "0") { e.preventDefault(); applyZoom(1); }
   };
 
   // ---- menus ----
@@ -262,17 +274,23 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Passwords and autofill", icon: <M.MKey />, children: [{ label: "Google Password Manager" }, { label: "Payment methods" }, { label: "Addresses and more" }] },
       { label: "History", icon: <M.MHistory />, children: [{ label: "History", shortcut: "Ctrl+H", onClick: () => openChromePage("history") }, { type: "sep" }, ...history.slice(0, 8).map((h) => ({ label: h.title || h.url, onClick: () => openTab(h.url) }))] },
       { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J", onClick: () => openChromePage("downloads") },
-      { label: "Bookmarks and lists", icon: <M.MBookmarks />, children: [{ label: "Bookmark this tab...", shortcut: "Ctrl+D" }, { label: "Bookmark all tabs...", shortcut: "Ctrl+Shift+D" }, { type: "sep" }, { label: "Show bookmarks bar", shortcut: "Ctrl+Shift+B", checked: true }, { label: "Bookmark manager", shortcut: "Ctrl+Shift+O" }, { label: "Reading list" }] },
+      { label: "Bookmarks", icon: <M.MBookmarks />, children: [
+        { label: bookmarked ? "Remove bookmark" : "Bookmark this tab...", shortcut: "Ctrl+D", disabled: !display, onClick: toggleBookmark },
+        { type: "sep" },
+        ...bookmarks.filter((b) => b.url).slice(0, 10).map((b) => ({ label: b.title, onClick: () => b.url && openTab(b.url) })),
+      ] },
       { label: "Tab groups", icon: <span />, children: [{ label: "No tab groups", disabled: true }] },
-      { label: "Extensions", icon: <M.MExtension />, children: [{ label: "Manage extensions" }, { label: "Visit Chrome Web Store" }] },
-      { label: "Delete browsing data...", icon: <M.MDelete />, shortcut: "Ctrl+Shift+Del" },
+      { label: "Extensions", icon: <M.MExtension />, children: [{ label: "No extensions are installed", disabled: true }] },
+      { label: "Delete browsing data...", icon: <M.MDelete />, shortcut: "Ctrl+Shift+Del", onClick: async () => { await fetch("/api/browser/history", { method: "DELETE" }); loadBrowserData(); setNote("Browsing data deleted"); setTimeout(() => setNote(null), 2500); } },
       { type: "sep" },
-      { label: "Zoom", icon: <M.MZoomIn />, shortcut: "−  100%  +" },
-      { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P" },
-      { label: "Search with Google Lens", icon: <M.MGoogleLens /> },
-      { label: "Translate...", icon: <M.MTranslate /> },
-      { label: "Find and edit", icon: <M.MFind />, children: [{ label: "Find...", shortcut: "Ctrl+F" }, { type: "sep" }, { label: "Cut", shortcut: "Ctrl+X" }, { label: "Copy", shortcut: "Ctrl+C" }, { label: "Paste", shortcut: "Ctrl+V" }] },
-      { label: "Cast, save, and share", icon: <M.MCast />, children: [{ label: "Cast..." }, { label: "Save page as...", shortcut: "Ctrl+S" }, { label: "Create shortcut..." }, { label: "Copy link" }, { label: "Send to your devices" }, { label: "Create QR Code" }] },
+      { label: "Zoom", icon: <M.MZoomIn />, children: [
+        { label: "Zoom in", shortcut: "Ctrl++", onClick: () => applyZoom(zoom * 1.1) },
+        { label: "Zoom out", shortcut: "Ctrl+−", onClick: () => applyZoom(zoom / 1.1) },
+        { label: `Reset to 100% (now ${Math.round(zoom * 100)}%)`, shortcut: "Ctrl+0", onClick: () => applyZoom(1) },
+      ] },
+      { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P", onClick: () => { setNote("No printers are installed."); setTimeout(() => setNote(null), 3000); } },
+      { label: "Find...", icon: <M.MFind />, shortcut: "Ctrl+F", onClick: () => setFind("") },
+      { label: "Copy link", icon: <M.MShare />, disabled: !display, onClick: () => navigator.clipboard?.writeText(display).catch(() => {}) },
       { label: "More tools", icon: <span />, children: [{ label: "Name window..." }, { label: "Reading mode" }, { label: "Performance" }, { label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
       { type: "sep" },
       { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome" }, { label: "What's new" }, { label: "Help center" }, { label: "Report an issue...", shortcut: "Alt+Shift+I" }] },
@@ -315,6 +333,21 @@ export function Chrome({ win }: { win: WinState }) {
   const openChromePage = useCallback((name: keyof typeof CHROME_PAGES | string) => {
     openTab(`${origin}${CHROME_PAGES[name] ?? NTP_PATH}`);
   }, [openTab, origin]);
+
+  const bookmarked = !!activeTab && bookmarks.some((b) => b.url === display || (b.children ?? []).some((c) => c.url === display));
+  const toggleBookmark = useCallback(async () => {
+    if (!display) return;
+    await fetch("/api/browser/bookmarks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: display, title: activeTab?.title || display, add: !bookmarked }) });
+    loadBrowserData();
+    setNote(bookmarked ? "Bookmark removed" : "Bookmark added");
+    setTimeout(() => setNote(null), 2200);
+  }, [display, activeTab?.title, bookmarked, loadBrowserData]);
+
+  const applyZoom = useCallback((factor: number) => {
+    const f = Math.max(0.25, Math.min(3, Number(factor.toFixed(2))));
+    setZoom(f);
+    if (activeTab) panes.current.get(activeTab.id)?.setZoom(f);
+  }, [activeTab]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const isNtp = !display;
@@ -372,7 +405,7 @@ export function Chrome({ win }: { win: WinState }) {
             />
             <div className={styles.omniRight} style={{ zIndex: 6 }}>
               {isNtp ? <button className={styles.omniChip}><M.MSparkle size={16} />AI Mode</button> : (
-                <button className={styles.tbBtn} title="Bookmark this tab"><M.MStar size={18} /></button>
+                <button className={styles.tbBtn} title={bookmarked ? "Edit bookmark" : "Bookmark this tab (Ctrl+D)"} onClick={toggleBookmark}>{bookmarked ? <M.MStarFilled size={18} /> : <M.MStar size={18} />}</button>
               )}
             </div>
           </div>
@@ -395,6 +428,26 @@ export function Chrome({ win }: { win: WinState }) {
           <span className={styles.bmSep} />
           <button className={styles.bm}><span className={styles.bmIcon}><M.MFolder size={16} /></span><span className={styles.bmText}>All Bookmarks</span></button>
         </div>
+        {find !== null && (
+          <div className={styles.findBar}>
+            <input
+              autoFocus
+              className={styles.findInput}
+              placeholder="Find in page"
+              value={find}
+              onChange={(e) => { setFind(e.target.value); if (activeTab) { if (e.target.value) panes.current.get(activeTab.id)?.find(e.target.value); else panes.current.get(activeTab.id)?.stopFind(); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && activeTab) panes.current.get(activeTab.id)?.find(find, !e.shiftKey);
+                if (e.key === "Escape") { if (activeTab) panes.current.get(activeTab.id)?.stopFind(); setFind(null); setFindHits({ active: 0, total: 0 }); }
+              }}
+            />
+            <span className={styles.findCount}>{findHits.total ? `${findHits.active}/${findHits.total}` : find ? "0/0" : ""}</span>
+            <button className={styles.tbBtn} onClick={() => activeTab && panes.current.get(activeTab.id)?.find(find, false)}><M.MExpandMore size={16} style={{ transform: "rotate(180deg)" }} /></button>
+            <button className={styles.tbBtn} onClick={() => activeTab && panes.current.get(activeTab.id)?.find(find, true)}><M.MExpandMore size={16} /></button>
+            <button className={styles.tbBtn} onClick={() => { if (activeTab) panes.current.get(activeTab.id)?.stopFind(); setFind(null); setFindHits({ active: 0, total: 0 }); }}><M.MClose size={16} /></button>
+          </div>
+        )}
+        {note && <div className={styles.note}>{note}</div>}
         <div className={styles.content} ref={contentRef}>
           {tabs.map((t) => (
             <WebPane
@@ -417,6 +470,7 @@ export function Chrome({ win }: { win: WinState }) {
                 onFavicon: (f) => update(t.id, { favicon: f }),
                 onContextMenu: (p) => pageMenu(t, p),
                 onFocus: () => wm.focus(win.id),
+                onFound: (active, total) => setFindHits({ active, total }),
               }}
             />
           ))}

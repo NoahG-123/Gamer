@@ -16,6 +16,7 @@ import { AssetsProvider, useAssets } from "@/lib/client/assets";
 import { host } from "@/lib/client/host";
 import { SystemProvider, useSystem } from "@/lib/client/system";
 import { RenameDialog, ConfirmDialog } from "./Prompts";
+import { LockScreen } from "./LockScreen";
 import { ViewIcon, Sort, Refresh, NewIcon, Display, Personalize, Terminal, ChevronRight } from "@/components/icons/fluent";
 
 export default function Desktop() {
@@ -48,6 +49,7 @@ function DesktopInner() {
   const [renaming, setRenaming] = useState<VfsNode | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; text: string; ok: string; onOk: () => void } | null>(null);
   const [clipboard, setClipboard] = useState<{ paths: string[]; move: boolean } | null>(null);
+  const [locked, setLocked] = useState(false);
   const sys = useSystem();
   const assets = useAssets();
   const wallpaperKey = sys.settings.wallpaper ?? profile?.wallpaper ?? "wallpaper.desktop";
@@ -100,6 +102,8 @@ function DesktopInner() {
       return;
     }
     if (res.viewer === "notepad") { wm.open("notepad", { props: { name: node.name, text: res.text, path: node.path } }); return; }
+    // Pictures open in Photos, the way they do on Windows; everything else opens in the browser.
+    if (res.kind === "image") { launch("photos", { path: node.path, nonce: Date.now() }); return; }
     launch("chrome", { openUrl: res.url, displayUrl: `file:///${node.path}`, title: node.name });
   }, [wm, launch]);
 
@@ -164,6 +168,9 @@ function DesktopInner() {
       if (e.ctrlKey && e.shiftKey && e.key === "Escape") { e.preventDefault(); launch("taskmgr"); }
       if (e.metaKey && e.key.toLowerCase() === "i") { e.preventDefault(); launch("settings"); }
       if (e.metaKey && e.key.toLowerCase() === "a") { e.preventDefault(); setPanel((p) => (p === "quick" ? null : "quick")); }
+      if (e.metaKey && e.key.toLowerCase() === "l") { e.preventDefault(); setPanel(null); setLocked(true); }
+      if (e.metaKey && e.key.toLowerCase() === "e") { e.preventDefault(); launch("explorer"); }
+      if (e.metaKey && e.key.toLowerCase() === "d") { e.preventDefault(); wm.windows.forEach((w) => wm.minimize(w.id)); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -211,8 +218,10 @@ function DesktopInner() {
       { label: "Open with", children: [
         { label: "Notepad", onClick: () => openWith(node.path, "notepad") },
         { label: "Google Chrome", onClick: () => openWith(node.path, "chrome") },
-        { label: "VLC media player", onClick: () => openWith(node.path, "player") },
-        { label: "Photos", onClick: () => openWith(node.path, "image") },
+        { label: "Photos", onClick: () => launch("photos", { path: node.path, nonce: Date.now() }) },
+        { label: "Paint", onClick: () => launch("paint", { path: node.path, nonce: Date.now() }) },
+        { label: "REAPER", onClick: () => launch("audio", { path: node.path, nonce: Date.now() }) },
+        { label: "Windows Media Player", onClick: () => openWith(node.path, "player") },
         { type: "sep" },
         { label: "Choose another app", onClick: () => { const d = dialogForFile(node.name, node.ext); wm.open("dialog", { props: { kind: "open-with", name: node.name, ext: node.ext, path: node.path }, w: d.w, h: 560, resizable: false }); } },
       ] },
@@ -273,11 +282,12 @@ function DesktopInner() {
         {sys.settings.nightLight && <div className={styles.nightLight} />}
         <TaskViewPanel open={panel === "taskview"} onClose={() => setPanel(null)} />
         <Toasts toasts={toasts} onDismiss={(id) => setToasts((t) => t.filter((x) => x.id !== id))} onOpen={openToast} />
-        <StartMenu open={panel === "start"} displayName={profile.displayName} onLaunch={(a, p) => launch(a, p)} onOpenFile={openFile} onClose={() => setPanel(null)} onSearch={(q) => { setSearchInitial(q); setPanel("search"); }} />
+        <StartMenu open={panel === "start"} displayName={profile.displayName} onLaunch={(a, p) => launch(a, p)} onOpenFile={openFile} onClose={() => setPanel(null)} onSearch={(q) => { setSearchInitial(q); setPanel("search"); }} onLock={() => setLocked(true)} />
         <SearchPanel open={panel === "search"} initial={searchInitial} onClose={() => { setPanel(null); setSearchInitial(""); }} onLaunch={launchEntry} onOpenFile={openFile} onOpenUrl={openUrl} />
         <NotificationPanel open={panel === "notif"} onClose={() => setPanel(null)} history={history} onOpen={openToast} onClear={() => { setHistory([]); setSeenNotif(0); }} />
         <WidgetsPanel open={panel === "widgets"} weather={weather} unit={profile.tempUnit ?? "C"} onOpenUrl={(u) => { setPanel(null); openUrl(u); }} />
         <QuickSettingsPanel open={panel === "quick"} onClose={() => setPanel(null)} onOpenSettings={(page) => launch("settings", page ? { page } : undefined)} />
+        {locked && <LockScreen profile={profile} wallpaper={wallpaper} onUnlock={() => setLocked(false)} />}
         {renaming && <RenameDialog node={renaming} onClose={() => setRenaming(null)} onDone={() => { setRenaming(null); refresh(); }} />}
         {confirm && <ConfirmDialog {...confirm} onClose={() => setConfirm(null)} />}
         <Taskbar profile={profile} pins={profile.taskbarPins as AppId[]} panel={panel} onPanel={(p) => { if (p === "search") setSearchInitial(""); setPanel(p); }} onLaunch={(a) => { setPanel(null); launch(a); }} onShowDesktop={() => { setPanel(null); wm.windows.forEach((w) => wm.minimize(w.id)); }} unreadCount={Math.max(0, history.length - seenNotif)} />

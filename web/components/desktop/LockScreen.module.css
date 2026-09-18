@@ -1,0 +1,17 @@
+.lock { position: fixed; inset: 0; z-index: 2000; background: #06080c center/cover no-repeat; color: #fff; overflow: hidden; }
+.curtain { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.5)); transition: transform .45s cubic-bezier(.2,.7,.2,1), opacity .45s; }
+.raised { transform: translateY(-100%); opacity: 0; }
+.clock { font-size: 104px; font-weight: 200; line-height: 1; text-shadow: 0 2px 20px rgba(0,0,0,.5); }
+.date { font-size: 26px; font-weight: 300; opacity: .95; }
+.hint { position: absolute; bottom: 60px; font-size: 13px; opacity: .6; }
+.signIn { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(10,14,20,.55); backdrop-filter: blur(40px); opacity: 0; pointer-events: none; transition: opacity .35s; }
+.signInShown { opacity: 1; pointer-events: auto; }
+.avatar { width: 108px; height: 108px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.name { font-size: 26px; font-weight: 300; }
+.button { all: unset; margin-top: 6px; padding: 8px 60px; border-radius: 4px; background: var(--accent, #0067C0); cursor: default; font-size: 14px; }
+.button:hover { filter: brightness(1.12); }
+.note { font-size: 12px; opacity: .6; }
+.corner { position: absolute; right: 26px; bottom: 22px; display: flex; gap: 16px; opacity: .85; }

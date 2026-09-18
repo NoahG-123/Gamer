@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
     return json({ openable: true, node, viewer: "chrome", url: rawUrl, kind: story.kind, fired });
   }
 
+  // An image the player drew or captured opens in the viewer, not as its own source.
+  if (node.kind === "image") return json({ openable: true, node, viewer: "chrome", url: rawUrl, kind: "image", fired });
+
   // Text the player wrote (Notepad, a download, the terminal) always opens as itself.
   const text = resolveText(node.path);
   const kind = node.kind === "text" ? "text" : dressingKind(node.ext);

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import styles from "./Taskbar.module.css";
 import { useWM, AppId } from "./wm";
 import { useMenu } from "./ContextMenu";
-import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon, TerminalAppIcon, SettingsIcon } from "@/components/icons/apps";
+import { ExplorerAppIcon, ChromeIcon, WhatsAppIcon, NotepadIcon, TerminalAppIcon, SettingsIcon, CalculatorIcon, ClockIcon as ClockAppIcon, PhotosIcon, PaintIcon, GenericAppIcon } from "@/components/icons/apps";
 import { DataUsage as TaskMgrIcon } from "@/components/icons/fluent";
 import { Search, TaskView, Wifi, WifiOff, SpeakerMute, Speaker, Battery, ChevronUp, Gear, Cloud, Pin, Close } from "@/components/icons/fluent";
 import { useSystem } from "@/lib/client/system";
@@ -20,6 +20,11 @@ export const APP_META: Record<AppId, { name: string; icon: (size: number) => Rea
   terminal: { name: "Terminal", icon: (s) => <TerminalAppIcon size={s} /> },
   settings: { name: "Settings", icon: (s) => <SettingsIcon size={s} /> },
   taskmgr: { name: "Task Manager", icon: (s) => <TaskMgrIcon size={s} /> },
+  calculator: { name: "Calculator", icon: (s) => <CalculatorIcon size={s} /> },
+  clock: { name: "Clock", icon: (s) => <ClockAppIcon size={s} /> },
+  photos: { name: "Photos", icon: (s) => <PhotosIcon size={s} /> },
+  paint: { name: "Paint", icon: (s) => <PaintIcon size={s} /> },
+  audio: { name: "REAPER", icon: (s) => <GenericAppIcon size={s} /> },
   dialog: { name: "", icon: () => null },
 };
 
@@ -106,9 +111,14 @@ export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop
         })}
       </div>
       <div className={styles.right}>
-        <button className={styles.trayBtn} title="Show hidden icons" style={{ width: 22 }} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 60, y: r.top - 4, anchorBottom: true, items: [{ label: "REAPER", onClick: () => {} }, { label: "Dropbox — Up to date" }, { label: "Realtek Audio Console" }, { label: "Windows Security — No action needed" }] }); }}><ChevronUp size={12} /></button>
+        <button className={styles.trayBtn} title="Show hidden icons" style={{ width: 22 }} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 60, y: r.top - 4, anchorBottom: true, items: [
+          { label: "REAPER", onClick: () => onLaunch("audio") },
+          { label: "Realtek Audio Console", onClick: () => onLaunch("settings") },
+          { label: "Windows Security — No action needed", onClick: () => onLaunch("settings") },
+          { label: "Task Manager", onClick: () => onLaunch("taskmgr") },
+        ] }); }}><ChevronUp size={12} /></button>
         {(profile.trayIcons ?? []).map((t) => (
-          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? (sys.online ? "OneDrive - Personal\nUp to date" : "OneDrive - Personal\nNot connected") : "WhatsApp"} onClick={() => { if (t === "whatsapp") onLaunch("whatsapp"); }}>
+          <button key={t} className={styles.trayBtn} style={{ width: 26 }} title={t === "onedrive" ? (sys.online ? "OneDrive - Personal\nUp to date" : "OneDrive - Personal\nNot connected") : "WhatsApp"} onClick={() => { if (t === "whatsapp") onLaunch("whatsapp"); else if (t === "onedrive") onLaunch("explorer"); }}>
             {t === "onedrive" ? <Cloud size={16} /> : t === "whatsapp" ? <SiWhatsapp size={15} color="#25D366" /> : null}
           </button>
         ))}

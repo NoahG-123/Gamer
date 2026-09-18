@@ -305,7 +305,7 @@ export function resolveText(p: string): string | null {
   const n = normalizePath(p);
   const ov = getOverlay(n);
   if (ov?.deleted) return null;
-  if (ov?.body != null) return ov.body;
+  if (ov?.body != null) return ov.body.startsWith("data:") ? null : ov.body;
   const seed = ov?.seed && ov.seed !== n ? normalizePath(ov.seed) : n;
   const story = buildIndex().story.get(seed);
   if (story) return story.body ?? "";

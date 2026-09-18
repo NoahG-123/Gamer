@@ -15,25 +15,22 @@ export interface AppEntry { label: string; icon: React.ReactNode; app?: AppId; u
 
 /** Everything the Start menu and Search know how to launch. Apps without an `app` are installed-but-not-simulated. */
 export const ALL_APPS: AppEntry[] = [
-  { label: "Calculator", icon: <A.CalculatorIcon size={24} /> },
-  { label: "Clock", icon: <A.ClockIcon size={24} /> },
+  { label: "Calculator", icon: <A.CalculatorIcon size={24} />, app: "calculator", keywords: "maths math calc" },
+  { label: "Clock", icon: <A.ClockIcon size={24} />, app: "clock", keywords: "alarm timer stopwatch world clock" },
   { label: "File Explorer", icon: <A.ExplorerAppIcon size={24} />, app: "explorer", keywords: "files folders" },
   { label: "Gmail", icon: <A.GmailIcon size={24} />, app: "chrome", url: "https://mail.google.com/mail/u/0/#inbox", keywords: "mail email" },
   { label: "Google Calendar", icon: <A.CalendarIcon size={24} />, app: "chrome", url: "https://calendar.google.com/calendar/u/0/r", keywords: "calendar" },
   { label: "Google Chrome", icon: <A.ChromeIcon size={24} />, app: "chrome", keywords: "browser web internet" },
-  { label: "Microsoft Edge", icon: <A.EdgeIcon size={24} /> },
-  { label: "Microsoft Store", icon: <A.StoreIcon size={24} /> },
+  { label: "Microsoft Edge", icon: <A.EdgeIcon size={24} />, app: "chrome", keywords: "browser web internet" },
+  { label: "Microsoft Store", icon: <A.StoreIcon size={24} />, app: "chrome", url: "https://apps.microsoft.com/", keywords: "store apps install" },
   { label: "Notepad", icon: <A.NotepadIcon size={24} />, app: "notepad", keywords: "text editor" },
-  { label: "Paint", icon: <A.PaintIcon size={24} /> },
-  { label: "Photos", icon: <A.PhotosIcon size={24} /> },
-  { label: "REAPER", icon: <A.GenericAppIcon size={24} />, keywords: "daw audio" },
+  { label: "Paint", icon: <A.PaintIcon size={24} />, app: "paint", keywords: "draw image bitmap" },
+  { label: "Photos", icon: <A.PhotosIcon size={24} />, app: "photos", keywords: "pictures images gallery viewer" },
+  { label: "REAPER", icon: <A.GenericAppIcon size={24} />, app: "audio", keywords: "daw audio wav waveform recording editor" },
   { label: "Settings", icon: <A.SettingsIcon size={24} />, app: "settings", keywords: "settings control panel wallpaper background volume brightness wifi bluetooth theme personalise personalize display sound" },
-  { label: "Snipping Tool", icon: <A.SnipIcon size={24} /> },
   { label: "Task Manager", icon: <TaskMgrIcon size={24} />, app: "taskmgr", keywords: "processes performance cpu memory end task" },
-  { label: "Spotify", icon: <A.SpotifyIcon size={24} /> },
   { label: "Terminal", icon: <A.TerminalAppIcon size={24} />, app: "terminal", keywords: "powershell cmd command prompt shell" },
   { label: "WhatsApp", icon: <A.WhatsAppIcon size={24} />, app: "whatsapp", keywords: "messages chat" },
-  { label: "Xbox", icon: <A.XboxIcon size={24} /> },
 ];
 
 const SETTINGS: { label: string; page: string }[] = [

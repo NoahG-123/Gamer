@@ -6,6 +6,7 @@ import { Window, CaptionButtons } from "@/components/desktop/Window";
 import { useMenu } from "@/components/desktop/ContextMenu";
 import { useOS } from "@/components/desktop/os";
 import { api, ChatSummary, Contact, Message, useLiveEvents, LiveEvent } from "@/lib/client/api";
+import { FilePicker } from "@/components/desktop/Prompts";
 import { useAssets } from "@/lib/client/assets";
 import * as W from "@/components/icons/wa";
 
@@ -67,6 +68,10 @@ export function WhatsApp({ win }: { win: WinState }) {
   const [filter, setFilter] = useState<"all" | "unread" | "favourites" | "groups">("all");
   const [search, setSearch] = useState("");
   const [nav, setNav] = useState<"chats" | "calls" | "status" | "communities" | "channels" | "starred" | "archived" | "settings" | "profile">("chats");
+  const [emoji, setEmoji] = useState(false);
+  const [newChat, setNewChat] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [attach, setAttach] = useState(false);
   const listEnd = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const currentRef = useRef<string | null>(null); currentRef.current = current;
@@ -78,6 +83,11 @@ export function WhatsApp({ win }: { win: WinState }) {
     const first = (win.props.chatId as string) || null;
     if (first) setCurrent(first);
   }, [win.props.chatId]);
+  // "Share with WhatsApp" from Explorer drops the file name into the box, ready to send.
+  useEffect(() => {
+    const share = win.props.share as string | undefined;
+    if (share) setText((t) => (t ? `${t} ` : "") + `[file] ${share}`);
+  }, [win.props.share]);
 
   const openChat = useCallback((id: string) => {
     setCurrent(id);
@@ -165,13 +175,24 @@ export function WhatsApp({ win }: { win: WinState }) {
           <div className={styles.list}>
             <div className={styles.listHead}>
               <span className={styles.listTitle}>{nav === "chats" ? "Chats" : nav === "calls" ? "Calls" : nav === "status" ? "Status" : nav === "channels" ? "Channels" : nav === "communities" ? "Communities" : nav === "starred" ? "Starred messages" : nav === "archived" ? "Archived" : "Settings"}</span>
-              {nav === "chats" && <><button className={styles.iconBtn} title="New chat"><W.WaNewChat size={22} /></button><button className={styles.iconBtn} title="Menu" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 4, variant: "wa", items: [{ label: "New group" }, { label: "New community" }, { label: "Starred messages" }, { label: "Select chats" }, { label: "Read all" }, { type: "sep" }, { label: "Settings" }, { label: "Log out" }] }); }}><W.WaMenu size={22} /></button></>}
+              {nav === "chats" && <><button className={styles.iconBtn} title="New chat" onClick={() => setNewChat((v) => !v)}><W.WaNewChat size={22} /></button><button className={styles.iconBtn} title="Menu" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 4, variant: "wa", items: [{ label: "New group" }, { label: "New community" }, { label: "Starred messages" }, { label: "Select chats" }, { label: "Read all" }, { type: "sep" }, { label: "Settings" }, { label: "Log out" }] }); }}><W.WaMenu size={22} /></button></>}
             </div>
             <div className={styles.searchWrap}>
               <W.WaSearch size={20} className={styles.searchIcon} />
               <input className={styles.search} placeholder="Search or start a new chat" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            {nav === "chats" && (
+            {nav === "chats" && newChat && (
+              <div className={styles.newChat}>
+                <div className={styles.newChatHead}>Start a chat</div>
+                {chats.map((c) => (
+                  <button key={c.contact.id} className={styles.newChatRow} onClick={() => { setNewChat(false); setCurrent(c.contact.id); }}>
+                    <Avatar contact={c.contact} size={36} />
+                    <span><b>{c.contact.name}</b><small>{c.contact.about || c.contact.phone || ""}</small></span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {nav === "chats" && !newChat && (
               <>
                 <div className={styles.filters}>
                   {(["all", "unread", "favourites", "groups"] as const).map((f) => (
@@ -214,9 +235,9 @@ export function WhatsApp({ win }: { win: WinState }) {
                 <div className={styles.convHead}>
                   <Avatar contact={contact} size={40} />
                   <div className={styles.convTitle}><span className={styles.convName}>{contact.name}</span><span className={`${styles.convStatus} ${typing[contact.id] ? styles.typing : ""}`}>{status}</span></div>
-                  <button className={styles.iconBtn} title="Video call"><W.WaVideo size={22} /></button>
-                  <button className={styles.iconBtn} title="Voice call"><W.WaPhone size={22} /></button>
-                  <button className={styles.iconBtn} title="Search"><W.WaSearch size={22} /></button>
+                  <button className={styles.iconBtn} title="Video call" onClick={() => setNotice("No camera or microphone is attached to this computer, so calls are not available.")}><W.WaVideo size={22} /></button>
+                  <button className={styles.iconBtn} title="Voice call" onClick={() => setNotice("No microphone is attached to this computer, so calls are not available.")}><W.WaPhone size={22} /></button>
+                  <button className={styles.iconBtn} title="Search" onClick={() => setNotice(null)}><W.WaSearch size={22} /></button>
                   <button className={styles.iconBtn} title="Menu" onClick={headerMenu}><W.WaMenu size={22} /></button>
                 </div>
                 <div className={styles.messages}>
@@ -248,17 +269,40 @@ export function WhatsApp({ win }: { win: WinState }) {
                     <div ref={listEnd} />
                   </div>
                 </div>
+                {emoji && (
+                  <div className={styles.emojiPicker}>
+                    {["😀","😂","🙂","😉","😊","😍","😘","🤔","😐","😴","😢","😭","😤","😱","🤝","👍","👎","🙏","👏","💪","❤️","🧡","💛","💚","💙","💜","🖤","✨","🔥","🎉","☕","🍺","🍕","🎂","🎧","🎙️","📻","📷","🚗","✈️","🌧️","⛅","🌙","⭐","🌊","🐈","🐕","🦉","🫡","🤷"].map((e) => (
+                      <button key={e} className={styles.emojiBtn} onClick={() => { setText((t) => t + e); input.current?.focus(); }}>{e}</button>
+                    ))}
+                  </div>
+                )}
+                {notice && <div className={styles.notice} onClick={() => setNotice(null)}>{notice}</div>}
                 <div className={styles.composer}>
-                  <button className={styles.iconBtn} title="Emoji"><W.WaEmoji size={24} /></button>
-                  <button className={styles.iconBtn} title="Attach"><W.WaPlus size={24} /></button>
+                  <button className={styles.iconBtn} title="Emoji" onClick={() => setEmoji((v) => !v)}><W.WaEmoji size={24} /></button>
+                  <button className={styles.iconBtn} title="Attach" onClick={() => setAttach(true)}><W.WaPlus size={24} /></button>
                   <textarea ref={input} className={styles.input} placeholder="Type a message" rows={1} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} />
-                  {text.trim() ? <button className={`${styles.iconBtn} ${styles.sendBtn}`} title="Send" onClick={send}><W.WaSend size={22} /></button> : <button className={styles.iconBtn} title="Voice message"><W.WaMic size={24} /></button>}
+                  {text.trim()
+                    ? <button className={`${styles.iconBtn} ${styles.sendBtn}`} title="Send" onClick={send}><W.WaSend size={22} /></button>
+                    : <button className={styles.iconBtn} title="Voice message" onClick={() => setNotice("No microphone is attached to this computer, so voice messages are not available.")}><W.WaMic size={24} /></button>}
                 </div>
               </>
             )}
           </div>
         </div>
       </div>
+      {attach && current && (
+        <FilePicker
+          mode="open"
+          start={`${os.home}/Documents`}
+          onClose={() => setAttach(false)}
+          onPick={(p) => {
+            setAttach(false);
+            const name = p.slice(p.lastIndexOf("/") + 1);
+            api.send(current, `[file] ${name}`).catch(() => {});
+            setTimeout(() => openChat(current), 300);
+          }}
+        />
+      )}
       <span style={{ display: "none" }}>{os.profile.displayName}</span>
     </Window>
   );

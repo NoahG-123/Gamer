@@ -1,0 +1,25 @@
+.win { color: var(--text, #fff); }
+.frame { display: flex; flex-direction: column; height: 100%; background: #2b2b2b; border-radius: 8px; overflow: hidden; font-size: 12px; }
+.titleBar { display: flex; align-items: center; gap: 8px; height: 34px; padding-left: 14px; background: #333; }
+.titleText { flex: 1; font-size: 12px; }
+.menuBar { display: flex; gap: 2px; padding: 2px 6px; background: #333; }
+.menuItem { all: unset; padding: 4px 12px; border-radius: 4px; cursor: default; }
+.menuItem:hover { background: rgba(255,255,255,.09); }
+.ribbon { display: flex; gap: 18px; align-items: center; padding: 8px 12px; background: #383838; border-bottom: 1px solid rgba(0,0,0,.4); flex-wrap: wrap; }
+.group { display: flex; align-items: center; gap: 6px; }
+.groupLabel { opacity: .65; }
+.tool { all: unset; display: flex; align-items: center; justify-content: center; width: 30px; height: 28px; border-radius: 4px; background: rgba(255,255,255,.06); cursor: default; }
+.tool:hover { background: rgba(255,255,255,.12); }
+.toolOn { background: var(--accent, #0067C0); }
+.size { width: 110px; accent-color: var(--accent, #4CC2FF); }
+.sizeVal { width: 34px; opacity: .7; }
+.swatchCurrent { width: 26px; height: 26px; border-radius: 4px; border: 2px solid rgba(255,255,255,.25); }
+.palette { display: grid; grid-template-columns: repeat(10, 16px); grid-auto-rows: 16px; gap: 2px; }
+.swatch { all: unset; width: 16px; height: 16px; border-radius: 2px; cursor: default; border: 1px solid rgba(0,0,0,.4); }
+.swatch:hover { outline: 2px solid #fff; }
+.colourInput { width: 28px; height: 26px; background: none; border: none; padding: 0; }
+.sheetWrap { flex: 1; min-height: 0; overflow: auto; background: #202020; padding: 16px; display: flex; justify-content: center; align-items: flex-start; }
+.sheet { position: relative; box-shadow: 0 4px 24px rgba(0,0,0,.5); }
+.canvas { display: block; background: #fff; max-width: 100%; cursor: crosshair; }
+.overlay { position: absolute; inset: 0; pointer-events: none; max-width: 100%; }
+.status { display: flex; gap: 14px; padding: 5px 12px; background: #333; font-size: 11px; opacity: .8; }
