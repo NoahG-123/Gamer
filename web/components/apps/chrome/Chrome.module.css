@@ -35,28 +35,28 @@
 .caption { height: 100%; }
 
 /* ---- toolbar ---- */
-.toolbar { height: 44px; display: flex; align-items: center; padding: 0 6px 0 4px; background: var(--cr-toolbar); gap: 0; }
+.toolbar { height: 42px; display: flex; align-items: center; padding: 0 6px 0 4px; background: var(--cr-toolbar); gap: 0; }
 .tbBtn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--cr-icon); flex-shrink: 0; }
 .tbBtn:hover { background: var(--cr-hover); }
 .tbBtn:disabled { color: rgba(255,255,255,.3); }
 .tbBtn:disabled:hover { background: none; }
-.omni { position: relative; flex: 1; height: 34px; margin: 0 6px 0 4px; display: flex; align-items: center; border-radius: 17px; background: var(--cr-omni); color: var(--cr-text); min-width: 100px; }
+.omni { position: relative; flex: 1; height: 30px; margin: 0 6px 0 4px; display: flex; align-items: center; border-radius: 15px; background: var(--cr-omni); color: var(--cr-text); min-width: 100px; }
 .omni:hover { background: var(--cr-omni-hover); }
 .omniFocus, .omniFocus:hover { background: var(--cr-omni-focus); box-shadow: 0 0 0 2px #a8c7fa inset; }
-.omniIcon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--cr-icon); border-radius: 50%; margin-left: 4px; flex-shrink: 0; }
+.omniIcon { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--cr-icon); border-radius: 50%; margin-left: 4px; flex-shrink: 0; }
 .omniIcon:hover { background: var(--cr-hover); }
 .omniInput { flex: 1; height: 100%; border: 0; background: transparent; color: var(--cr-text); font-size: 14px; padding: 0 2px; min-width: 0; user-select: text; cursor: text; }
 .omniInput::placeholder { color: var(--cr-text-2); }
-.omniChip { display: flex; align-items: center; gap: 6px; height: 26px; margin-right: 4px; padding: 0 12px 0 8px; border-radius: 13px; background: rgba(255,255,255,.08); font-size: 13px; color: var(--cr-text); white-space: nowrap; }
+.omniChip { display: flex; align-items: center; gap: 6px; height: 24px; margin-right: 4px; padding: 0 12px 0 8px; border-radius: 13px; background: rgba(255,255,255,.08); font-size: 13px; color: var(--cr-text); white-space: nowrap; }
 .omniChip:hover { background: rgba(255,255,255,.14); }
 .omniRight { display: flex; align-items: center; margin-right: 4px; }
-.omniRight .tbBtn { width: 30px; height: 30px; }
+.omniRight .tbBtn { width: 28px; height: 28px; }
 .avatarBtn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .avatarBtn:hover { background: var(--cr-hover); }
 .avatarDot { width: 24px; height: 24px; border-radius: 50%; background: #5f6368; display: flex; align-items: center; justify-content: center; }
 
 /* ---- omnibox dropdown ---- */
-.dropdown { position: absolute; left: 0; right: 0; top: 0; background: var(--cr-omni-focus); border-radius: 17px 17px 12px 12px; padding: 40px 0 8px; box-shadow: 0 4px 12px rgba(0,0,0,.5); z-index: 5; }
+.dropdown { position: absolute; left: 0; right: 0; top: 0; background: var(--cr-omni-focus); border-radius: 15px 15px 12px 12px; padding: 36px 0 8px; box-shadow: 0 4px 12px rgba(0,0,0,.5); z-index: 5; }
 .ddRow { display: flex; align-items: center; height: 36px; padding: 0 12px 0 14px; gap: 14px; color: var(--cr-text); font-size: 14px; cursor: default; }
 .ddRow:hover, .ddRowSel { background: rgba(255,255,255,.1); }
 .ddIcon { width: 20px; display: flex; justify-content: center; color: var(--cr-icon); flex-shrink: 0; }
@@ -66,7 +66,7 @@
 .ddSep { color: var(--cr-text-2); }
 
 /* ---- bookmarks bar ---- */
-.bookmarks { height: 30px; display: flex; align-items: center; padding: 0 8px 0 8px; background: var(--cr-toolbar); gap: 2px; border-bottom: 1px solid var(--cr-sep); }
+.bookmarks { height: 34px; display: flex; align-items: center; padding: 0 8px 0 8px; background: var(--cr-toolbar); gap: 2px; border-bottom: 1px solid var(--cr-sep); }
 .bm { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px 0 6px; border-radius: 12px; color: var(--cr-text); font-size: 12px; white-space: nowrap; max-width: 160px; }
 .bm:hover { background: var(--cr-hover); }
 .bmIcon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; color: var(--cr-icon); flex-shrink: 0; }
@@ -74,6 +74,8 @@
 .bmText { overflow: hidden; text-overflow: ellipsis; }
 .bmSep { width: 1px; height: 16px; background: var(--cr-tab-sep); margin: 0 6px; }
 .bmSpacer { flex: 1; }
+.tabGroups { width: 28px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--cr-icon); }
+.tabGroups:hover { background: var(--cr-hover); }
 
 /* ---- content ---- */
 .content { position: relative; flex: 1; min-height: 0; background: #fff; }

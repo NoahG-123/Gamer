@@ -1,0 +1,37 @@
+# Packaged as one unassuming portable executable. No installer, no branding.
+appId: local.untitled.recovered
+productName: recovered_00417
+copyright: ""
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/electron/**
+  - package.json
+extraResources:
+  - from: web/.next/standalone
+    to: web
+    filter: ["**/*"]
+  - from: web/.next/static
+    to: web/web/.next/static
+  - from: web/public
+    to: web/web/public
+  - from: content
+    to: content
+    filter: ["**/*", "!assets/people/*.png"]
+asar: true
+win:
+  target:
+    - portable
+  icon: build/icon.ico
+  artifactName: "recovered_00417.exe"
+  legalTrademarks: ""
+  signAndEditExecutable: true
+portable:
+  artifactName: "recovered_00417.exe"
+  requestExecutionLevel: user
+linux:
+  target: [dir]
+  icon: build/icon.png
+electronLanguages: [en-US]
+npmRebuild: false

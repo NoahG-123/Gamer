@@ -347,10 +347,7 @@ export function Chrome({ win }: { win: WinState }) {
             />
             <div className={styles.omniRight} style={{ zIndex: 6 }}>
               {isNtp ? <button className={styles.omniChip}><M.MSparkle size={16} />AI Mode</button> : (
-                <>
-                  <button className={styles.tbBtn} title="Share this page"><M.MShare size={18} /></button>
-                  <button className={styles.tbBtn} title="Bookmark this tab"><M.MStar size={18} /></button>
-                </>
+                <button className={styles.tbBtn} title="Bookmark this tab"><M.MStar size={18} /></button>
               )}
             </div>
           </div>
@@ -360,6 +357,8 @@ export function Chrome({ win }: { win: WinState }) {
           <button className={styles.tbBtn} title="Customize and control Google Chrome" onClick={mainMenu}><M.MMoreVert /></button>
         </div>
         <div className={styles.bookmarks} onContextMenu={(e) => bookmarkMenu(e)}>
+          <button className={styles.tabGroups} title="Saved tab groups"><M.MApps size={18} /></button>
+          <span className={styles.bmSep} />
           {bookmarks.map((b) => (
             b.folder ? (
               <button key={b.id} className={styles.bm} onClick={(e) => folderMenu(e, b)} onContextMenu={(e) => bookmarkMenu(e, b)}><span className={styles.bmIcon}><M.MFolder size={16} /></span><span className={styles.bmText}>{b.title}</span></button>
