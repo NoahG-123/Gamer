@@ -74,7 +74,7 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
 
   const style: React.CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, display: visible ? "flex" : "none", background: "#fff" };
   if (h.isElectron) {
-    return <webview ref={(el: HTMLElement | null) => { wvRef.current = el as WebviewEl | null; }} src={initialUrl} partition={h.webviewPartition} style={style} allowpopups />;
+    return <webview ref={(el: HTMLElement | null) => { wvRef.current = el as WebviewEl | null; }} src={initialUrl} partition={h.webviewPartition} style={style} {...({ allowpopups: "true" } as object)} />;
   }
   return (
     <iframe
