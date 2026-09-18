@@ -58,7 +58,7 @@ export function DialogWindow({ win }: { win: WinState }) {
     <Window win={win} className={styles.dialogWin}>
       <div className={styles.dialog}>
         <div className={styles.titleBar} data-drag>
-          {kind !== "cant-run" && <span className={styles.titleIcon}>{kind === "shortcut" ? <A.FileLnk size={16} /> : <A.FileZip size={16} />}</span>}
+          {kind !== "cant-run" && <span className={styles.titleIcon}><A.FileTypeIcon ext={kind === "shortcut" ? "lnk" : "zip"} size={16} /></span>}
           <span className={styles.titleText}>{title}</span>
           <CaptionButtons win={win} closeOnly className={styles.captionSmall} />
         </div>

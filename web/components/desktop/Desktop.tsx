@@ -10,15 +10,18 @@ import { APP_COMPONENTS } from "./registry";
 import { dialogForFile } from "./Dialogs";
 import { api, Profile, VfsNode, useLiveEvents, LiveEvent } from "@/lib/client/api";
 import { RecycleBinIcon, FileTypeIcon, ChromeIcon, WhatsAppIcon } from "@/components/icons/apps";
+import { AssetsProvider, useAsset } from "@/lib/client/assets";
 import { ViewIcon, Sort, Refresh, NewIcon, Display, Personalize, Terminal, ChevronRight } from "@/components/icons/fluent";
 
 export default function Desktop() {
   return (
-    <WMProvider>
-      <MenuProvider>
-        <DesktopInner />
-      </MenuProvider>
-    </WMProvider>
+    <AssetsProvider>
+      <WMProvider>
+        <MenuProvider>
+          <DesktopInner />
+        </MenuProvider>
+      </WMProvider>
+    </AssetsProvider>
   );
 }
 
@@ -31,6 +34,7 @@ function DesktopInner() {
   const [desktopItems, setDesktopItems] = useState<VfsNode[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const wallpaper = useAsset(profile?.wallpaper ?? "wallpaper.desktop");
 
   useEffect(() => { api.profile().then((d) => { setProfile(d.profile); setHome(d.home); }).catch(() => {}); }, []);
   useEffect(() => {
@@ -128,7 +132,7 @@ function DesktopInner() {
     ] });
   };
 
-  if (!profile || !os) return <div className={styles.desktop} style={{ backgroundImage: "url(/wallpaper/bloom-dark.jpg)" }} />;
+  if (!profile || !os) return <div className={styles.desktop} data-theme="dark" style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined }} />;
 
   const iconFor = (n: VfsNode) => {
     if (n.ext === "lnk" && /chrome/i.test(n.name)) return <ChromeIcon size={48} />;
@@ -139,7 +143,7 @@ function DesktopInner() {
 
   return (
     <OSProvider value={os}>
-      <div className={styles.desktop} style={{ backgroundImage: `url(/wallpaper/${profile.wallpaper}.jpg)`, ["--accent" as string]: profile.accentColor }} onContextMenu={desktopMenu} data-desktop>
+      <div className={styles.desktop} data-theme={profile.theme ?? "dark"} style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined, ...(profile.theme === "light" ? { ["--accent" as string]: profile.accentColor } : {}) }} onContextMenu={desktopMenu} data-desktop>
         <div className={styles.icons}>
           <button data-desktop-icon className={`${styles.icon} ${selected === "recycle-bin" ? styles.iconSel : ""}`} onClick={() => setSelected("recycle-bin")} onDoubleClick={() => openFolder("Recycle Bin")} onContextMenu={(e) => iconMenu(e, null)}>
             <span className={styles.iconImg}><RecycleBinIcon size={48} full={!profile.recycleBinEmpty} /></span>
@@ -156,7 +160,7 @@ function DesktopInner() {
           {wm.windows.map((w) => { const C = APP_COMPONENTS[w.app]; return <C key={w.id} win={w} />; })}
         </div>
         <StartMenu open={startOpen} displayName={profile.displayName} onLaunch={(a) => launch(a)} onOpenFile={openFile} onClose={() => setStartOpen(false)} />
-        <Taskbar pins={profile.taskbarPins as AppId[]} startOpen={startOpen} onToggleStart={() => setStartOpen((s) => !s)} onLaunch={(a) => launch(a)} locale={profile.locale} onShowDesktop={() => wm.windows.forEach((w) => wm.minimize(w.id))} />
+        <Taskbar profile={profile} pins={profile.taskbarPins as AppId[]} startOpen={startOpen} onToggleStart={() => setStartOpen((s) => !s)} onLaunch={(a) => launch(a)} onShowDesktop={() => wm.windows.forEach((w) => wm.minimize(w.id))} />
       </div>
     </OSProvider>
   );

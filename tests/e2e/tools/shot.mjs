@@ -5,7 +5,7 @@ const [out, scriptPath] = process.argv.slice(2);
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] });
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 page.on("pageerror", (e) => console.log("PAGEERROR", e.message));
-page.on("console", (m) => { if (m.type() === "error") console.log("CONSOLE", m.text()); });
+page.on("console", (m) => { if (m.type() === "error" && !/hmr|404/.test(m.text())) console.log("CONSOLE", m.text().slice(0, 300)); });
 await page.goto("http://127.0.0.1:4127/", { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 if (scriptPath) { const fn = (await import(fs.realpathSync(scriptPath))).default; await fn(page); }

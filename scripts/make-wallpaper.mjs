@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const W = 2560, H = 1440;
-const out = path.resolve("web/public/wallpaper/bloom-dark.jpg");
+const out = path.resolve("content/assets/generated/bloom-dark.jpg");
 const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>

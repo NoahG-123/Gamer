@@ -1,14 +1,37 @@
 {
-  "_comment": "PLACEHOLDER. Identity of the computer's owner. Everything here is safe to change; paths in other content files use the {user} token so the username is defined once.",
+  "_comment": "PLACEHOLDER. Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). `theme` dark|light. `dateFormat` yyyy-MM-dd or M/d/yyyy. Paths elsewhere use the {user} token.",
   "username": "mtorres",
-  "displayName": "Marisol",
+  "displayName": "Marisol Torres",
   "machineName": "DESKTOP-4K1Q7RV",
   "timezone": "America/Chicago",
   "locale": "en-US",
   "accountEmail": "PLACEHOLDER@outlook.com",
-  "wallpaper": "bloom-dark",
+  "wallpaper": "wallpaper.desktop",
   "accentColor": "#0067C0",
-  "taskbarPins": ["explorer", "chrome", "whatsapp"],
-  "desktopIcons": ["recycle-bin"],
-  "recycleBinEmpty": false
+  "taskbarPins": [
+    "explorer",
+    "chrome",
+    "whatsapp"
+  ],
+  "desktopIcons": [
+    "recycle-bin"
+  ],
+  "recycleBinEmpty": false,
+  "theme": "dark",
+  "tempUnit": "C",
+  "dateFormat": "yyyy-MM-dd",
+  "laptop": true,
+  "inputLanguage": [
+    "ENG",
+    "US"
+  ],
+  "weather": {
+    "temp": 21,
+    "text": "Partly cloudy",
+    "icon": "sun-behind-cloud"
+  },
+  "trayIcons": [
+    "onedrive",
+    "whatsapp"
+  ]
 }

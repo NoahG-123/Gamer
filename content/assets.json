@@ -1,0 +1,15 @@
+{
+  "_comment": "Central image manifest. Every image the UI shows is looked up here by key; components never hardcode filenames. `file` is relative to content/assets/. `kind`: stock (fetch with `npm run fetch:assets` via Pexels), generated (built by a script), person (LEFT BLANK on purpose — drop your own image at exactly that path; a neutral silhouette is shown until then). `fallback` is used while `file` is missing.",
+  "assets": {
+    "wallpaper.desktop": { "kind": "stock", "file": "stock/wallpaper-desktop.jpg", "fallback": "generated/bloom-dark.jpg", "pexels": { "query": "abstract colorful smoke dark background", "orientation": "landscape", "size": "original" } },
+    "taskbar.searchHighlight": { "kind": "stock", "file": "stock/search-highlight.jpg", "pexels": { "query": "aerial view old town", "orientation": "landscape", "size": "small" } },
+    "chrome.ntpBackground": { "kind": "stock", "file": "stock/ntp-background.jpg", "optional": true, "pexels": { "query": "city night winter castle", "orientation": "landscape", "size": "large2x" } },
+    "chrome.ntpBackgroundCredit": { "kind": "text", "value": "" },
+    "start.phoneLinkIllustration": { "kind": "stock", "file": "stock/phone-link.png", "optional": true, "pexels": { "query": "smartphone laptop desk", "orientation": "landscape", "size": "medium" } },
+    "people.owner": { "kind": "person", "file": "people/owner.png", "placeholder": "silhouette" },
+    "people.contact.placeholder-a": { "kind": "person", "file": "people/contact-placeholder-a.png", "placeholder": "silhouette" },
+    "people.contact.placeholder-b": { "kind": "person", "file": "people/contact-placeholder-b.png", "placeholder": "silhouette" },
+    "people.contact.placeholder-unlock": { "kind": "person", "file": "people/contact-placeholder-unlock.png", "placeholder": "silhouette" },
+    "people.contact.placeholder-group": { "kind": "person", "file": "people/group-placeholder-group.png", "placeholder": "group" }
+  }
+}

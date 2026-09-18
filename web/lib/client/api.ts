@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 export interface VfsNode { name: string; path: string; dir: boolean; size: number; created: string; modified: string; hidden: boolean; system: boolean; openable: boolean; kind?: string; ext: string; items?: number }
 export interface Drive { letter: string; label: string; total: number; free: number; system: boolean }
-export interface Profile { username: string; displayName: string; machineName: string; timezone: string; locale: string; accountEmail: string; wallpaper: string; accentColor: string; taskbarPins: string[]; desktopIcons: string[]; recycleBinEmpty: boolean }
+export interface Profile { username: string; displayName: string; machineName: string; timezone: string; locale: string; accountEmail: string; wallpaper: string; accentColor: string; taskbarPins: string[]; desktopIcons: string[]; recycleBinEmpty: boolean; theme?: "dark" | "light"; tempUnit?: "C" | "F"; dateFormat?: string; laptop?: boolean; inputLanguage?: [string, string]; weather?: { temp: number; text: string; icon?: string }; trayIcons?: string[] }
 export interface Contact { id: string; name: string; phone?: string; about?: string; avatar: { initials: string; color: string; src?: string }; presence?: "online" | "offline" | "lastSeen"; lastSeen?: string; character?: string | null; isGroup?: boolean; participants?: string[]; pinned?: boolean }
 export interface Message { id: number; chatId: string; sender: string; text: string; at: string; status: "sent" | "delivered" | "read"; origin: string }
 export interface ChatSummary { contact: Contact; last: Message | null; unread: number }
@@ -71,11 +71,16 @@ export function formatSizeCol(n: number): string {
   return `${Math.max(1, Math.ceil(n / 1024)).toLocaleString("en-US")} KB`;
 }
 
-export function formatDateTime(iso: string, locale = "en-US"): string {
+export function formatDate(d: Date, dateFormat = "yyyy-MM-dd", locale = "en-US"): string {
+  if (dateFormat === "yyyy-MM-dd") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return d.toLocaleDateString(locale, { month: "numeric", day: "numeric", year: "numeric" });
+}
+export function formatTime(d: Date, locale = "en-US"): string {
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+export function formatDateTime(iso: string, locale = "en-US", dateFormat = "yyyy-MM-dd"): string {
   const d = new Date(iso);
-  const date = d.toLocaleDateString(locale, { month: "numeric", day: "numeric", year: "numeric" });
-  const time = d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
-  return `${date} ${time}`;
+  return `${formatDate(d, dateFormat, locale)} ${formatTime(d, locale)}`;
 }
 
 export function toWindowsPath(p: string): string {

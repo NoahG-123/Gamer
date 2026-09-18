@@ -27,7 +27,8 @@ function createdModified(y0, y1) {
   const c = dateBetween(y0, y1);
   // modified is usually the same or later; sometimes earlier (copied file keeps mtime)
   let m = new Date(c);
-  if (chance(0.55)) m = new Date(Math.min(NOW, c.getTime() + rnd() * 1000 * 3600 * 24 * int(0, 400)));
+  if (chance(0.55)) m = new Date(c.getTime() + rnd() * 1000 * 3600 * 24 * int(0, 400));
+  if (m.getTime() > NOW) m = new Date(NOW - rnd() * 1000 * 3600 * 24 * int(1, 40));
   if (chance(0.12)) m = new Date(c.getTime() - rnd() * 1000 * 3600 * 24 * int(1, 900));
   return { created: iso(c), modified: iso(m) };
 }

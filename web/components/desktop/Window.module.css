@@ -3,11 +3,11 @@
   border-radius: 8px;
   overflow: hidden;
   outline: none;
-  background: #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.09), 0 24px 56px rgba(0, 0, 0, 0.32), 0 6px 18px rgba(0, 0, 0, 0.16);
+  background: var(--mica);
+  box-shadow: var(--window-shadow);
   contain: layout style;
 }
-.inactive { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.09), 0 8px 24px rgba(0, 0, 0, 0.14); }
+.inactive { box-shadow: var(--window-shadow-inactive); }
 .maximized { border-radius: 0; box-shadow: none; }
 .frameless { box-shadow: none; background: transparent; }
 .content { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
@@ -22,10 +22,10 @@
 .h_se { bottom: -4px; right: -4px; width: 12px; height: 12px; cursor: nwse-resize; }
 
 .caption { display: flex; height: 100%; align-items: stretch; flex-shrink: 0; }
-.capBtn { width: 46px; display: flex; align-items: center; justify-content: center; color: #1a1a1a; }
-.capBtn:hover { background: rgba(0, 0, 0, 0.0578); }
-.capBtn:active { background: rgba(0, 0, 0, 0.0419); color: rgba(0,0,0,.6); }
-.capBtn:disabled { color: rgba(0, 0, 0, 0.36); }
+.capBtn { width: 46px; display: flex; align-items: center; justify-content: center; color: var(--text); }
+.capBtn:hover { background: var(--hover); }
+.capBtn:active { background: var(--pressed); color: var(--text-2); }
+.capBtn:disabled { color: var(--text-disabled); }
 .capBtn:disabled:hover { background: none; }
 .capClose:hover { background: #c42b1c; color: #fff; }
 .capClose:active { background: #c42b1c; color: rgba(255,255,255,.7); }

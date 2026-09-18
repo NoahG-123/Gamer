@@ -357,7 +357,7 @@ export function Explorer({ win }: { win: WinState }) {
                   {sorted.map((n) => (
                     <div key={n.path} data-row className={`${styles.row} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
                       <span className={styles.cellName} style={{ width: searchResults ? 300 : 360 }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} /></span><span className={styles.rowText}>{n.name}</span></span>
-                      <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale)}</span>
+                      <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale, os.profile.dateFormat)}</span>
                       <span className={styles.cell} style={{ width: 170 }}>{A.typeLabel(n.ext, n.dir)}</span>
                       <span className={`${styles.cell} ${styles.cellSize}`} style={{ width: 90 }}>{n.dir ? "" : formatSizeCol(n.size)}</span>
                       {searchResults && <span className={styles.cell} style={{ width: 300 }}>{toWindowsPath(n.path.slice(0, n.path.lastIndexOf("/")))}</span>}
@@ -478,7 +478,7 @@ function HomeView({ home, quick, recent, navigate, open, click, selected, fileMe
         {recent.map((n) => (
           <div key={n.path} data-row className={`${styles.row} ${selected.has(n.path) ? styles.rowSel : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
             <span className={styles.cellName} style={{ width: 300 }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} name={n.name} /></span><span className={styles.rowText}>{n.name}</span></span>
-            <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale)}</span>
+            <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale, os.profile.dateFormat)}</span>
             <span className={styles.cell} style={{ width: 160 }}>{A.typeLabel(n.ext, false)}</span>
             <span className={`${styles.cell} ${styles.cellSize}`} style={{ width: 80 }}>{formatSizeCol(n.size)}</span>
             <span className={styles.cell} style={{ width: 280 }}>{toWindowsPath(n.path.slice(0, n.path.lastIndexOf("/")))}</span>

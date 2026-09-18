@@ -1,32 +1,43 @@
-/** WhatsApp-style icons (24-unit grid). */
+"use client";
+/** WhatsApp UI icons via react-icons (Material + Lucide) — WhatsApp's own glyphs are Material-derived. */
 import React from "react";
-type P = React.SVGProps<SVGSVGElement> & { size?: number };
-const W = ({ size = 24, children, ...rest }: P) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...rest}>{children}</svg>);
+import * as Md from "react-icons/md";
+import * as Lu from "react-icons/lu";
+import type { IconType } from "react-icons";
 
-export const WaChats = (p: P) => <W {...p}><path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z" /></W>;
-export const WaCalls = (p: P) => <W {...p}><path d="M17.5 12.5c-1.2 0-2.4-.2-3.5-.6-.3-.1-.7 0-1 .2l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.2-1-.4-1.1-.6-2.3-.6-3.5 0-.6-.4-1-1-1H1.5c-.6 0-1 .4-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.6-.4-1-1-1z" /></W>;
-export const WaStatus = (p: P) => <W {...p}><path d="M12 2.4c-2.2 0-4.3.7-6 2l1.6 2A7.1 7.1 0 0 1 12 4.9zm7.6 3.6l-2 1.6a7.1 7.1 0 0 1 1.5 4.4h2.5c0-2.2-.7-4.3-2-6zM4.4 6L2.4 4.4a9.6 9.6 0 0 0-2 6h2.5c0-1.6.5-3.1 1.5-4.4zm14.7 11.6a7.1 7.1 0 0 1-4.4 1.5v2.5c2.2 0 4.3-.7 6-2zM19.1 12a7.1 7.1 0 0 1-1.5 4.4l2 1.6c1.3-1.7 2-3.8 2-6zM2.9 12H.4c0 2.2.7 4.3 2 6l2-1.6A7.1 7.1 0 0 1 2.9 12zm9.1 7.1a7.1 7.1 0 0 1-4.4-1.5l-1.6 2c1.7 1.3 3.8 2 6 2z" /></W>;
-export const WaCommunities = (p: P) => <W {...p}><path d="M12 12.75c1.63 0 3.07.39 4.24.9 1.08.48 1.76 1.56 1.76 2.73V18H6v-1.61c0-1.18.68-2.26 1.76-2.73 1.17-.52 2.61-.91 4.24-.91zM4 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm1.13 1.1c-.37-.06-.74-.1-1.13-.1-.99 0-1.93.21-2.78.58A2.01 2.01 0 0 0 0 16.43V18h4.5v-1.61c0-.83.23-1.61.63-2.29zM20 13c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85A6.95 6.95 0 0 0 20 14c-.39 0-.76.04-1.13.1.4.68.63 1.46.63 2.29V18H24v-1.57zM12 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3z" /></W>;
-export const WaChannels = (p: P) => <W {...p}><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2.2c1.5 0 2.9.4 4.1 1.2L12 9.5 7.9 5.4A7.7 7.7 0 0 1 12 4.2zM4.2 12c0-1.5.4-2.9 1.2-4.1L9.5 12l-4.1 4.1A7.7 7.7 0 0 1 4.2 12zM12 19.8c-1.5 0-2.9-.4-4.1-1.2l4.1-4.1 4.1 4.1c-1.2.8-2.6 1.2-4.1 1.2zm6.6-3.7L14.5 12l4.1-4.1c.8 1.2 1.2 2.6 1.2 4.1s-.4 2.9-1.2 4.1z" /></W>;
-export const WaStarred = (p: P) => <W {...p}><path d="M12 2l2.9 6.6 7.1.7-5.4 4.8 1.6 7.1L12 17.5l-6.2 3.7 1.6-7.1L2 9.3l7.1-.7z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></W>;
-export const WaArchive = (p: P) => <W {...p}><path d="M20.5 3h-17C2.7 3 2 3.7 2 4.5v3c0 .6.3 1 .8 1.3V19c0 1.1.9 2 2 2h14.4c1.1 0 2-.9 2-2V8.8c.5-.3.8-.8.8-1.3v-3c0-.8-.7-1.5-1.5-1.5zM19.2 19H4.8V9h14.4v10zM20 7H4V5h16v2zM9 12h6v2H9z" /></W>;
-export const WaSettings = (p: P) => <W {...p}><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" /></W>;
-export const WaNewChat = (p: P) => <W {...p}><path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zM11 14.5H9v-2h2v2zm3.6-6.2l-4.2 4.2H8.5v-1.9l4.2-4.2 1.9 1.9zm1-1l-1.9-1.9.9-.9c.3-.3.7-.3 1 0l.9.9c.3.3.3.7 0 1l-.9.9z" /></W>;
-export const WaFilter = (p: P) => <W {...p}><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" /></W>;
-export const WaMenu = (p: P) => <W {...p}><path d="M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" /></W>;
-export const WaSearch = (p: P) => <W {...p}><path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 0 0 1.256-3.386 5.207 5.207 0 1 0-5.207 5.208 5.183 5.183 0 0 0 3.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 1 1 0-7.21 3.605 3.605 0 0 1 0 7.21z" /></W>;
-export const WaVideo = (p: P) => <W {...p}><path d="M15.243 5.5H4.757A1.757 1.757 0 0 0 3 7.257v9.486c0 .97.787 1.757 1.757 1.757h10.486A1.757 1.757 0 0 0 17 16.743V7.257A1.757 1.757 0 0 0 15.243 5.5zM21 7.8l-3 2.1v4.2l3 2.1z" /></W>;
-export const WaPhone = (p: P) => <W {...p}><path d="M16.9 14.3c-1 0-2-.2-2.9-.5-.3-.1-.6 0-.9.2l-1.9 1.9c-2.5-1.3-4.5-3.3-5.8-5.8l1.9-1.9c.3-.3.3-.6.2-.9-.3-.9-.5-1.9-.5-2.9 0-.5-.4-.9-.9-.9H3.9c-.5 0-.9.4-.9.9 0 7.7 6.3 14 14 14 .5 0 .9-.4.9-.9v-3.1c0-.6-.4-1-1-1z" /></W>;
-export const WaEmoji = (p: P) => <W {...p}><path d="M9.153 11.603c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962zm-3.204 1.362c-.026-.307-.131 5.218 6.063 5.551 6.066-.25 6.066-5.551 6.066-5.551-6.078 1.416-12.129 0-12.129 0zm11.363 1.108s-.669 1.959-5.051 1.959c-3.505 0-5.388-1.164-5.607-1.959 0 0 5.912 1.055 10.658 0zM11.804 1.011C5.609 1.011.978 6.033.978 12.228s4.826 10.761 11.021 10.761S23.02 18.423 23.02 12.228c.001-6.195-5.021-11.217-11.216-11.217zM12 21.354c-5.273 0-9.381-3.886-9.381-9.159s3.942-9.548 9.215-9.548 9.548 4.275 9.548 9.548c-.001 5.272-4.109 9.159-9.382 9.159zm3.108-9.751c.795 0 1.439-.879 1.439-1.962s-.644-1.962-1.439-1.962-1.439.879-1.439 1.962.644 1.962 1.439 1.962z" /></W>;
-export const WaPlus = (p: P) => <W {...p}><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" /></W>;
-export const WaMic = (p: P) => <W {...p}><path d="M11.999 14.942c2.001 0 3.531-1.53 3.531-3.531V4.35c0-2.001-1.53-3.531-3.531-3.531S8.469 2.35 8.469 4.35v7.061c0 2.001 1.53 3.531 3.53 3.531zm6.238-3.53c0 3.531-2.942 6.002-6.237 6.002s-6.237-2.471-6.237-6.002H3.761c0 4.001 3.178 7.297 7.061 7.885v3.884h2.354v-3.884c3.884-.588 7.061-3.884 7.061-7.885h-2z" /></W>;
-export const WaSend = (p: P) => <W {...p}><path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" /></W>;
-export const WaCheck = (p: P) => <W {...p} viewBox="0 0 16 15"><path d="M10.91 3.316l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" /></W>;
-export const WaDoubleCheck = (p: P) => <W {...p} viewBox="0 0 16 15"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.879a.32.32 0 0 1-.484.033l-.358-.325a.319.319 0 0 0-.484.032l-.378.483a.418.418 0 0 0 .036.541l1.32 1.266c.143.14.361.125.484-.033l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.879a.32.32 0 0 1-.484.033L1.891 7.769a.366.366 0 0 0-.515.006l-.423.433a.364.364 0 0 0 .006.514l3.258 3.185c.143.14.361.125.484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" /></W>;
-export const WaBack = (p: P) => <W {...p}><path d="M12 4l1.4 1.4L7.8 11H20v2H7.8l5.6 5.6L12 20l-8-8z" /></W>;
+type P = { size?: number; className?: string; style?: React.CSSProperties };
+const w = (C: IconType) => ({ size = 24, className, style }: P) => <C size={size} className={className} style={{ display: "block", ...style }} />;
+
+export const WaChats = w(Md.MdOutlineChat);
+export const WaCalls = w(Md.MdOutlineCall);
+export const WaStatus = w(Md.MdOutlineDonutLarge);
+export const WaCommunities = w(Md.MdOutlineGroups);
+export const WaChannels = w(Md.MdOutlineCampaign);
+export const WaStarred = w(Md.MdOutlineStarOutline);
+export const WaArchive = w(Md.MdOutlineArchive);
+export const WaSettings = w(Md.MdOutlineSettings);
+export const WaNewChat = w(Md.MdOutlineAddComment);
+export const WaFilter = w(Md.MdFilterList);
+export const WaMenu = w(Md.MdMoreVert);
+export const WaSearch = w(Md.MdSearch);
+export const WaVideo = w(Md.MdOutlineVideocam);
+export const WaPhone = w(Md.MdOutlineCall);
+export const WaEmoji = w(Md.MdOutlineEmojiEmotions);
+export const WaPlus = w(Md.MdAdd);
+export const WaMic = w(Md.MdOutlineMic);
+export const WaSend = w(Md.MdSend);
+export const WaCheck = w(Md.MdDone);
+export const WaDoubleCheck = w(Md.MdDoneAll);
+export const WaBack = w(Md.MdArrowBack);
+export const WaClose = w(Md.MdClose);
+export const WaLock = w(Lu.LuLock);
 export const WaDefaultAvatar = ({ size = 40, color = "#DFE5E7" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 212 212"><circle cx="106" cy="106" r="106" fill={color} /><path d="M173.5 174.7c-16-17.1-40.4-26.3-67.5-26.3s-51.5 9.2-67.5 26.3C55 192.5 79.2 203 106 203s51-10.5 67.5-28.3zM106 132c19.9 0 36-16.1 36-36s-16.1-36-36-36-36 16.1-36 36 16.1 36 36 36z" fill="#fff" /></svg>
+  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, borderRadius: "50%", background: color, flexShrink: 0 }}>
+    <Md.MdPerson size={size * 0.7} color="#fff" style={{ marginTop: size * 0.06 }} />
+  </span>
 );
 export const WaGroupAvatar = ({ size = 40, color = "#DFE5E7" }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 212 212"><circle cx="106" cy="106" r="106" fill={color} /><path d="M106 118c-22 0-40 8-53 22 13 15 32 24 53 24s40-9 53-24c-13-14-31-22-53-22zm-33-10c11 0 20-9 20-20s-9-20-20-20-20 9-20 20 9 20 20 20zm66 0c11 0 20-9 20-20s-9-20-20-20-20 9-20 20 9 20 20 20zM64 116c-14 0-27 5-36 13 8 10 20 18 34 21-2-4-3-8-3-13 0-7 2-14 5-21zm84 0c3 7 5 14 5 21 0 5-1 9-3 13 14-3 26-11 34-21-9-8-22-13-36-13z" fill="#fff" /></svg>
+  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: size, height: size, borderRadius: "50%", background: color, flexShrink: 0 }}>
+    <Md.MdGroups size={size * 0.62} color="#fff" />
+  </span>
 );
