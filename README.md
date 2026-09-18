@@ -93,8 +93,9 @@ consultant and the victim's daughter.
    `content/llm/pricing.json`, so the spend estimate goes approximate — the hard cap
    still works.
 2. `LLM_BUDGET_USD` (default 10) is a hard spend cap for the whole install; when
-   reached, characters simply stop reading messages. `deepseek-chat` is much cheaper
-   than `deepseek-reasoner` and is the default for these characters.
+   reached, characters simply stop reading messages. Every character is set to
+   `deepseek-chat` (V3): cheaper than the reasoning models, and it texts in short
+   bursts instead of dumping paragraphs.
 3. `PEXELS_API_KEY` (optional) fills in stock imagery (wallpaper, backgrounds) on
    first run. Character portraits come from `npm run fetch:people` instead and need
    no key.
@@ -125,7 +126,7 @@ needs nothing extra.
 | `DEEPSEEK_API_KEY` | DeepSeek API key. Never committed. |
 | `LLM_BUDGET_USD` | Hard spend cap for the whole install (default 10). When reached, LLM contacts simply stop reading messages. |
 | `LLM_PROVIDER` | `deepseek` (default) or `mock`. |
-| `LLM_DEFAULT_MODEL` | Default model when a character does not set one (`deepseek-reasoner`). |
+| `LLM_DEFAULT_MODEL` | Default model when a character does not set one (`deepseek-chat`). Reasoning models read wrong in chat — they answer in paragraphs instead of short bursts. |
 | `LLM_TIMEOUT_MS` | Per-request timeout (default 120000). |
 | `PEXELS_API_KEY` | For `npm run fetch:assets`. |
 | `DATA_DIR`, `CONTENT_DIR` | Overrides for the SQLite folder and content folder (set automatically by Electron). |

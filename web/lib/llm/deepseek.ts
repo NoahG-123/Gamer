@@ -6,7 +6,8 @@
  *   DEEPSEEK_API_BASE  default https://api.deepseek.com (tests point this at a mock)
  *   LLM_PROVIDER       "deepseek" (default) | "mock" (canned replies, no network)
  *   LLM_BUDGET_USD     hard spend cap across the whole install (default 10)
- *   LLM_DEFAULT_MODEL  default "deepseek-reasoner"
+ *   LLM_DEFAULT_MODEL  default "deepseek-chat" (V3). Reasoning models like deepseek-reasoner
+ *                      write long, deliberate paragraphs, which reads wrong as a text message.
  *   LLM_TIMEOUT_MS     default 120000
  */
 import { db } from "../db";
@@ -59,7 +60,7 @@ function record(characterId: string | undefined, model: string, usage: ChatUsage
 
 /** Send a conversation to the model. Throws BudgetExceededError / NotConfiguredError / Error(network). */
 export async function chat(req: ChatRequest): Promise<ChatResponse> {
-  const model = req.model || process.env.LLM_DEFAULT_MODEL || "deepseek-reasoner";
+  const model = req.model || process.env.LLM_DEFAULT_MODEL || "deepseek-chat";
   const budget = budgetUsd();
   const spent = spentUsd();
   if (spent >= budget) throw new BudgetExceededError(spent, budget);
