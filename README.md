@@ -102,6 +102,31 @@ consultant and the victim's daughter.
 
 So: add the key, download/run, and it starts as a stray file on your machine.
 
+## CI / secrets
+
+`.github/workflows/build.yml` typechecks and builds on every push to `main`. The
+Windows `.exe` is a **manual** run (Actions → Build → Run workflow).
+
+The API key is never in the repo — `.env` is gitignored and `.env.example` ships
+empty. Add the key once under **Settings → Secrets and variables → Actions**:
+
+| Name | Kind | Notes |
+| --- | --- | --- |
+| `DEEPSEEK_API_KEY` | Secret | Only read when you tick `bake_key` on a manual run. |
+| `DEEPSEEK_API_BASE` | Variable | Optional, e.g. the OpenRouter endpoint. |
+| `LLM_DEFAULT_MODEL` | Variable | Optional. |
+| `LLM_BUDGET_USD` | Variable | Optional, defaults to 10. |
+
+Ticking `bake_key` writes a `.env` next to the executable in the artifact, so the
+build works with no setup by whoever runs it. **That key is then readable by anyone
+who has the file** — it is a plain text file sitting beside the exe. Use it for
+builds you keep, and give a provider-side spend limit to any key that goes further
+than that; the in-app `LLM_BUDGET_USD` cap only limits the app's own spending and
+does nothing about a key someone has lifted out of the file.
+
+Leave `bake_key` off and the build ships keyless — each player supplies their own,
+which is how the app is designed to work.
+
 ## Build and package
 
 ```bash

@@ -1,0 +1,80 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      bake_key:
+        description: "Ship the API key inside the build (see the warning in the job below)"
+        type: boolean
+        default: false
+
+jobs:
+  # Fast gate on every push: does it still compile?
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build:web
+
+  # The distributable. Manual only — it is slow and produces a release artifact.
+  windows:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - run: npm ci
+
+      # Portraits are gitignored, so fetch them here or the build ships blank faces.
+      # A hiccup on the free API shouldn't fail a release; it degrades to silhouettes.
+      - name: Fetch character portraits
+        run: npm run fetch:people
+        continue-on-error: true
+
+      - run: npm run package
+
+      # The app reads `.env` from beside the executable, so writing one into the
+      # artifact is all it takes to ship a working key — no code change needed.
+      #
+      # WARNING: an API key inside a file you hand to other people is readable by
+      # every one of them. Only enable this for a build you keep to yourself, or
+      # use a key with a hard spend limit set at the provider. The app's own
+      # LLM_BUDGET_USD cap does NOT protect an extracted key — it only limits what
+      # the app itself spends.
+      - name: Write .env into the artifact
+        if: inputs.bake_key
+        shell: bash
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_API_BASE: ${{ vars.DEEPSEEK_API_BASE }}
+          LLM_DEFAULT_MODEL: ${{ vars.LLM_DEFAULT_MODEL }}
+          LLM_BUDGET_USD: ${{ vars.LLM_BUDGET_USD }}
+        run: |
+          if [ -z "$DEEPSEEK_API_KEY" ]; then
+            echo "::error::bake_key was set but the DEEPSEEK_API_KEY secret is empty."
+            exit 1
+          fi
+          {
+            echo "DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
+            [ -n "$DEEPSEEK_API_BASE" ] && echo "DEEPSEEK_API_BASE=$DEEPSEEK_API_BASE"
+            [ -n "$LLM_DEFAULT_MODEL" ] && echo "LLM_DEFAULT_MODEL=$LLM_DEFAULT_MODEL"
+            echo "LLM_BUDGET_USD=${LLM_BUDGET_USD:-10}"
+          } > release/.env
+          echo "::warning::This build carries an API key. Anyone you give it to can read it."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: found-windows
+          path: |
+            release/*.exe
+            release/.env
+          if-no-files-found: error
+          retention-days: 14
