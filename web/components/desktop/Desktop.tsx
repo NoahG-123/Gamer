@@ -49,7 +49,7 @@ function DesktopInner() {
 
   const launch = useCallback((app: AppId, props?: Record<string, unknown>) => {
     api.event("app.opened", app).catch(() => {});
-    if (app === "chrome") return wm.open("chrome", { singleton: true, props, w: Math.min(1366, window.innerWidth - 80), h: Math.min(860, window.innerHeight - 48 - 40) });
+    if (app === "chrome") return wm.open("chrome", { singleton: true, props: { ...(props ?? {}), nonce: Date.now() }, w: Math.min(1366, window.innerWidth - 80), h: Math.min(860, window.innerHeight - 48 - 40) });
     if (app === "whatsapp") return wm.open("whatsapp", { singleton: true, props });
     if (app === "notepad") return wm.open("notepad", { props: { name: "Untitled", text: "", ...(props ?? {}) } });
     return wm.open(app, { props });
@@ -57,6 +57,12 @@ function DesktopInner() {
 
   const openFile = useCallback(async (node: VfsNode) => {
     if (node.dir) { wm.open("explorer", { props: { path: node.path } }); return; }
+    // Shortcuts to the apps that exist launch them; any other shortcut is a broken .lnk.
+    if (node.ext === "lnk" || node.ext === "url") {
+      const n = node.name.toLowerCase();
+      const target: AppId | null = /chrome/.test(n) ? "chrome" : /whatsapp/.test(n) ? "whatsapp" : /notepad/.test(n) ? "notepad" : /(desktop|downloads|documents|explorer)/.test(n) ? "explorer" : null;
+      if (target) { api.event("file.opened", node.path).catch(() => {}); launch(target); return; }
+    }
     let res;
     try { res = await api.open(node.path); } catch { return; }
     if (res.openable) {
