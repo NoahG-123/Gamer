@@ -9,6 +9,9 @@
  *   LLM_DEFAULT_MODEL  default "deepseek-chat" (V3). Reasoning models like deepseek-reasoner
  *                      write long, deliberate paragraphs, which reads wrong as a text message.
  *   LLM_TIMEOUT_MS     default 120000
+ *   GEMINI_API_KEY     optional stand-in: if DeepSeek is not configured or cannot be
+ *                      reached, replies come from Gemini instead, so people still answer.
+ *   LLM_FALLBACK_MODEL default "gemini-2.5-flash"
  */
 import { db } from "../db";
 import { loadContent } from "../content";
@@ -26,7 +29,7 @@ export interface ChatRequest {
 }
 
 export interface ChatUsage { promptTokens: number; cacheHitTokens: number; completionTokens: number; reasoningTokens: number; costUsd: number }
-export interface ChatResponse { content: string; reasoning?: string; model: string; usage: ChatUsage; provider: "deepseek" | "mock" }
+export interface ChatResponse { content: string; reasoning?: string; model: string; usage: ChatUsage; provider: "deepseek" | "gemini" | "mock" }
 
 export class BudgetExceededError extends Error { constructor(public spent: number, public budget: number) { super(`LLM budget exhausted: $${spent.toFixed(4)} of $${budget.toFixed(2)}`); } }
 export class NotConfiguredError extends Error { constructor() { super("DEEPSEEK_API_KEY is not set"); } }
@@ -97,6 +100,8 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
 
   const key = process.env.DEEPSEEK_API_KEY;
   if (!key) {
+    // A Gemini key is enough on its own: people still answer, just through a different model.
+    if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) return geminiChat(req, messages);
     warnOnce("nokey", "No DEEPSEEK_API_KEY is set, so nobody will answer messages or email. Put your key in the .env file next to the app and restart.");
     throw new NotConfiguredError();
   }
@@ -121,6 +126,10 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
       else if (res.status >= 500) warnOnce("provider", `The model provider returned HTTP ${res.status}. Replies will be missing until it recovers.`);
       const err = `DeepSeek HTTP ${res.status}: ${text.slice(0, 300)}`;
       record(req.characterId, model, { promptTokens: 0, cacheHitTokens: 0, completionTokens: 0, reasoningTokens: 0, costUsd: 0 }, false, err);
+      if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
+        warnOnce("fallback", "DeepSeek is not answering, so replies are coming from Gemini for now.");
+        return geminiChat(req, messages);
+      }
       throw new Error(err);
     }
     const json = (await res.json()) as {
@@ -140,12 +149,68 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
     record(req.characterId, model, usage, true);
     return { content: (msg?.content ?? "").trim(), reasoning: msg?.reasoning_content, model: json.model ?? model, usage, provider: "deepseek" };
   } catch (e) {
-    if ((e as Error).cause || (e as Error).message.includes("fetch failed")) warnOnce("network", `Could not reach ${base}. Check the machine's internet connection, or DEEPSEEK_API_BASE if you changed it.`);
+    if ((e as Error).cause || (e as Error).message.includes("fetch failed")) {
+      warnOnce("network", `Could not reach ${base}. Check the machine's internet connection, or DEEPSEEK_API_BASE if you changed it.`);
+      if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) return geminiChat(req, messages);
+    }
     if ((e as Error).name === "AbortError") {
       record(req.characterId, model, { promptTokens: 0, cacheHitTokens: 0, completionTokens: 0, reasoningTokens: 0, costUsd: 0 }, false, "timeout");
       throw new Error("DeepSeek request timed out");
     }
     throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * The stand-in. Same conversation, same system prompt, a different model behind it — used
+ * only when DeepSeek is not configured or is not answering, so a missing key or a provider
+ * outage does not leave everyone silent. Costs nothing against the spend cap, which is
+ * DeepSeek's, but every call is still recorded.
+ */
+async function geminiChat(req: ChatRequest, messages: ChatMessage[]): Promise<ChatResponse> {
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+  const model = process.env.LLM_FALLBACK_MODEL || "gemini-2.5-flash";
+  const system = messages.find((m) => m.role === "system")?.content;
+  const contents = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: { maxOutputTokens: req.maxTokens ?? 400, ...(req.temperature !== undefined ? { temperature: req.temperature } : {}) },
+    ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+  };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.LLM_TIMEOUT_MS ?? 120000));
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      if (res.status === 429) warnOnce("gemini-quota", "The stand-in model is out of allowance for now, so some replies will be missing.");
+      const err = `Gemini HTTP ${res.status}: ${text.slice(0, 300)}`;
+      record(req.characterId, model, { promptTokens: 0, cacheHitTokens: 0, completionTokens: 0, reasoningTokens: 0, costUsd: 0 }, false, err);
+      throw new Error(err);
+    }
+    const json = (await res.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number };
+    };
+    const content = (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
+    const usage: ChatUsage = {
+      promptTokens: json.usageMetadata?.promptTokenCount ?? 0,
+      cacheHitTokens: 0,
+      completionTokens: json.usageMetadata?.candidatesTokenCount ?? 0,
+      reasoningTokens: json.usageMetadata?.thoughtsTokenCount ?? 0,
+      costUsd: 0,
+    };
+    record(req.characterId, model, usage, true);
+    return { content, model, usage, provider: "gemini" };
   } finally {
     clearTimeout(timeout);
   }

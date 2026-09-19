@@ -115,6 +115,12 @@ instead of wobbling a few Hz; the phase is now integrated properly.
 - The DeepSeek path was verified end to end against a local OpenAI-compatible stand-in
   (auth header, model, temperature, token limit, system prompt, history, usage accounting,
   spend cap). Key problems are reported once on the host console, never inside the machine.
+- Because api.deepseek.com is blocked here, a **stand-in model** was added so people still
+  answer when DeepSeek is missing, rejected or unreachable: with a `GEMINI_API_KEY` set,
+  replies come from Gemini instead, with the same system prompt and history, and every call
+  is still recorded. Verified live here without any DeepSeek key at all: a message sent in
+  the app was scheduled, delivered and answered in character. DeepSeek is still preferred
+  whenever it is configured and answering.
 
 ## Remaining
 

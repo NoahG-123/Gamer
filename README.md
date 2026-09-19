@@ -68,7 +68,9 @@ the first time you open it, which makes the machine feel sluggish.
 `npm run play` (and `npm run dev`) creates `.env` for you on first run (copied from
 `.env.example`) and tells you so. Paste your API key after `DEEPSEEK_API_KEY=` in it and restart to
 give the characters a voice — without it everything else still works, messages just
-never get answered. That file is gitignored, so your key stays on your machine.
+never get answered. A `GEMINI_API_KEY` works too: it is what generates the spoken lines,
+and it stands in for replies whenever DeepSeek is missing or not answering, so people
+still get back to you. That file is gitignored, so your key stays on your machine.
 
 `fetch:people` makes one request per character and writes
 `content/assets/people/*.jpg`; the manifest already points at those paths, so the
