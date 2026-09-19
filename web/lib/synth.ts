@@ -80,26 +80,88 @@ function chunk(type: string, data: Buffer): Buffer {
   const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
   return Buffer.concat([len, td, crc]);
 }
-/** A soft, slightly grainy photo-like frame: two-tone gradient with a vignette. Looks like an out-of-focus snapshot. */
+/**
+ * A photograph. Not a gradient: each one is a composed scene chosen by the file's own path
+ * — a view out over water, a room with light coming in a window, a sky over a horizon, or
+ * something too close to the lens to read — with depth-of-field softness, film grain and a
+ * vignette. Deterministic, so a picture looks the same every time it is opened.
+ */
+function fbm(r: () => number, cells: number, octaves = 4): (x: number, y: number) => number {
+  const grids: Float32Array[] = [];
+  const sizes: number[] = [];
+  for (let o = 0; o < octaves; o++) {
+    const c = cells * 2 ** o + 2;
+    const g = new Float32Array(c * c);
+    for (let i = 0; i < g.length; i++) g[i] = r();
+    grids.push(g); sizes.push(c);
+  }
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  return (x, y) => {
+    let v = 0, amp = 0.5, total = 0;
+    for (let o = 0; o < grids.length; o++) {
+      const c = sizes[o], g = grids[o];
+      const fx = x * (c - 2), fy = y * (c - 2);
+      const x0 = Math.floor(fx), y0 = Math.floor(fy);
+      const tx = smooth(fx - x0), ty = smooth(fy - y0);
+      const at = (a: number, b: number) => g[Math.min(c - 1, b) * c + Math.min(c - 1, a)];
+      v += lerp(lerp(at(x0, y0), at(x0 + 1, y0), tx), lerp(at(x0, y0 + 1), at(x0 + 1, y0 + 1), ty), ty) * amp;
+      total += amp; amp *= 0.5;
+    }
+    return v / total;
+  };
+}
+
 export function synthPng(seed: string, w = 800, h = 600): Buffer {
   return memo(`png:${seed}:${w}x${h}`, () => {
     const r = rng(seed);
-    const palettes = [[[38, 52, 74], [186, 168, 140]], [[70, 60, 52], [210, 196, 170]], [[24, 40, 44], [140, 170, 160]], [[90, 70, 60], [230, 214, 190]], [[30, 30, 36], [120, 130, 150]], [[60, 80, 60], [200, 210, 180]]];
-    const [c0, c1] = palettes[Math.floor(r() * palettes.length)];
-    const angle = r() * Math.PI * 2, grain = 6 + r() * 10, horizon = 0.35 + r() * 0.3;
+    const scene = Math.floor(r() * 4);
+    const haze = fbm(r, 2, 4), detail = fbm(r, 5, 3);
+    const warm = 0.6 + r() * 0.9;            // how warm the light is
+    const dark = scene === 0 ? 0.55 : 0.85;  // evening or daylight
+    const horizon = 0.42 + r() * 0.26;
+    const lx = 0.2 + r() * 0.6, ly = 0.18 + r() * 0.4;
     const raw = Buffer.alloc((w * 3 + 1) * h);
-    const cx = w / 2, cy = h / 2, maxd = Math.hypot(cx, cy);
+    const cx = 0.5, cy = 0.5;
     for (let y = 0; y < h; y++) {
       raw[y * (w * 3 + 1)] = 0;
+      const ny = y / h;
       for (let x = 0; x < w; x++) {
-        const nx = x / w - 0.5, ny = y / h - 0.5;
-        let t = 0.5 + (nx * Math.cos(angle) + ny * Math.sin(angle));
-        t = Math.max(0, Math.min(1, t));
-        const band = y / h > horizon ? 0.85 : 1; // a darker lower half, like ground
-        const vig = 1 - 0.45 * Math.pow(Math.hypot(x - cx, y - cy) / maxd, 2);
-        const g = (r() * 2 - 1) * grain;
+        const nx = x / w;
+        let lum: number, tint: number;
+        if (scene === 0) {
+          // water under an evening sky
+          const toH = 1 - Math.min(1, Math.abs(ny - horizon) / 0.5);
+          lum = 22 + 52 * toH + (ny > horizon ? -14 * ((ny - horizon) / (1 - horizon)) : 0);
+          lum += Math.max(0, haze(nx, ny) - 0.35) * 70;
+          lum += Math.exp(-(((nx - lx) ** 2) * 2.2 + (ny - ly) ** 2) / 0.02) * 60;
+          tint = 0.75;
+        } else if (scene === 1) {
+          // a room with a window
+          const win = Math.pow(Math.max(0, 1 - Math.abs(nx - lx) / 0.19) * Math.max(0, 1 - Math.abs(ny - ly) / 0.27), 1.5);
+          lum = 26 + win * 185 + Math.exp(-(((nx - lx) ** 2) + (ny - ly) ** 2) / 0.24) * 54;
+          lum *= 0.75 + detail(nx, ny) * 0.45;
+          tint = 1.15;
+        } else if (scene === 2) {
+          // open sky over ground
+          const sky = ny < horizon;
+          lum = sky ? 120 + (1 - ny / horizon) * 72 : 58 + detail(nx, ny) * 60;
+          lum += Math.max(0, haze(nx, ny * 1.6) - 0.4) * (sky ? 56 : 24);
+          tint = sky ? 0.7 : 1.05;
+        } else {
+          // too close to the lens to make out
+          const blob = Math.exp(-(((nx - lx) ** 2) + ((ny - ly) ** 2)) / 0.09);
+          lum = 40 + blob * 120 + detail(nx, ny) * 70;
+          tint = 1.0;
+        }
+        lum *= dark;
+        const grain = (r() * 2 - 1) * 6.5;
+        const vig = 1 - 0.46 * ((nx - cx) ** 2 + (ny - cy) ** 2) * 1.8;
         const o = y * (w * 3 + 1) + 1 + x * 3;
-        for (let k = 0; k < 3; k++) raw[o + k] = Math.max(0, Math.min(255, Math.round((c0[k] + (c1[k] - c0[k]) * t) * band * vig + g)));
+        const wr = 1 + 0.13 * (warm - 1) * tint, wb = 1 - 0.13 * (warm - 1) * tint;
+        raw[o] = Math.max(0, Math.min(255, (lum * wr + grain) * vig));
+        raw[o + 1] = Math.max(0, Math.min(255, (lum + grain) * vig));
+        raw[o + 2] = Math.max(0, Math.min(255, (lum * wb + grain) * vig));
       }
     }
     const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;

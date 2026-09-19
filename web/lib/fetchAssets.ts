@@ -11,6 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { loadContent, contentPath } from "./content";
+import { assetsWritableRoot, locateAsset } from "./assets";
 import type { AssetEntry } from "./assets";
 
 interface ManifestFile { assets: Record<string, AssetEntry & { pexels?: { query: string; orientation?: string; size?: string; index?: number } }> }
@@ -29,7 +30,8 @@ export function ensureStockAssets(): Promise<void> {
 /** Portraits for every `person` slot whose file is missing. Silent when offline. */
 async function fetchPeople(): Promise<void> {
   const { assets } = loadContent<ManifestFile>("assets.json");
-  const root = contentPath("assets");
+  // Written to the data folder: a packaged app's own folder may not be writable.
+  const root = assetsWritableRoot();
   // Slots that name the same file share one face (an account picture and a chat avatar
   // belong to the same human).
   const wanted = new Map<string, { gender: "male" | "female" }>();
@@ -42,7 +44,7 @@ async function fetchPeople(): Promise<void> {
   for (const [name, a] of Object.entries(assets)) {
     if (a.kind !== "person" || !a.file) continue;
     const dest = path.join(root, a.file);
-    if (fs.existsSync(dest) || wanted.has(dest)) continue;
+    if (locateAsset(a.file) || wanted.has(dest)) continue;
     wanted.set(dest, { gender: GENDER[name] ?? (Math.random() < 0.5 ? "male" : "female") });
   }
   if (!wanted.size) return;
