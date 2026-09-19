@@ -86,15 +86,19 @@ Chrome shows its own offline page until it goes back on. Files can be created, r
 edited, saved, deleted to the Recycle Bin, restored and emptied — from Explorer, from
 Notepad, or from the Terminal (`New-Item`, `Set-Content`, `rm`, `mv`, `cp`, `>` and `>>`).
 Wallpaper, theme and accent colour change from Settings or by right-clicking a picture.
-Chrome keeps real history, real bookmarks, real downloads, and its Inspect and View source
-open Chromium's own tools. Task Manager lists the windows that are actually open and End
-task closes them. Downloads land in this machine's Downloads folder and never touch the
-computer it is running on.
+Chrome keeps real history, real bookmarks, real downloads, has a working bookmark manager
+and settings page, and its Inspect and View source open Chromium's own tools. Explorer has
+all eight of its view modes, a details and a preview pane, working Sort, Filter and Group
+by, hidden items and file name extensions. The messaging app really pins, mutes, archives,
+favourites and stars, and remembers it. Task Manager lists the windows that are actually
+open and End task closes them. Downloads land in this machine's Downloads folder and never
+touch the computer it is running on.
 
 A few things genuinely cannot work inside an app like this, and they say so plainly and
 identically every time you try: Bluetooth (no adapter), casting and second displays,
-nearby sharing, printing, the camera and microphone, and changing the host account's
-password. Nothing else hides behind an excuse.
+nearby sharing, printing, the camera and microphone, pairing a phone, and changing the
+account's password. Nothing else hides behind an excuse, and nothing this build does not
+have is left on screen as a button that does nothing — it is simply not offered.
 
 ## Voices
 

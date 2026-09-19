@@ -17,7 +17,7 @@ export interface System {
   online: boolean;
 }
 
-export type SoundName = "notify" | "message" | "error" | "unlock" | "click" | "empty-bin" | "device-connect" | "discovery";
+export type SoundName = "notify" | "message" | "send" | "error" | "unlock" | "click" | "empty-bin" | "device-connect" | "discovery";
 
 const DEFAULTS: SettingsState = { volume: 34, muted: true, brightness: 100, wifi: true, bluetooth: false, airplane: false, nightLight: false, theme: "dark", accent: "#0067C0", wallpaper: "wallpaper.desktop", wallpaperFit: "fill", chromeBookmarksBar: true, chromeTabGroups: true, chromeZoom: 1, chromeStartup: "ntp", chatFlags: {}, waSounds: true, starredMessages: [] };
 const Ctx = createContext<System | null>(null);
@@ -117,6 +117,8 @@ function renderSound(ctx: AudioContext, name: SoundName, gain: number): void {
     case "discovery": tone(392, 0, 0.5, "sine", 0.3); tone(587.33, 0.18, 0.6, "sine", 0.24); tone(783.99, 0.36, 0.9, "sine", 0.16); break;
     case "device-connect": tone(523.25, 0, 0.14, "sine", 0.4); tone(784, 0.08, 0.22, "sine", 0.3); break;
     case "empty-bin": noise(0, 0.5, 0.35, 500); tone(180, 0.02, 0.3, "triangle", 0.2); break;
+    // Sending: a short rising blip, quieter than an arriving message.
+    case "send": tone(1046.5, 0, 0.09, "sine", 0.26); tone(1396.91, 0.05, 0.16, "sine", 0.18); break;
     case "click": default: noise(0, 0.05, 0.22, 2000); break;
   }
 }

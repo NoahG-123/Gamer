@@ -124,6 +124,7 @@ export function WhatsApp({ win }: { win: WinState }) {
     if (!t || !current) return;
     setText("");
     api.send(current, t).catch(() => {});
+    if (sys.settings.waSounds !== false) sys.play("send");
     input.current?.focus();
   };
 

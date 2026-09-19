@@ -1,9 +1,7 @@
 # HANDOFF — final build pass (contains no story details)
 
-Everything asked for in the final pass is done except the last of the spoken lines, which
-are rate-limited by the speech provider (see **Voices** below). The build is green:
-typecheck, 16 API tests and the Electron end-to-end test all pass, and `npm run build`
-completes.
+Everything asked for in the final pass is done. The build is green: typecheck, 16 API tests
+and the Electron end-to-end test all pass, and `npm run build` completes.
 
 ## Fixed
 
@@ -40,6 +38,17 @@ referenced them except as fallbacks.
   surviving restarts; every contact and group can answer; messages sent while offline go
   out when the network returns.
 - Interface sounds synthesised in the browser so they follow the volume slider.
+- A second sweep over every remaining button, menu entry and toggle in the shell and the
+  apps, sorting each into works / genuinely cannot / not in this build, then building the
+  first, stating the second plainly and removing the third. That sweep added: Explorer's
+  six missing view modes, list, tiles and content layouts, Sort, Filter, Group by and See
+  more menus, details and preview panes, item check boxes, hidden items, compact rows,
+  name extensions and a sortable folder-path column; Chrome's bookmark manager and
+  settings page, with the bookmarks bar, tab-groups button, page zoom and start-up
+  behaviour stored alongside the machine's other settings; the messaging app's pin, mute,
+  archive, favourite and unread switches, starred messages with a list to match, contact
+  info, and search within a conversation; the desktop's own view and sort menus; and the
+  taskbar's input-method list.
 
 ## Functionality audit
 
@@ -54,15 +63,18 @@ referenced them except as fallbacks.
   and accent, apps, accounts, time, accessibility, privacy, update); Task Manager
   (processes, End task, performance graphs); Photos; Paint; Calculator; Clock; audio
   editor; lock screen; notifications; search; task view; widgets; start menu; power menu.
-- **Category 2 (genuine limits): 7.** Bluetooth, casting/second display, nearby sharing,
-  printing, camera, microphone, host account password. Each states one flat, mundane
+- **Category 2 (genuine limits): 8.** Bluetooth, casting/second display, nearby sharing,
+  printing, camera, microphone, account password, pairing a phone. Each states one flat, mundane
   reason ("No Bluetooth adapter found.") and never says anything different however many
   times it is tried. Nothing else uses this wording.
 - **Category 3 (story locks): unchanged.** Whatever the content data defines is left
   exactly as it was, behaves like an ordinary feature, and carries no system-level hint.
   Nothing was added to or removed from this set.
-- Apps the machine does not actually have were removed from the Start menu and search
-  rather than left as dead entries.
+- **Removed rather than faked:** anything this build does not have is no longer offered —
+  apps the machine does not have (gone from the Start menu and search), the Settings
+  Gaming page and its two inert switches, a browser assistant this build does not ship,
+  and menu entries with nothing behind them. After the sweep there is no control anywhere
+  in the shell or the apps that can be clicked and does nothing.
 
 ## Voices
 
@@ -84,14 +96,22 @@ instead of wobbling a few Hz; the phase is now integrated properly.
 
 ## Known environment limits (not code problems)
 
-- The provided Gemini key has **no image-generation quota** (429, "limit: 0", every image
-  model, both 2.5 and 3.x), so character photographs could not be generated here. Portraits
-  are instead fetched automatically on first run from randomuser.me, which is blocked in
-  this sandbox but works on a normal machine.
-- Blocked here: HuggingFace (so Chatterbox could not be installed or compared), Freesound,
-  Pixabay, LibriVox, archive.org, Pexels, randomuser.me, api.deepseek.com, openrouter.ai.
-  Sound effects are therefore synthesised locally, which also keeps them tied to the volume
-  slider.
+- The provided Gemini key has **no image-generation quota** — 429 with `limit: 0` on every
+  image model across 2.5, 3 and 3.1, on both API versions, and no Imagen model on the key.
+  This is a zero allowance rather than a daily one, so it does not come back tomorrow, and
+  there is no OpenAI key here to fall back to. Portraits are therefore acquired at run time
+  instead: the app tries image generation first (so a key that does have allowance draws
+  faces that belong to nobody), then two free portrait services. All three are blocked in
+  this sandbox — the two services answer 403 through the proxy — but any one of them
+  working on a normal machine fills the whole cast, and if none does, the silhouettes stay
+  and nothing else changes. Which face a person gets falls out of a hash of the file it
+  lands in, so nothing chooses a face for anyone.
+- Blocked here: HuggingFace and its mirrors, Freesound, Pixabay, LibriVox, archive.org,
+  Pexels, Wikimedia, randomuser.me, pravatar.cc, api.deepseek.com, openrouter.ai.
+  Chatterbox installs from PyPI but its model weights come only from HuggingFace, so it
+  could not be run, and the comparison the brief asked for could not be made here. Sound
+  effects are therefore synthesised locally, which also keeps them tied to the volume
+  slider and free of licensing.
 - The DeepSeek path was verified end to end against a local OpenAI-compatible stand-in
   (auth header, model, temperature, token limit, system prompt, history, usage accounting,
   spend cap). Key problems are reported once on the host console, never inside the machine.
