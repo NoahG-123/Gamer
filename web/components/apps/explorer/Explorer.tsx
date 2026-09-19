@@ -9,8 +9,24 @@ import { api, VfsNode, Drive, BinItem, formatSizeCol, formatDateTime, formatByte
 import * as F from "@/components/icons/fluent";
 import * as A from "@/components/icons/apps";
 
-type View = "details" | "large";
-type SortKey = "name" | "modified" | "type" | "size";
+type View = "xl" | "large" | "medium" | "small" | "list" | "details" | "tiles" | "content";
+/** Icon size and tile box for each of the icon-grid views, as Windows sizes them. */
+const GRID: Partial<Record<View, { icon: number; w: number; h: number }>> = {
+  xl: { icon: 96, w: 150, h: 158 }, large: { icon: 64, w: 106, h: 118 },
+  medium: { icon: 48, w: 96, h: 100 }, small: { icon: 16, w: 200, h: 22 },
+};
+/** What each entry of the View menu is called and which view it picks. */
+const VIEWS: { id: View; label: string }[] = [
+  { id: "xl", label: "Extra large icons" }, { id: "large", label: "Large icons" },
+  { id: "medium", label: "Medium icons" }, { id: "small", label: "Small icons" },
+  { id: "list", label: "List" }, { id: "details", label: "Details" },
+  { id: "tiles", label: "Tiles" }, { id: "content", label: "Content" },
+];
+
+/** The options on the View ▸ Show submenu. Each one really does what it says. */
+interface ViewOpts { nav: boolean; detailsPane: boolean; previewPane: boolean; boxes: boolean; extensions: boolean; hidden: boolean; compact: boolean }
+const DEFAULT_OPTS: ViewOpts = { nav: true, detailsPane: false, previewPane: false, boxes: false, extensions: true, hidden: false, compact: false };
+type SortKey = "name" | "modified" | "type" | "size" | "path";
 interface Tab { id: string; history: string[]; index: number; view: View; sort: SortKey; asc: boolean }
 
 const SPECIAL = { home: "Home", pc: "This PC", bin: "Recycle Bin", net: "Network", gallery: "Gallery" } as const;
@@ -74,10 +90,35 @@ export function Explorer({ win }: { win: WinState }) {
   const [pcOpen, setPcOpen] = useState(true);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState<VfsNode[] | null>(null);
+  const [opts, setOpts] = useState<ViewOpts>(DEFAULT_OPTS);
+  const [kindFilter, setKindFilter] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState<SortKey | null>(null);
   const [editingAddress, setEditingAddress] = useState(false);
   const [addressText, setAddressText] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
   const active = wm.activeId === win.id;
+
+  const label = (n: VfsNode) => (opts.extensions || n.dir || !n.ext ? n.name : n.name.slice(0, n.name.length - n.ext.length - 1) || n.name);
+  const viewItems = () => VIEWS.map((v) => ({ label: v.label, checked: tab.view === v.id, onClick: () => updateTab((t) => ({ ...t, view: v.id })) }));
+  const showItems = () => [
+    { label: "Navigation pane", checked: opts.nav, onClick: () => setOpts((o) => ({ ...o, nav: !o.nav })) },
+    { label: "Details pane", checked: opts.detailsPane, onClick: () => setOpts((o) => ({ ...o, detailsPane: !o.detailsPane, previewPane: false })) },
+    { label: "Preview pane", checked: opts.previewPane, onClick: () => setOpts((o) => ({ ...o, previewPane: !o.previewPane, detailsPane: false })) },
+    { type: "sep" as const },
+    { label: "Item check boxes", checked: opts.boxes, onClick: () => setOpts((o) => ({ ...o, boxes: !o.boxes })) },
+    { label: "File name extensions", checked: opts.extensions, onClick: () => setOpts((o) => ({ ...o, extensions: !o.extensions })) },
+    { label: "Hidden items", checked: opts.hidden, onClick: () => setOpts((o) => ({ ...o, hidden: !o.hidden })) },
+  ];
+  const sortItems = () => [
+    { label: "Name", checked: tab.sort === "name", onClick: () => setSort("name") },
+    { label: "Date modified", checked: tab.sort === "modified", onClick: () => setSort("modified") },
+    { label: "Type", checked: tab.sort === "type", onClick: () => setSort("type") },
+    { label: "Size", checked: tab.sort === "size", onClick: () => setSort("size") },
+    ...(searchResults ? [{ label: "Folder path", checked: tab.sort === "path", onClick: () => setSort("path" as SortKey) }] : []),
+    { type: "sep" as const },
+    { label: "Ascending", checked: tab.asc, onClick: () => updateTab((t) => ({ ...t, asc: true })) },
+    { label: "Descending", checked: !tab.asc, onClick: () => updateTab((t) => ({ ...t, asc: false })) },
+  ];
 
   const updateTab = useCallback((fn: (t: Tab) => Tab) => setTabs((ts) => ts.map((t) => (t.id === activeTab ? fn(t) : t))), [activeTab]);
   const navigate = useCallback((p: string) => {
@@ -124,19 +165,28 @@ export function Explorer({ win }: { win: WinState }) {
       fetch("/api/fs/recent?limit=20").then((r) => r.json()).then((d) => { if (!cancelled) { setRecent(d.recent ?? []); setItems([]); setLoading(false); } }).catch(() => setLoading(false));
       return () => { cancelled = true; };
     }
-    api.list(path).then((d) => { if (!cancelled) { setItems(d.children); setLoading(false); } }).catch(() => { if (!cancelled) { setItems([]); setLoading(false); } });
+    api.list(path, { hidden: opts.hidden }).then((d) => { if (!cancelled) { setItems(d.children); setLoading(false); } }).catch(() => { if (!cancelled) { setItems([]); setLoading(false); } });
     return () => { cancelled = true; };
-  }, [path, os.refreshTick]);
+  }, [path, os.refreshTick, opts.hidden]);
 
   // Search (debounced)
   useEffect(() => {
-    if (!search.trim() || isSpecial(path)) { setSearchResults(null); return; }
+    if (!search.trim() || isSpecial(path)) { setSearchResults(null); setKindFilter(null); return; }
     const id = setTimeout(() => { api.search(path, search).then((d) => setSearchResults(d.results)).catch(() => {}); }, 250);
+    setKindFilter(null);
     return () => clearTimeout(id);
   }, [search, path]);
 
+  // What kinds are actually in front of you, for the Filter menu to offer.
+  const kinds = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const n of searchResults ?? []) { const k = A.typeLabel(n.ext, n.dir); seen.set(k, (seen.get(k) ?? 0) + 1); }
+    return [...seen.entries()].sort((a, b) => b[1] - a[1]);
+  }, [searchResults]);
+
   const sorted = useMemo(() => {
-    const list = searchResults ?? items;
+    const parentOf = (p: string) => p.slice(0, Math.max(0, p.lastIndexOf("/")));
+    const list = (searchResults ?? items).filter((n) => !kindFilter || A.typeLabel(n.ext, n.dir) === kindFilter);
     const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
     const cmp = (a: VfsNode, b: VfsNode) => {
       if (a.dir !== b.dir) return a.dir ? -1 : 1;
@@ -145,10 +195,33 @@ export function Explorer({ win }: { win: WinState }) {
       else if (tab.sort === "modified") r = a.modified.localeCompare(b.modified);
       else if (tab.sort === "type") r = collator.compare(A.typeLabel(a.ext, a.dir), A.typeLabel(b.ext, b.dir)) || collator.compare(a.name, b.name);
       else if (tab.sort === "size") r = a.size - b.size;
+      // Only search results show a folder column, and only there can it be sorted on.
+      else if (tab.sort === "path") r = collator.compare(parentOf(a.path), parentOf(b.path)) || collator.compare(a.name, b.name);
       return tab.asc ? r : -r;
     };
     return [...list].sort(cmp);
-  }, [items, searchResults, tab.sort, tab.asc]);
+  }, [items, searchResults, kindFilter, tab.sort, tab.asc]);
+
+  const grouped = useMemo(() => {
+    if (!groupBy) return [{ label: "", items: sorted }];
+    const headingFor = (n: VfsNode) => {
+      if (groupBy === "type") return A.typeLabel(n.ext, n.dir);
+      if (groupBy === "name") return (n.name[0] ?? "#").toUpperCase().replace(/[^A-Z]/, "#");
+      if (groupBy === "modified") {
+        const days = (Date.now() - new Date(n.modified).getTime()) / 86400000;
+        return days < 1 ? "Today" : days < 2 ? "Yesterday" : days < 7 ? "Earlier this week" : days < 31 ? "Earlier this month" : days < 366 ? "Earlier this year" : "A long time ago";
+      }
+      if (n.dir) return "Folders";
+      return n.size < 16 * 1024 ? "Tiny (0 - 16 KB)" : n.size < 1024 * 1024 ? "Small (16 KB - 1 MB)" : n.size < 128 * 1024 * 1024 ? "Medium (1 - 128 MB)" : "Large (128 MB and over)";
+    };
+    const out: { label: string; items: VfsNode[] }[] = [];
+    for (const n of sorted) {
+      const label = headingFor(n);
+      const last = out[out.length - 1];
+      if (last && last.label === label) last.items.push(n); else out.push({ label, items: [n] });
+    }
+    return out;
+  }, [sorted, groupBy]);
 
   const open = useCallback((n: VfsNode) => {
     // Items in the Recycle Bin are not openable in Windows either: you look at them, or restore them.
@@ -267,9 +340,15 @@ export function Explorer({ win }: { win: WinState }) {
     e.preventDefault();
     setSelected(new Set());
     menu.open({ x: e.clientX, y: e.clientY, items: [
-      { label: "View", icon: <F.ViewIcon />, children: [{ label: "Extra large icons" }, { label: "Large icons", checked: tab.view === "large", onClick: () => updateTab((t) => ({ ...t, view: "large" })) }, { label: "Medium icons" }, { label: "Small icons" }, { label: "List" }, { label: "Details", checked: tab.view === "details", onClick: () => updateTab((t) => ({ ...t, view: "details" })) }, { label: "Tiles" }, { label: "Content" }] },
-      { label: "Sort by", icon: <F.Sort />, children: [{ label: "Name", checked: tab.sort === "name", onClick: () => setSort("name") }, { label: "Date modified", checked: tab.sort === "modified", onClick: () => setSort("modified") }, { label: "Type", checked: tab.sort === "type", onClick: () => setSort("type") }, { label: "Size", checked: tab.sort === "size", onClick: () => setSort("size") }, { type: "sep" }, { label: "Ascending", checked: tab.asc }, { label: "Descending", checked: !tab.asc }] },
-      { label: "Group by", icon: <span />, children: [{ label: "(None)", checked: true }, { label: "Name" }, { label: "Date modified" }, { label: "Type" }, { label: "Size" }] },
+      { label: "View", icon: <F.ViewIcon />, children: viewItems() },
+      { label: "Sort by", icon: <F.Sort />, children: sortItems() },
+      { label: "Group by", icon: <span />, disabled: tab.view !== "details", children: [
+        { label: "(None)", checked: !groupBy, onClick: () => setGroupBy(null) },
+        { label: "Name", checked: groupBy === "name", onClick: () => setGroupBy("name") },
+        { label: "Date modified", checked: groupBy === "modified", onClick: () => setGroupBy("modified") },
+        { label: "Type", checked: groupBy === "type", onClick: () => setGroupBy("type") },
+        { label: "Size", checked: groupBy === "size", onClick: () => setGroupBy("size") },
+      ] },
       { label: "Refresh", icon: <F.Refresh />, onClick: refresh },
       { type: "sep" },
       { label: "New", icon: <F.NewIcon />, children: [
@@ -351,13 +430,13 @@ export function Explorer({ win }: { win: WinState }) {
           <button className={styles.cmdIcon} title="Delete (Delete)" disabled={!selected.size} onClick={() => doDelete()}><F.Delete size={18} /></button>
           {inBin && <button className={styles.cmdText} disabled={!items.length} onClick={doEmptyBin}><F.Delete size={16} /><span>Empty Recycle Bin</span></button>}
           <div className={styles.vsep} />
-          <button className={styles.cmdText}><F.Sort size={16} /><span>Sort</span><F.ChevronDown size={10} /></button>
-          <button className={styles.cmdText} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [{ label: "Extra large icons" }, { label: "Large icons", checked: tab.view === "large", onClick: () => updateTab((t) => ({ ...t, view: "large" })) }, { label: "Medium icons" }, { label: "Small icons" }, { label: "List" }, { label: "Details", checked: tab.view === "details", onClick: () => updateTab((t) => ({ ...t, view: "details" })) }, { label: "Tiles" }, { label: "Content" }, { type: "sep" }, { label: "Compact view" }, { label: "Show", children: [{ label: "Navigation pane", checked: true }, { label: "Details pane" }, { label: "Preview pane" }, { type: "sep" }, { label: "Item check boxes" }, { label: "File name extensions", checked: true }, { label: "Hidden items" }] }] }); }}><F.ViewIcon size={16} /><span>View</span><F.ChevronDown size={10} /></button>
-          {searchResults && <button className={styles.cmdText}><F.Filter size={16} /><span>Filter</span><F.ChevronDown size={10} /></button>}
+          <button className={styles.cmdText} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: sortItems() }); }}><F.Sort size={16} /><span>Sort</span><F.ChevronDown size={10} /></button>
+          <button className={styles.cmdText} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [...viewItems(), { type: "sep" }, { label: "Compact view", checked: opts.compact, onClick: () => setOpts((o) => ({ ...o, compact: !o.compact })) }, { label: "Show", children: showItems() }] }); }}><F.ViewIcon size={16} /><span>View</span><F.ChevronDown size={10} /></button>
+          {searchResults && <button className={styles.cmdText} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [{ label: "All kinds", checked: !kindFilter, onClick: () => setKindFilter(null) }, ...(kinds.length ? [{ type: "sep" as const }] : []), ...kinds.map(([k, count]) => ({ label: `${k} (${count})`, checked: kindFilter === k, onClick: () => setKindFilter(k) }))] }); }}><F.Filter size={16} /><span>Filter</span><F.ChevronDown size={10} /></button>}
           <div className={styles.vsep} />
-          <button className={styles.cmdIcon} title="See more"><F.More size={18} /></button>
+          <button className={styles.cmdIcon} title="See more" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 2, items: [ { label: "Select all", onClick: () => setSelected(new Set(sorted.map((n) => n.path))) }, { label: "Select none", onClick: () => setSelected(new Set()) }, { label: "Invert selection", onClick: () => setSelected(new Set(sorted.filter((n) => !selected.has(n.path)).map((n) => n.path))) }, { type: "sep" }, { label: "Copy path", onClick: () => { const n = sorted.find((x) => selected.has(x.path)); if (n) navigator.clipboard?.writeText(`"${toWindowsPath(n.path)}"`).catch(() => {}); } }, { label: "Open in Terminal", onClick: () => os.launch("terminal", { cwd: path }) }, { type: "sep" }, { label: "Options", onClick: () => os.launch("settings", { page: "system" }) },] }); }}><F.More size={18} /></button>
           <div style={{ flex: 1 }} />
-          <button className={styles.cmdText} style={{ marginRight: 6 }}><F.Properties size={16} /><span>Details</span></button>
+          <button className={`${styles.cmdText} ${opts.detailsPane ? styles.cmdOn : ""}`} style={{ marginRight: 6 }} onClick={() => setOpts((o) => ({ ...o, detailsPane: !o.detailsPane, previewPane: false }))}><F.Properties size={16} /><span>Details</span></button>
         </div>
 
         {/* Address row */}
@@ -379,7 +458,7 @@ export function Explorer({ win }: { win: WinState }) {
                   </React.Fragment>
                 ))}
                 <span style={{ flex: 1 }} />
-                <button className={styles.addressBtn} title="Previous Locations"><F.ChevronDown size={12} /></button>
+                <button className={styles.addressBtn} title="Previous Locations" onClick={(e) => { e.stopPropagation(); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 200, y: r.bottom + 4, items: [...tab.history].reverse().slice(0, 10).map((p) => ({ label: folderNameFor(p), icon: folderIcon(p, home), checked: p === path, onClick: () => navigate(p) })) }); }}><F.ChevronDown size={12} /></button>
                 <button className={styles.addressBtn} title="Refresh" onClick={refresh}><F.Refresh size={14} /></button>
               </>
             )}
@@ -392,7 +471,7 @@ export function Explorer({ win }: { win: WinState }) {
 
         {/* Body */}
         <div className={styles.body}>
-          <div className={styles.nav}>
+          {opts.nav && <div className={styles.nav}>
             <NavItem label="Home" icon={<A.HomeIcon size={16} />} active={path === SPECIAL.home} onClick={() => navigate(SPECIAL.home)} />
             <NavItem label="Gallery" icon={<A.GalleryIcon size={16} />} active={path === SPECIAL.gallery} onClick={() => navigate(SPECIAL.gallery)} />
             <div className={styles.navSep} />
@@ -404,7 +483,7 @@ export function Explorer({ win }: { win: WinState }) {
             {pcOpen && drives.map((d) => <NavItem key={d.letter} label={`${d.label} (${d.letter}:)`} icon={folderIcon(`${d.letter}:`, home)} indent chevron active={path === `${d.letter}:`} onClick={() => navigate(`${d.letter}:`)} />)}
             {pcOpen && !drives.length && <NavItem label="Local Disk (C:)" icon={<A.DriveC size={16} />} indent chevron active={path === "C:"} onClick={() => navigate("C:")} />}
             <NavItem label="Network" icon={<A.NetworkIcon size={16} />} chevron active={path === SPECIAL.net} onClick={() => navigate(SPECIAL.net)} />
-          </div>
+          </div>}
           <div className={styles.content} ref={bodyRef} onClick={() => setSelected(new Set())} onContextMenu={bgMenu}>
             {path === SPECIAL.pc && <ThisPCView drives={drives} home={home} quick={quick} navigate={navigate} selected={selected} click={click} />}
             {path === SPECIAL.net && (
@@ -424,12 +503,15 @@ export function Explorer({ win }: { win: WinState }) {
                   <HeaderCell label="Date modified" k="modified" sort={tab} onClick={setSort} style={{ width: 150 }} />
                   <HeaderCell label="Type" k="type" sort={tab} onClick={setSort} style={{ width: 170 }} />
                   <HeaderCell label="Size" k="size" sort={tab} onClick={setSort} style={{ width: 90, textAlign: "right", justifyContent: "flex-end" }} />
-                  {searchResults && <HeaderCell label="Folder path" k="name" sort={tab} onClick={() => {}} style={{ width: 300 }} />}
+                  {searchResults && <HeaderCell label="Folder path" k="path" sort={tab} onClick={setSort} style={{ width: 300 }} />}
                 </div>
                 <div className={styles.rows}>
-                  {sorted.map((n) => (
-                    <div key={n.path} data-row className={`${styles.row} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
-                      <span className={styles.cellName} style={{ width: searchResults ? 300 : inBin ? 300 : 360 }}><span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} /></span><span className={styles.rowText}>{n.name}</span></span>
+                  {grouped.map((g) => (
+                    <React.Fragment key={g.label || "all"}>
+                      {g.label && <div className={styles.groupHeading}>{g.label} <span className={styles.groupCount}>({g.items.length})</span></div>}
+                  {g.items.map((n) => (
+                    <div key={n.path} data-row className={`${styles.row} ${opts.compact ? styles.rowCompact : ""} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
+                      <span className={styles.cellName} style={{ width: searchResults ? 300 : inBin ? 300 : 360 }}>{opts.boxes && <input type="checkbox" className={styles.check} checked={selected.has(n.path)} onClick={(e) => e.stopPropagation()} onChange={(e) => setSelected((prev) => { const next = new Set(prev); if (e.target.checked) next.add(n.path); else next.delete(n.path); return next; })} />}<span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} /></span><span className={styles.rowText}>{label(n)}</span></span>
                       {inBin && <span className={styles.cell} style={{ width: 240 }}>{bin.find((b) => b.path === n.path)?.origin ?? ""}</span>}
                       <span className={styles.cell} style={{ width: 150 }}>{formatDateTime(n.modified, os.profile.locale, os.profile.dateFormat)}</span>
                       <span className={styles.cell} style={{ width: 170 }}>{A.typeLabel(n.ext, n.dir)}</span>
@@ -437,22 +519,71 @@ export function Explorer({ win }: { win: WinState }) {
                       {searchResults && <span className={styles.cell} style={{ width: 300 }}>{toWindowsPath(n.path.slice(0, n.path.lastIndexOf("/")))}</span>}
                     </div>
                   ))}
+                    </React.Fragment>
+                  ))}
                   {!loading && !sorted.length && <div className={styles.empty}>{searchResults ? "No items match your search." : "This folder is empty."}</div>}
                 </div>
               </div>
             )}
-            {listLike && tab.view === "large" && (
+            {listLike && GRID[tab.view] && (
               <div className={styles.grid}>
                 {sorted.map((n) => (
-                  <div key={n.path} data-row className={`${styles.tile} ${selected.has(n.path) ? styles.rowSel : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
-                    <span className={styles.tileIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={64} /></span>
-                    <span className={styles.tileLabel}>{n.name}</span>
+                  <div key={n.path} data-row className={`${styles.tile} ${tab.view === "small" ? styles.tileRow : ""} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`}
+                    style={{ width: GRID[tab.view]!.w, height: GRID[tab.view]!.h }}
+                    onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
+                    <span className={styles.tileIcon} style={{ width: GRID[tab.view]!.icon, height: GRID[tab.view]!.icon }}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={GRID[tab.view]!.icon} /></span>
+                    <span className={styles.tileLabel}>{label(n)}</span>
                   </div>
                 ))}
-                {!loading && !sorted.length && <div className={styles.empty}>This folder is empty.</div>}
+                {!loading && !sorted.length && <div className={styles.empty}>{searchResults ? "No items match your search." : "This folder is empty."}</div>}
+              </div>
+            )}
+            {listLike && tab.view === "list" && (
+              <div className={styles.listView}>
+                {sorted.map((n) => (
+                  <div key={n.path} data-row className={`${styles.listItem} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
+                    <span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={16} /></span>
+                    <span className={styles.rowText}>{label(n)}</span>
+                  </div>
+                ))}
+                {!loading && !sorted.length && <div className={styles.empty}>{searchResults ? "No items match your search." : "This folder is empty."}</div>}
+              </div>
+            )}
+            {listLike && tab.view === "tiles" && (
+              <div className={styles.grid}>
+                {sorted.map((n) => (
+                  <div key={n.path} data-row className={`${styles.tileWide} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
+                    <span className={styles.tileIcon} style={{ width: 48, height: 48 }}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={48} /></span>
+                    <span className={styles.tileWideText}>
+                      <span className={styles.rowText}>{label(n)}</span>
+                      <span className={styles.tileSub}>{A.typeLabel(n.ext, n.dir)}</span>
+                      {!n.dir && <span className={styles.tileSub}>{formatSizeCol(n.size)}</span>}
+                    </span>
+                  </div>
+                ))}
+                {!loading && !sorted.length && <div className={styles.empty}>{searchResults ? "No items match your search." : "This folder is empty."}</div>}
+              </div>
+            )}
+            {listLike && tab.view === "content" && (
+              <div className={styles.contentView}>
+                {sorted.map((n) => (
+                  <div key={n.path} data-row className={`${styles.contentRow} ${selected.has(n.path) ? styles.rowSel : ""} ${n.hidden ? styles.rowHidden : ""}`} onClick={(e) => click(e, n)} onDoubleClick={() => open(n)} onContextMenu={(e) => fileMenu(e, n)}>
+                    <span className={styles.rowIcon}><A.FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={32} /></span>
+                    <span className={styles.contentMain}>
+                      <span className={styles.rowText}>{label(n)}</span>
+                      <span className={styles.tileSub}>{A.typeLabel(n.ext, n.dir)}</span>
+                    </span>
+                    <span className={styles.contentMeta}>
+                      <span>{formatDateTime(n.modified, os.profile.locale, os.profile.dateFormat)}</span>
+                      <span>{n.dir ? "" : formatSizeCol(n.size)}</span>
+                    </span>
+                  </div>
+                ))}
+                {!loading && !sorted.length && <div className={styles.empty}>{searchResults ? "No items match your search." : "This folder is empty."}</div>}
               </div>
             )}
           </div>
+          {(opts.detailsPane || opts.previewPane) && <SidePane node={sorted.find((n) => selected.has(n.path)) ?? null} preview={opts.previewPane} locale={os.profile.locale} dateFormat={os.profile.dateFormat} />}
         </div>
 
         {/* Status bar */}
@@ -466,6 +597,49 @@ export function Explorer({ win }: { win: WinState }) {
         {!active && <div className={styles.inactiveOverlay} />}
       </div>
     </Window>
+  );
+}
+
+/**
+ * The pane on the right of the window. Details lists what is known about the selected
+ * item; Preview shows the thing itself — the first of a text file, or the picture.
+ */
+function SidePane({ node, preview, locale, dateFormat }: { node: VfsNode | null; preview: boolean; locale: string; dateFormat?: string }) {
+  const [text, setText] = useState<string | null>(null);
+  const isImage = !!node && /^(jpg|jpeg|png|gif|webp|bmp|ico)$/.test(node.ext);
+  useEffect(() => {
+    setText(null);
+    if (!preview || !node || node.dir || isImage) return;
+    let cancelled = false;
+    fetch(`/lf${node.path.replace(/^([A-Z]):/, "/$1")}`).then((r) => (r.ok ? r.text() : "")).then((t) => { if (!cancelled) setText(t.slice(0, 4000)); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [preview, node?.path, node?.dir, isImage]);
+
+  if (!node) return <div className={styles.sidePane}><div className={styles.sideEmpty}>Select a file to see its {preview ? "preview" : "details"}.</div></div>;
+  return (
+    <div className={styles.sidePane}>
+      {preview ? (
+        <div className={styles.previewBox}>
+          {isImage ? <img className={styles.previewImg} src={`/lf${node.path.replace(/^([A-Z]):/, "/$1")}`} alt="" />
+            : node.dir ? <A.FileTypeIcon ext="" dir name={node.name} size={96} />
+            : text === null ? <span className={styles.sideEmpty}>Loading…</span>
+            : text.trim() ? <pre className={styles.previewText}>{text}</pre>
+            : <span className={styles.sideEmpty}>No preview available.</span>}
+        </div>
+      ) : (
+        <div className={styles.detailsBox}>
+          <span className={styles.detailsIcon}><A.FileTypeIcon ext={node.ext} dir={node.dir} name={node.name} size={64} /></span>
+          <b className={styles.detailsName}>{node.name}</b>
+          <span className={styles.detailsKind}>{A.typeLabel(node.ext, node.dir)}</span>
+          <dl className={styles.detailsList}>
+            <dt>Date modified</dt><dd>{formatDateTime(node.modified, locale, dateFormat)}</dd>
+            <dt>Date created</dt><dd>{formatDateTime(node.created, locale, dateFormat)}</dd>
+            {!node.dir && <><dt>Size</dt><dd>{formatSizeCol(node.size)}</dd></>}
+            <dt>Location</dt><dd>{toWindowsPath(node.path.slice(0, node.path.lastIndexOf("/")))}</dd>
+          </dl>
+        </div>
+      )}
+    </div>
   );
 }
 

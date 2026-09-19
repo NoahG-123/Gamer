@@ -5,6 +5,7 @@ import { WinState, useWM } from "@/components/desktop/wm";
 import { Window, CaptionButtons } from "@/components/desktop/Window";
 import { useMenu, MenuItem } from "@/components/desktop/ContextMenu";
 import { useOS } from "@/components/desktop/os";
+import { useSystem } from "@/lib/client/system";
 import { WebPane, PaneHandle } from "./WebPane";
 import { api, Bookmark, HistoryEntry } from "@/lib/client/api";
 import { host as hostBridge } from "@/lib/client/host";
@@ -15,7 +16,7 @@ interface Tab { id: string; url: string; title: string; favicon: string | null; 
 
 const NTP_PATH = "/chrome/ntp";
 /** Chrome's own pages, served by this machine but addressed the way Chrome addresses them. */
-const CHROME_PAGES: Record<string, string> = { history: "/chrome/history", downloads: "/chrome/downloads", offline: "/chrome/offline" };
+const CHROME_PAGES: Record<string, string> = { history: "/chrome/history", downloads: "/chrome/downloads", bookmarks: "/chrome/bookmarks", settings: "/chrome/settings", offline: "/chrome/offline" };
 let tabSeq = 1;
 
 /** URL the address bar shows for what the pane actually loaded. Local story routes appear as their real-looking hosts. */
@@ -54,6 +55,7 @@ export function Chrome({ win }: { win: WinState }) {
   const wm = useWM();
   const os = useOS();
   const menu = useMenu();
+  const sys = useSystem();
   const origin = typeof location !== "undefined" ? location.origin : "";
   const electron = hostBridge().isElectron;
   const [storyHosts, setStoryHosts] = useState<string[]>([]);
@@ -65,7 +67,11 @@ export function Chrome({ win }: { win: WinState }) {
   const [omniText, setOmniText] = useState("");
   const [omniFocus, setOmniFocus] = useState(false);
   const [ddIndex, setDdIndex] = useState(-1);
-  const [zoom, setZoom] = useState(1);
+  const showBar = sys.settings.chromeBookmarksBar;
+  const showTabGroups = sys.settings.chromeTabGroups;
+  const setShowBar = (fn: (v: boolean) => boolean) => sys.set({ chromeBookmarksBar: fn(sys.settings.chromeBookmarksBar) });
+  const setShowTabGroups = (fn: (v: boolean) => boolean) => sys.set({ chromeTabGroups: fn(sys.settings.chromeTabGroups) });
+  const zoom = sys.settings.chromeZoom;
   const [find, setFind] = useState<string | null>(null);
   const [findHits, setFindHits] = useState({ active: 0, total: 0 });
   const [note, setNote] = useState<string | null>(null);
@@ -124,9 +130,23 @@ export function Chrome({ win }: { win: WinState }) {
     handledNonce.current = nonce;
     const url = win.props.openUrl as string | undefined;
     if (url) openTab(url.startsWith("/") ? `${origin}${url}` : url);
-    else if (!tabs.length) openTab();
+    else if (!tabs.length) {
+      // "Continue where you left off" reopens what was on screen when Chrome last closed.
+      let restored = false;
+      if (sys.settings.chromeStartup === "continue") {
+        try {
+          const saved = JSON.parse(localStorage.getItem("chrome.session") || "[]") as string[];
+          for (const u of saved.slice(0, 12)) { openTab(u, { background: restored }); restored = true; }
+        } catch { /* nothing kept, or storage is unavailable */ }
+      }
+      if (!restored) openTab();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [win.props.nonce, win.props.openUrl]);
+
+  useEffect(() => {
+    try { localStorage.setItem("chrome.session", JSON.stringify(tabs.map((t) => t.url).filter((u) => u && !u.includes(NTP_PATH)))); } catch { /* storage unavailable */ }
+  }, [tabs]);
 
   // Links that want a new window open as a new tab (Electron sends these from main).
   useEffect(() => {
@@ -184,6 +204,7 @@ export function Chrome({ win }: { win: WinState }) {
     else if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); if (activeTab) panes.current.get(activeTab.id)?.goBack(); }
     else if (e.altKey && e.key === "ArrowRight") { e.preventDefault(); if (activeTab) panes.current.get(activeTab.id)?.goForward(); }
     else if (e.ctrlKey && e.key === "Tab") { e.preventDefault(); const i = tabs.findIndex((t) => t.id === activeId); if (tabs.length) setActiveId(tabs[(i + (e.shiftKey ? tabs.length - 1 : 1)) % tabs.length].id); }
+    else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "b") { e.preventDefault(); setShowBar((v) => !v); }
     else if (e.ctrlKey && e.key.toLowerCase() === "h") { e.preventDefault(); openChromePage("history"); }
     else if (e.ctrlKey && e.key.toLowerCase() === "j") { e.preventDefault(); openChromePage("downloads"); }
     else if (e.ctrlKey && e.key.toLowerCase() === "u") { e.preventDefault(); if (activeTab) viewSource(activeTab.id); }
@@ -262,6 +283,7 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J", onClick: () => openChromePage("downloads") },
       { label: "Bookmarks", icon: <M.MBookmarks />, children: [
         { label: bookmarked ? "Remove bookmark" : "Bookmark this tab...", shortcut: "Ctrl+D", disabled: !display, onClick: toggleBookmark },
+        { label: "Bookmark manager", onClick: () => openChromePage("bookmarks") },
         { type: "sep" },
         ...bookmarks.filter((b) => b.url).slice(0, 10).map((b) => ({ label: b.title, onClick: () => b.url && openTab(b.url) })),
       ] },
@@ -277,27 +299,39 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P", onClick: () => { setNote("No printers are installed."); setTimeout(() => setNote(null), 3000); } },
       { label: "Find...", icon: <M.MFind />, shortcut: "Ctrl+F", onClick: () => setFind("") },
       { label: "Copy link", icon: <M.MShare />, disabled: !display, onClick: () => navigator.clipboard?.writeText(display).catch(() => {}) },
-      { label: "More tools", icon: <span />, children: [{ label: "Name window..." }, { label: "Reading mode" }, { label: "Performance" }, { label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
+      { label: "More tools", icon: <span />, children: [{ label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
       { type: "sep" },
       { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome", onClick: () => { setNote("Google Chrome is up to date — Version 138.0.7204.101 (Official Build) (64-bit)"); setTimeout(() => setNote(null), 4000); } }] },
-      { label: "Settings", icon: <M.MSettings />, onClick: () => os.launch("settings") },
+      { label: "Settings", icon: <M.MSettings />, onClick: () => openChromePage("settings") },
       { label: "Exit", icon: <M.MExit />, onClick: () => wm.close(win.id) },
     ], 300);
+  };
+  const dropBookmark = async (b: Bookmark) => {
+    if (!b.url) return;
+    await fetch("/api/browser/bookmarks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: b.url, title: b.title, add: false }) });
+    loadBrowserData();
   };
   const bookmarkMenu = (e: React.MouseEvent, b?: Bookmark) => {
     e.preventDefault(); e.stopPropagation();
     chromeMenu(e.clientX, e.clientY, b && b.url ? [
       { label: "Open in new tab", icon: <span />, onClick: () => openTab(b.url!, { background: true }) },
       { label: "Open in new window", icon: <span />, onClick: () => openTab(b.url!) },
-      { label: "Open in Incognito window", icon: <span /> },
       { type: "sep" },
-      { label: "Edit...", icon: <span /> }, { label: "Cut", icon: <span /> }, { label: "Copy", icon: <span /> }, { label: "Paste", icon: <span />, disabled: true }, { label: "Delete", icon: <span /> },
+      { label: "Copy address", icon: <span />, onClick: () => navigator.clipboard?.writeText(b.url!).catch(() => {}) },
+      { label: "Cut", icon: <span />, onClick: () => { navigator.clipboard?.writeText(b.url!).catch(() => {}); void dropBookmark(b); } },
+      { label: "Delete", icon: <span />, onClick: () => void dropBookmark(b) },
       { type: "sep" },
-      { label: "Add page...", icon: <span /> }, { label: "Add folder...", icon: <span /> },
+      { label: "Add this page", icon: <span />, disabled: !display || bookmarked, onClick: toggleBookmark },
       { type: "sep" },
-      { label: "Bookmark manager", icon: <span /> }, { label: "Show apps shortcut", icon: <span /> }, { label: "Show tab groups", icon: <span />, checked: true }, { label: "Show bookmarks bar", icon: <span />, shortcut: "Ctrl+Shift+B", checked: true },
+      { label: "Bookmark manager", icon: <span />, onClick: () => openChromePage("bookmarks") },
+      { label: "Show tab groups", icon: <span />, checked: showTabGroups, onClick: () => setShowTabGroups((v) => !v) },
+      { label: "Show bookmarks bar", icon: <span />, shortcut: "Ctrl+Shift+B", checked: showBar, onClick: () => setShowBar((v) => !v) },
     ] : [
       { label: "Bookmark this tab...", icon: <span />, shortcut: "Ctrl+D", disabled: !display, onClick: toggleBookmark },
+      { type: "sep" },
+      { label: "Bookmark manager", icon: <span />, onClick: () => openChromePage("bookmarks") },
+      { label: "Show tab groups", icon: <span />, checked: showTabGroups, onClick: () => setShowTabGroups((v) => !v) },
+      { label: "Show bookmarks bar", icon: <span />, shortcut: "Ctrl+Shift+B", checked: showBar, onClick: () => setShowBar((v) => !v) },
     ]);
   };
   const folderMenu = (e: React.MouseEvent, b: Bookmark) => {
@@ -329,9 +363,11 @@ export function Chrome({ win }: { win: WinState }) {
 
   const applyZoom = useCallback((factor: number) => {
     const f = Math.max(0.25, Math.min(3, Number(factor.toFixed(2))));
-    setZoom(f);
+    sys.set({ chromeZoom: f });
     if (activeTab) panes.current.get(activeTab.id)?.setZoom(f);
-  }, [activeTab]);
+  }, [activeTab, sys]);
+  // A zoom set from chrome://settings applies to the page already on screen.
+  useEffect(() => { if (activeTab) panes.current.get(activeTab.id)?.setZoom(zoom); }, [zoom, activeTab?.id]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const isNtp = !display;
@@ -354,7 +390,6 @@ export function Chrome({ win }: { win: WinState }) {
           </div>
           <button className={styles.newTab} data-nodrag title="New tab (Ctrl+T)" onClick={() => { openTab(); setTimeout(() => omniRef.current?.focus(), 50); }}><M.MAdd size={20} /></button>
           <div className={styles.dragSpace} />
-          <button className={styles.gemini} data-nodrag><M.MSparkle size={16} />Ask Gemini</button>
           <CaptionButtons win={win} dark className={styles.caption} />
         </div>
         <div className={styles.toolbar}>
@@ -388,18 +423,18 @@ export function Chrome({ win }: { win: WinState }) {
               onKeyDown={onOmniKey}
             />
             <div className={styles.omniRight} style={{ zIndex: 6 }}>
-              {isNtp ? <button className={styles.omniChip}><M.MSparkle size={16} />AI Mode</button> : (
+              {!isNtp && (
                 <button className={styles.tbBtn} title={bookmarked ? "Edit bookmark" : "Bookmark this tab (Ctrl+D)"} onClick={toggleBookmark}>{bookmarked ? <M.MStarFilled size={18} /> : <M.MStar size={18} />}</button>
               )}
             </div>
           </div>
-          <button className={styles.tbBtn} title="Extensions"><M.MExtension /></button>
+          <button className={styles.tbBtn} title="Extensions" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); chromeMenu(r.right - 280, r.bottom + 4, [{ label: "No extensions are installed", disabled: true }, { type: "sep" }, { label: "Visit Chrome Web Store", icon: <M.MExtension />, onClick: () => openTab("https://chromewebstore.google.com/") }], 280); }}><M.MExtension /></button>
           <button className={styles.tbBtn} title="Downloads (Ctrl+J)" onClick={() => openChromePage("downloads")}><M.MDownload /></button>
-          <button className={styles.avatarBtn} title={`Google Account\n${os.profile.displayName}\n${os.profile.accountEmail}`}><span className={styles.avatarDot}><M.MPerson size={16} /></span></button>
+          <button className={styles.avatarBtn} title={`Google Account\n${os.profile.displayName}\n${os.profile.accountEmail}`} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); chromeMenu(r.right - 300, r.bottom + 4, [{ label: os.profile.displayName, disabled: true }, { label: os.profile.accountEmail, disabled: true }, { type: "sep" }, { label: "Manage your Google Account", icon: <M.MAccount />, onClick: () => openTab("https://myaccount.google.com/") }, { label: "Sync is on", icon: <M.MRefresh />, disabled: true }], 300); }}><span className={styles.avatarDot}><M.MPerson size={16} /></span></button>
           <button className={styles.tbBtn} title="Customize and control Google Chrome" onClick={mainMenu}><M.MMoreVert /></button>
         </div>
-        <div className={styles.bookmarks} onContextMenu={(e) => bookmarkMenu(e)}>
-          <button className={styles.tabGroups} title="Saved tab groups"><M.MApps size={18} /></button>
+        {showBar && <div className={styles.bookmarks} onContextMenu={(e) => bookmarkMenu(e)}>
+          {showTabGroups && <button className={styles.tabGroups} title="Saved tab groups" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); chromeMenu(r.left, r.bottom + 4, [{ label: "No saved tab groups", disabled: true }], 260); }}><M.MApps size={18} /></button>}
           <span className={styles.bmSep} />
           {bookmarks.map((b) => (
             b.folder ? (
@@ -410,8 +445,8 @@ export function Chrome({ win }: { win: WinState }) {
           ))}
           <span className={styles.bmSpacer} />
           <span className={styles.bmSep} />
-          <button className={styles.bm}><span className={styles.bmIcon}><M.MFolder size={16} /></span><span className={styles.bmText}>All Bookmarks</span></button>
-        </div>
+          <button className={styles.bm} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); chromeMenu(Math.max(8, r.right - 320), r.bottom + 4, [...bookmarks.map((b) => (b.folder  ? { label: b.title, icon: <M.MFolder size={16} />, children: (b.children ?? []).length      ? (b.children ?? []).map((c) => ({ label: c.title, icon: <Favicon url={c.url} />, onClick: () => c.url && openTab(c.url) }))      : [{ label: "(empty)", disabled: true }] }  : { label: b.title, icon: <Favicon url={b.url} />, onClick: () => b.url && openTab(b.url) })),...(bookmarks.length ? [{ type: "sep" as const }] : [{ label: "No bookmarks yet", disabled: true }]),{ label: "Bookmark manager", icon: <M.MBookmarks />, onClick: () => openChromePage("bookmarks") },], 320); }}><span className={styles.bmIcon}><M.MFolder size={16} /></span><span className={styles.bmText}>All Bookmarks</span></button>
+        </div>}
         {find !== null && (
           <div className={styles.findBar}>
             <input

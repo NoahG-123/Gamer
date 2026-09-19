@@ -128,3 +128,38 @@
 .netPane b { font-size: 14px; font-weight: 600; }
 .netPane span { font-size: 12px; opacity: .65; max-width: 420px; line-height: 1.5; }
 .netBtn { all: unset; margin-top: 6px; padding: 7px 16px; border-radius: 4px; background: var(--accent, #0067C0); color: #fff; cursor: default; font-size: 12.5px; }
+
+/* View modes beyond Details and Large icons */
+.tileRow { flex-direction: row; align-items: center; gap: 8px; padding: 0 6px; }
+.tileRow .tileLabel { margin-top: 0; text-align: left; max-width: none; -webkit-line-clamp: 1; }
+.tileWide { width: 210px; height: 70px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 4px; }
+.tileWide:hover { background: var(--hover); }
+.tileWideText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tileSub { font-size: 11px; color: var(--text-2); }
+.listView { display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; height: 100%; padding: 8px 12px; }
+.listItem { display: flex; align-items: center; gap: 8px; height: 22px; width: 230px; padding: 0 6px; border-radius: 4px; font-size: 12px; }
+.listItem:hover { background: var(--hover); }
+.contentView { display: flex; flex-direction: column; padding: 6px 12px; }
+.contentRow { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 10px; border-radius: 4px; border-bottom: 1px solid var(--border); }
+.contentRow:hover { background: var(--hover); }
+.contentMain { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; font-size: 12px; }
+.contentMeta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 11px; color: var(--text-2); }
+.rowCompact { height: 22px; }
+.check { margin-right: 6px; accent-color: var(--accent); }
+.cmdOn { background: var(--hover); }
+
+/* Details / preview pane */
+.sidePane { width: 290px; flex: 0 0 290px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); background: var(--layer-alt); overflow: auto; }
+.sideEmpty { display: block; padding: 20px 16px; font-size: 12px; color: var(--text-2); text-align: center; }
+.detailsBox { display: flex; flex-direction: column; align-items: center; padding: 20px 16px; gap: 6px; }
+.detailsIcon { display: flex; }
+.detailsName { font-size: 13px; text-align: center; word-break: break-word; }
+.detailsKind { font-size: 11px; color: var(--text-2); }
+.detailsList { display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; width: 100%; margin-top: 14px; font-size: 11px; }
+.detailsList dt { color: var(--text-2); }
+.detailsList dd { margin: 0; word-break: break-word; }
+.previewBox { display: flex; align-items: center; justify-content: center; padding: 14px; min-height: 160px; }
+.previewImg { max-width: 100%; max-height: 420px; object-fit: contain; }
+.previewText { font-family: Consolas, "Cascadia Mono", monospace; font-size: 11px; line-height: 16px; white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 520px; overflow: hidden; color: var(--text); }
+.groupHeading { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; font-size: 12px; color: var(--text); background: var(--layer-alt); position: sticky; top: 0; }
+.groupCount { color: var(--text-2); }

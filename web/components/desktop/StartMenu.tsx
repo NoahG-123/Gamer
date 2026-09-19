@@ -51,6 +51,7 @@ function whenLabel(iso: string): string {
 export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, onSearch, onLock }: { open: boolean; displayName: string; onLaunch: (app: AppId, props?: Record<string, unknown>) => void; onOpenFile: (n: VfsNode) => void; onClose: () => void; onSearch: (q: string) => void; onLock: () => void }) {
   const [recent, setRecent] = useState<VfsNode[]>([]);
   const [phonePane, setPhonePane] = useState(false);
+  const [phoneNote, setPhoneNote] = useState<string | null>(null);
   const [allApps, setAllApps] = useState(false);
   const menu = useMenu();
   const owner = useAsset("people.owner");
@@ -136,7 +137,7 @@ export function StartMenu({ open, displayName, onLaunch, onOpenFile, onClose, on
           <div className={styles.paneTitle}>Access your mobile device here</div>
           <div className={styles.paneText}>Keep up with calls, messages, and recent activity here in the Start menu.</div>
           <div className={styles.paneSelect}>Select device</div>
-          <div className={styles.paneButtons}><button className={styles.paneBtn}>Android™</button><button className={styles.paneBtn}>iPhone®</button></div>
+          <div className={styles.paneButtons}><button className={styles.paneBtn} onClick={() => setPhoneNote("No phone is paired with this computer.")}>Android™</button><button className={styles.paneBtn} onClick={() => setPhoneNote("No phone is paired with this computer.")}>iPhone®</button></div>{phoneNote && <div className={styles.paneNote}>{phoneNote}</div>}
           <button className={styles.paneHide} onClick={() => setPhonePane(false)}>Hide this pane</button>
         </div>
       )}

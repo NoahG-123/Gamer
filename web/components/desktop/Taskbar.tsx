@@ -123,7 +123,7 @@ export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop
           </button>
         ))}
         {profile.inputLanguage && (
-          <button className={styles.lang} title="To switch input methods, press Windows key+Space"><span>{profile.inputLanguage[0]}</span><span>{profile.inputLanguage[1]}</span></button>
+          <button className={styles.lang} title="To switch input methods, press Windows key+Space" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left - 120, y: r.top - 90, items: [ { label: `${profile.inputLanguage![0]} ${profile.inputLanguage![1]}  Canadian Multilingual Standard`, checked: true }, { type: "sep" }, { label: "Language preferences", onClick: () => onLaunch("settings") },] }); }}><span>{profile.inputLanguage[0]}</span><span>{profile.inputLanguage[1]}</span></button>
         )}
         <button
           className={`${styles.trayGroup} ${panel === "quick" ? styles.btnPressed : ""}`}

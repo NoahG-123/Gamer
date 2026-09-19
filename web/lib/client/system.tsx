@@ -19,7 +19,7 @@ export interface System {
 
 export type SoundName = "notify" | "message" | "error" | "unlock" | "click" | "empty-bin" | "device-connect" | "discovery";
 
-const DEFAULTS: SettingsState = { volume: 34, muted: true, brightness: 100, wifi: true, bluetooth: false, airplane: false, nightLight: false, theme: "dark", accent: "#0067C0", wallpaper: "wallpaper.desktop", wallpaperFit: "fill" };
+const DEFAULTS: SettingsState = { volume: 34, muted: true, brightness: 100, wifi: true, bluetooth: false, airplane: false, nightLight: false, theme: "dark", accent: "#0067C0", wallpaper: "wallpaper.desktop", wallpaperFit: "fill", chromeBookmarksBar: true, chromeTabGroups: true, chromeZoom: 1, chromeStartup: "ntp", chatFlags: {}, waSounds: true, starredMessages: [] };
 const Ctx = createContext<System | null>(null);
 
 export function SystemProvider({ children }: { children: React.ReactNode }) {

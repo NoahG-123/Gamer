@@ -25,7 +25,9 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export interface BinItem { name: string; path: string; origin: string; dir: boolean; size: number; modified: string; ext: string; deletedHere: boolean }
 export interface DownloadItem { id: number; name: string; url: string; path: string; size: number; state: string; at: string }
-export interface SettingsState { volume: number; muted: boolean; brightness: number; wifi: boolean; bluetooth: boolean; airplane: boolean; nightLight: boolean; theme: "dark" | "light"; accent: string; wallpaper: string | null; wallpaperFit: string }
+export interface SettingsState { volume: number; muted: boolean; brightness: number; wifi: boolean; bluetooth: boolean; airplane: boolean; nightLight: boolean; theme: "dark" | "light"; accent: string; wallpaper: string | null; wallpaperFit: string; chromeBookmarksBar: boolean; chromeTabGroups: boolean; chromeZoom: number; chromeStartup: "ntp" | "continue"; chatFlags: Record<string, ChatFlags>; waSounds: boolean; starredMessages: StarredMessage[] }
+export interface StarredMessage { id: number; chatId: string; name: string; text: string; at: string }
+export interface ChatFlags { pinned?: boolean; muted?: boolean; archived?: boolean; favourite?: boolean; unread?: boolean }
 
 export const api = {
   profile: () => get<{ profile: Profile; home: string; drives: Drive[]; serverTime: string }>("/api/profile"),

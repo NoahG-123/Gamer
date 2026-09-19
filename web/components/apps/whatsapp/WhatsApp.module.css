@@ -39,7 +39,7 @@
 .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--wa-green); color: #111b21; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 .typing { color: var(--wa-green); }
 .emptyList { padding: 40px 30px; text-align: center; color: var(--wa-text-2); font-size: 14px; line-height: 1.5; }
-.conv { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #0b141a; }
+.conv { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #0b141a; position: relative; }
 .landing { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 40px; background: #222e35; border-bottom: 6px solid var(--wa-green); }
 .landingLogo { color: #7c8a92; margin-bottom: 30px; }
 .landingTitle { font-size: 32px; font-weight: 300; color: var(--wa-text); margin-bottom: 18px; }
@@ -90,3 +90,28 @@
 .newChatRow span { display: flex; flex-direction: column; min-width: 0; }
 .newChatRow b { font-size: 14px; font-weight: 400; }
 .newChatRow small { font-size: 12px; color: #8696a0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Settings and profile panes */
+.settingsPane { display: flex; flex-direction: column; overflow: auto; padding-bottom: 20px; }
+.settingsMe { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 26px 16px 20px; }
+.settingsName { font-size: 17px; }
+.settingsSub { font-size: 13px; color: var(--wa-text-2, #8696a0); }
+.settingsGroup { padding: 16px 20px 6px; font-size: 13px; color: #00a884; }
+.settingsRow { all: unset; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 20px; font-size: 14px; cursor: default; box-sizing: border-box; width: 100%; }
+.settingsRow:hover { background: rgba(255, 255, 255, 0.04); }
+.settingsValue { color: var(--wa-text-2, #8696a0); font-size: 13px; }
+
+/* Conversation search, contact info */
+.convWho { all: unset; display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: default; }
+.convSearch { display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: var(--wa-panel, #202c33); border-bottom: 1px solid rgba(255,255,255,.08); }
+.convSearch input { all: unset; flex: 1; font-size: 14px; color: inherit; }
+.infoPane { position: absolute; top: 0; right: 0; bottom: 0; width: 340px; background: var(--wa-panel, #202c33); border-left: 1px solid rgba(255,255,255,.08); overflow: auto; z-index: 3; }
+.infoHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; font-size: 15px; }
+.infoTop { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 16px 24px; }
+.infoName { font-size: 19px; }
+.infoSub { font-size: 14px; color: #8696a0; }
+.infoBlock { display: flex; flex-direction: column; gap: 4px; padding: 14px 20px; font-size: 14px; border-top: 1px solid rgba(255,255,255,.06); }
+.infoLabel { font-size: 12px; color: #8696a0; }
+.infoRow { all: unset; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 20px; font-size: 14px; cursor: default; box-sizing: border-box; width: 100%; border-top: 1px solid rgba(255,255,255,.06); }
+.infoRow:hover { background: rgba(255,255,255,.04); }
+.infoValue { color: #8696a0; font-size: 13px; }

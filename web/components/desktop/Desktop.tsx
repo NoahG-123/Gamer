@@ -41,6 +41,10 @@ function DesktopInner() {
   const [panel, setPanel] = useState<Panel>(null);
   const [searchInitial, setSearchInitial] = useState("");
   const [desktopItems, setDesktopItems] = useState<VfsNode[]>([]);
+  // The desktop's own View and Sort by, which really do change what is on the desktop.
+  const [iconSize, setIconSize] = useState<"large" | "medium" | "small">("medium");
+  const [iconSort, setIconSort] = useState<"name" | "size" | "type" | "modified">("name");
+  const [showIcons, setShowIcons] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -82,7 +86,10 @@ function DesktopInner() {
       const t: Toast = { id: Date.now() + Math.random(), app: String(ev.app), title: String(ev.title), text: String(ev.text), props: (ev.props as Record<string, unknown>) ?? {}, at: Date.now() };
       setToasts((x) => [...x, t]);
       setHistory((x) => [...x.slice(-49), t]);
-      sys.play(t.app === "whatsapp" ? "message" : "notify");
+      // A muted chat still arrives; it just doesn't make a sound.
+      const chatId = typeof t.props.chatId === "string" ? t.props.chatId : null;
+      const silenced = t.app === "whatsapp" && (sys.settings.waSounds === false || !!(chatId && sys.settings.chatFlags?.[chatId]?.muted));
+      if (!silenced) sys.play(t.app === "whatsapp" ? "message" : "notify");
     }
   }, [launch, sys]);
   useLiveEvents(onLive);
@@ -150,6 +157,19 @@ function DesktopInner() {
 
   const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fs: fsOps } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fsOps]);
 
+  const ICON_PX = { large: 64, medium: 48, small: 32 } as const;
+  const ICON_BOX = { large: 100, medium: 76, small: 60 } as const;
+  const sortedIcons = useMemo(() => {
+    const collator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+    return [...desktopItems].sort((a, b) => {
+      if (a.dir !== b.dir) return a.dir ? -1 : 1;
+      if (iconSort === "size") return a.size - b.size;
+      if (iconSort === "modified") return b.modified.localeCompare(a.modified);
+      if (iconSort === "type") return collator.compare(a.ext, b.ext) || collator.compare(a.name, b.name);
+      return collator.compare(a.name, b.name);
+    });
+  }, [desktopItems, iconSort]);
+
   // Close any flyout on outside click; deselect desktop icons.
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
@@ -181,8 +201,19 @@ function DesktopInner() {
     if ((e.target as HTMLElement).closest("[data-desktop-icon]")) return;
     e.preventDefault();
     menu.open({ x: e.clientX, y: e.clientY, items: [
-      { label: "View", icon: <ViewIcon />, children: [{ label: "Large icons" }, { label: "Medium icons", checked: true }, { label: "Small icons" }, { type: "sep" }, { label: "Auto arrange icons" }, { label: "Align icons to grid", checked: true }, { type: "sep" }, { label: "Show desktop icons", checked: true }] },
-      { label: "Sort by", icon: <Sort />, children: [{ label: "Name", checked: true }, { label: "Size" }, { label: "Item type" }, { label: "Date modified" }] },
+      { label: "View", icon: <ViewIcon />, children: [
+        { label: "Large icons", checked: iconSize === "large", onClick: () => setIconSize("large") },
+        { label: "Medium icons", checked: iconSize === "medium", onClick: () => setIconSize("medium") },
+        { label: "Small icons", checked: iconSize === "small", onClick: () => setIconSize("small") },
+        { type: "sep" },
+        { label: "Show desktop icons", checked: showIcons, onClick: () => setShowIcons((v) => !v) },
+      ] },
+      { label: "Sort by", icon: <Sort />, children: [
+        { label: "Name", checked: iconSort === "name", onClick: () => setIconSort("name") },
+        { label: "Size", checked: iconSort === "size", onClick: () => setIconSort("size") },
+        { label: "Item type", checked: iconSort === "type", onClick: () => setIconSort("type") },
+        { label: "Date modified", checked: iconSort === "modified", onClick: () => setIconSort("modified") },
+      ] },
       { label: "Refresh", icon: <Refresh />, onClick: () => setRefreshTick((t) => t + 1) },
       { type: "sep" },
       { label: "New", icon: <NewIcon />, children: [
@@ -207,7 +238,8 @@ function DesktopInner() {
       menu.open({ x: e.clientX, y: e.clientY, items: [
         { label: "Open", onClick: () => openFolder("Recycle Bin") },
         { label: "Empty Recycle Bin", onClick: () => setConfirm({ title: "Delete Multiple Items", text: "Are you sure you want to permanently delete these items?", ok: "Yes", onOk: async () => { await api.emptyBin(); sys.play("empty-bin"); refresh(); } }) },
-        { type: "sep" }, { label: "Pin to Start" }, { type: "sep" }, { label: "Properties" },
+        { type: "sep" },
+        { label: "Properties", onClick: () => wm.open("dialog", { props: { kind: "properties", name: "Recycle Bin", ext: "", path: "shell:RecycleBinFolder" }, w: 400, h: 520, resizable: false }) },
       ] });
       return;
     }
@@ -238,11 +270,11 @@ function DesktopInner() {
 
   if (!profile || !os) return <div className={styles.desktop} data-theme={sys.settings.theme} style={{ backgroundImage: wallpaper ? `url(${wallpaper})` : undefined }} />;
 
-  const iconFor = (n: VfsNode) => {
-    if (n.ext === "lnk" && /chrome/i.test(n.name)) return <ChromeIcon size={48} />;
-    if (n.ext === "lnk" && /whatsapp/i.test(n.name)) return <WhatsAppIcon size={48} />;
-    if (n.ext === "lnk" && /terminal|powershell/i.test(n.name)) return <TerminalAppIcon size={48} />;
-    return <FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={48} />;
+  const iconFor = (n: VfsNode, size = 48) => {
+    if (n.ext === "lnk" && /chrome/i.test(n.name)) return <ChromeIcon size={size} />;
+    if (n.ext === "lnk" && /whatsapp/i.test(n.name)) return <WhatsAppIcon size={size} />;
+    if (n.ext === "lnk" && /terminal|powershell/i.test(n.name)) return <TerminalAppIcon size={size} />;
+    return <FileTypeIcon ext={n.ext} dir={n.dir} name={n.name} size={size} />;
   };
   const label = (n: VfsNode) => (n.ext === "lnk" || n.ext === "url" ? n.name.replace(/\.(lnk|url)$/i, "") : n.name);
   const weather = profile.weather ?? { temp: 21, text: "Partly cloudy", icon: "sun-behind-cloud" };
@@ -261,18 +293,18 @@ function DesktopInner() {
         onContextMenu={desktopMenu}
         data-desktop
       >
-        <div className={styles.icons}>
-          <button data-desktop-icon className={`${styles.icon} ${selected === "recycle-bin" ? styles.iconSel : ""}`} onClick={() => setSelected("recycle-bin")} onDoubleClick={() => openFolder("Recycle Bin")} onContextMenu={(e) => iconMenu(e, null)}>
-            <span className={styles.iconImg}><RecycleBinIcon size={48} full={!profile.recycleBinEmpty} /></span>
+        {showIcons && <div className={styles.icons}>
+          <button data-desktop-icon className={`${styles.icon} ${selected === "recycle-bin" ? styles.iconSel : ""}`} style={{ width: ICON_BOX[iconSize], height: ICON_BOX[iconSize] + 42 }} onClick={() => setSelected("recycle-bin")} onDoubleClick={() => openFolder("Recycle Bin")} onContextMenu={(e) => iconMenu(e, null)}>
+            <span className={styles.iconImg} style={{ width: ICON_PX[iconSize], height: ICON_PX[iconSize] }}><RecycleBinIcon size={ICON_PX[iconSize]} full={!profile.recycleBinEmpty} /></span>
             <span className={styles.iconLabel}>Recycle Bin</span>
           </button>
-          {desktopItems.map((n) => (
-            <button key={n.path} data-desktop-icon className={`${styles.icon} ${selected === n.path ? styles.iconSel : ""}`} onClick={() => setSelected(n.path)} onDoubleClick={() => openFile(n)} onContextMenu={(e) => iconMenu(e, n)}>
-              <span className={styles.iconImg}>{iconFor(n)}</span>
-              <span className={styles.iconLabel}>{label(n)}</span>
+          {sortedIcons.map((n) => (
+            <button key={n.path} data-desktop-icon className={`${styles.icon} ${selected === n.path ? styles.iconSel : ""}`} style={{ width: ICON_BOX[iconSize], height: ICON_BOX[iconSize] + 42 }} onClick={() => setSelected(n.path)} onDoubleClick={() => openFile(n)} onContextMenu={(e) => iconMenu(e, n)}>
+              <span className={styles.iconImg} style={{ width: ICON_PX[iconSize], height: ICON_PX[iconSize] }}>{iconFor(n, ICON_PX[iconSize])}</span>
+              <span className={styles.iconLabel} style={{ maxWidth: ICON_BOX[iconSize] - 4 }}>{label(n)}</span>
             </button>
           ))}
-        </div>
+        </div>}
         <div className={styles.windows}>
           {wm.windows.map((w) => { const C = APP_COMPONENTS[w.app]; return <C key={w.id} win={w} />; })}
         </div>

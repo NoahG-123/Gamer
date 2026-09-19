@@ -10,7 +10,7 @@ import { api, VfsNode } from "@/lib/client/api";
 import * as F from "@/components/icons/fluent";
 import * as A from "@/components/icons/apps";
 
-type PageId = "system" | "bluetooth" | "network" | "personalisation" | "apps" | "accounts" | "time" | "gaming" | "accessibility" | "privacy" | "update";
+type PageId = "system" | "bluetooth" | "network" | "personalisation" | "apps" | "accounts" | "time" | "accessibility" | "privacy" | "update";
 
 const PAGES: { id: PageId; label: string; icon: React.ReactNode }[] = [
   { id: "system", label: "System", icon: <F.Monitor size={18} /> },
@@ -20,7 +20,6 @@ const PAGES: { id: PageId; label: string; icon: React.ReactNode }[] = [
   { id: "apps", label: "Apps", icon: <F.AppFolder size={18} /> },
   { id: "accounts", label: "Accounts", icon: <F.Accounts size={18} /> },
   { id: "time", label: "Time & language", icon: <F.ClockIcon size={18} /> },
-  { id: "gaming", label: "Gaming", icon: <F.Grid size={18} /> },
   { id: "accessibility", label: "Accessibility", icon: <F.Accessibility size={18} /> },
   { id: "privacy", label: "Privacy & security", icon: <F.LockClosed size={18} /> },
   { id: "update", label: "Windows Update", icon: <F.SyncIcon size={18} /> },
@@ -207,19 +206,18 @@ export function Settings({ win }: { win: WinState }) {
           <div className={styles.group}>Sign-in options</div>
           <Row title="Password" sub="This account signs in automatically. Locking the screen does not ask for one." right={<span className={styles.value}>Not required</span>} />
           <Row title="Windows Hello" sub="This device does not have a camera or fingerprint reader." right={<span className={styles.value}>Unavailable</span>} />
-          <div className={styles.note}>Changing the password for this account is not available from here.</div>
+          <div className={styles.note}>This account has no password, so there is nothing to change.</div>
         </>
       );
       case "time": return (
         <>
           <h2 className={styles.h2}>Time &amp; language</h2>
           <Row title="Time zone" sub={os.profile.timezone.replace("_", " ")} right={<span className={styles.value}>(UTC−04:00)</span>} />
-          <Row title="Set time automatically" right={<Toggle on onChange={() => setNote("The clock follows this computer's time.")} />} />
+          <Row title="Set time automatically" sub="The clock follows this computer's time." right={<span className={styles.value}>On</span>} />
           <Row title="Language" sub={os.profile.locale === "en-CA" ? "English (Canada)" : os.profile.locale} right={<span className={styles.value}>Default</span>} />
           <Row title="Keyboard layout" sub="Canadian Multilingual Standard" />
         </>
       );
-      case "gaming": return (<><h2 className={styles.h2}>Gaming</h2><Row title="Game Bar" sub="Open Game Bar with the controller button" right={<Toggle on={false} onChange={() => {}} />} /><Row title="Game Mode" sub="Optimise your PC for play" right={<Toggle on onChange={() => {}} />} /></>);
       case "accessibility": return (
         <>
           <h2 className={styles.h2}>Accessibility</h2>

@@ -49,7 +49,6 @@ export function HistoryClient() {
       <div className={styles.body}>
         <nav className={styles.side}>
           <a className={styles.sideOn}>Chrome history</a>
-          <a>Tabs from other devices</a>
           <button className={styles.clear} onClick={() => { if (confirm("Clear all browsing history from this device?")) fetch("/api/browser/history", { method: "DELETE" }).then(() => load(q)); }}>Clear browsing data</button>
         </nav>
         <main className={styles.list}>

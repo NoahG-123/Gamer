@@ -5,6 +5,7 @@ import { WinState, useWM } from "@/components/desktop/wm";
 import { Window, CaptionButtons } from "@/components/desktop/Window";
 import { useMenu } from "@/components/desktop/ContextMenu";
 import { useOS } from "@/components/desktop/os";
+import { useSystem } from "@/lib/client/system";
 import { api, ChatSummary, Contact, Message, useLiveEvents, LiveEvent } from "@/lib/client/api";
 import { FilePicker } from "@/components/desktop/Prompts";
 import { useAssets } from "@/lib/client/assets";
@@ -59,6 +60,7 @@ export function WhatsApp({ win }: { win: WinState }) {
   const wm = useWM();
   const os = useOS();
   const menu = useMenu();
+  const sys = useSystem();
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [current, setCurrent] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,6 +74,8 @@ export function WhatsApp({ win }: { win: WinState }) {
   const [newChat, setNewChat] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [attach, setAttach] = useState(false);
+  const [info, setInfo] = useState(false);
+  const [convSearch, setConvSearch] = useState<string | null>(null);
   const listEnd = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const currentRef = useRef<string | null>(null); currentRef.current = current;
@@ -123,32 +127,62 @@ export function WhatsApp({ win }: { win: WinState }) {
     input.current?.focus();
   };
 
+  const flags = sys.settings.chatFlags ?? {};
+  const flagsOf = (id: string) => flags[id] ?? {};
+  const setFlag = (id: string, patch: Partial<(typeof flags)[string]>) =>
+    sys.set({ chatFlags: { ...flags, [id]: { ...flagsOf(id), ...patch } } });
+
   const visibleChats = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return chats.filter((c) => {
-      if (filter === "unread" && !c.unread) return false;
+    const f = (id: string) => flags[id] ?? {};
+    const list = chats.filter((c) => {
+      const fl = f(c.contact.id);
+      if (nav === "archived" ? !fl.archived : !!fl.archived) return false;
+      if (filter === "unread" && !c.unread && !fl.unread) return false;
       if (filter === "groups" && !c.contact.isGroup) return false;
-      if (filter === "favourites" && !c.contact.pinned) return false;
+      if (filter === "favourites" && !fl.favourite && !c.contact.pinned) return false;
       if (q && !c.contact.name.toLowerCase().includes(q) && !(c.last?.text ?? "").toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [chats, filter, search]);
+    // Pinned chats sit at the top, as they do in WhatsApp.
+    return [...list].sort((a, b) => Number(!!f(b.contact.id).pinned) - Number(!!f(a.contact.id).pinned));
+  }, [chats, filter, search, flags, nav]);
+
+  const starred = sys.settings.starredMessages ?? [];
+  const isStarred = (id: number) => starred.some((x) => x.id === id);
+  const toggleStar = (m: Message) => {
+    if (isStarred(m.id)) { sys.set({ starredMessages: starred.filter((x) => x.id !== m.id) }); return; }
+    const name = m.sender === "me" ? "You" : contact?.name ?? m.sender;
+    sys.set({ starredMessages: [...starred, { id: m.id, chatId: contact?.id ?? "", name, text: m.text, at: m.at }] });
+  };
 
   const chatMenu = (e: React.MouseEvent, c: ChatSummary) => {
     e.preventDefault();
     menu.open({ x: e.clientX, y: e.clientY, variant: "wa", items: [
-      { label: "Archive chat" }, { label: "Mute notifications" }, { label: "Pin chat" }, { label: c.unread ? "Mark as read" : "Mark as unread" }, { label: "Add to favourites" }, { type: "sep" }, { label: "Block" }, { label: "Delete chat" },
+      { label: flagsOf(c.contact.id).archived ? "Unarchive chat" : "Archive chat", onClick: () => setFlag(c.contact.id, { archived: !flagsOf(c.contact.id).archived }) },
+      { label: flagsOf(c.contact.id).muted ? "Unmute notifications" : "Mute notifications", onClick: () => setFlag(c.contact.id, { muted: !flagsOf(c.contact.id).muted }) },
+      { label: flagsOf(c.contact.id).pinned ? "Unpin chat" : "Pin chat", onClick: () => setFlag(c.contact.id, { pinned: !flagsOf(c.contact.id).pinned }) },
+      { label: c.unread || flagsOf(c.contact.id).unread ? "Mark as read" : "Mark as unread",
+        onClick: () => { if (c.unread) { void api.markRead(c.contact.id).then(refreshChats); setFlag(c.contact.id, { unread: false }); } else setFlag(c.contact.id, { unread: !flagsOf(c.contact.id).unread }); } },
+      { label: flagsOf(c.contact.id).favourite ? "Remove from favourites" : "Add to favourites", onClick: () => setFlag(c.contact.id, { favourite: !flagsOf(c.contact.id).favourite }) },
     ] });
   };
   const msgMenu = (e: React.MouseEvent, m: Message) => {
     e.preventDefault();
     menu.open({ x: e.clientX, y: e.clientY, variant: "wa", items: [
-      { label: "Reply" }, { label: "Copy", onClick: () => navigator.clipboard?.writeText(m.text).catch(() => {}) }, { label: "React" }, { label: "Forward" }, { label: "Pin" }, { label: "Star" }, { type: "sep" }, { label: "Delete" },
+      { label: "Copy", onClick: () => navigator.clipboard?.writeText(m.text).catch(() => {}) },
+      { label: isStarred(m.id) ? "Unstar" : "Star", onClick: () => toggleStar(m) },
     ] });
   };
   const headerMenu = (e: React.MouseEvent) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    menu.open({ x: r.right - 200, y: r.bottom + 4, variant: "wa", items: [{ label: "Contact info" }, { label: "Select messages" }, { label: "Mute notifications" }, { label: "Disappearing messages" }, { label: "Add to favourites" }, { label: "Close chat", onClick: () => { setCurrent(null); setContact(null); setMessages([]); } }, { type: "sep" }, { label: "Report" }, { label: "Block" }, { label: "Clear chat" }, { label: "Delete chat" }] });
+    menu.open({ x: r.right - 200, y: r.bottom + 4, variant: "wa", items: [
+      { label: "Contact info", onClick: () => setInfo(true) },
+      { label: contact && flagsOf(contact.id).muted ? "Unmute notifications" : "Mute notifications", disabled: !contact, onClick: () => contact && setFlag(contact.id, { muted: !flagsOf(contact.id).muted }) },
+      { label: contact && flagsOf(contact.id).favourite ? "Remove from favourites" : "Add to favourites", disabled: !contact, onClick: () => contact && setFlag(contact.id, { favourite: !flagsOf(contact.id).favourite }) },
+      { label: contact && flagsOf(contact.id).archived ? "Unarchive chat" : "Archive chat", disabled: !contact, onClick: () => contact && setFlag(contact.id, { archived: !flagsOf(contact.id).archived }) },
+      { label: "Close chat", onClick: () => { setCurrent(null); setContact(null); setMessages([]); setInfo(false); } },
+    ] });
   };
 
   const groupNames = (c: Contact) => (c.participants ?? []).map((p) => (p === "me" ? "You" : chats.find((x) => x.contact.id === p)?.contact.name ?? p)).join(", ");
@@ -170,12 +204,18 @@ export function WhatsApp({ win }: { win: WinState }) {
             <button className={`${styles.railBtn} ${nav === "starred" ? styles.railActive : ""}`} title="Starred messages" onClick={() => setNav("starred")}><W.WaStarred size={24} /></button>
             <button className={`${styles.railBtn} ${nav === "archived" ? styles.railActive : ""}`} title="Archived" onClick={() => setNav("archived")}><W.WaArchive size={24} /></button>
             <button className={`${styles.railBtn} ${nav === "settings" ? styles.railActive : ""}`} title="Settings" onClick={() => setNav("settings")}><W.WaSettings size={24} /></button>
-            <button className={styles.railBtn} title="Profile"><OwnerAvatar size={28} /></button>
+            <button className={`${styles.railBtn} ${nav === "profile" ? styles.railActive : ""}`} title="Profile" onClick={() => setNav("profile")}><OwnerAvatar size={28} /></button>
           </div>
           <div className={styles.list}>
             <div className={styles.listHead}>
-              <span className={styles.listTitle}>{nav === "chats" ? "Chats" : nav === "calls" ? "Calls" : nav === "status" ? "Status" : nav === "channels" ? "Channels" : nav === "communities" ? "Communities" : nav === "starred" ? "Starred messages" : nav === "archived" ? "Archived" : "Settings"}</span>
-              {nav === "chats" && <><button className={styles.iconBtn} title="New chat" onClick={() => setNewChat((v) => !v)}><W.WaNewChat size={22} /></button><button className={styles.iconBtn} title="Menu" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 4, variant: "wa", items: [{ label: "New group" }, { label: "New community" }, { label: "Starred messages" }, { label: "Select chats" }, { label: "Read all" }, { type: "sep" }, { label: "Settings" }, { label: "Log out" }] }); }}><W.WaMenu size={22} /></button></>}
+              <span className={styles.listTitle}>{nav === "chats" ? "Chats" : nav === "calls" ? "Calls" : nav === "status" ? "Status" : nav === "channels" ? "Channels" : nav === "communities" ? "Communities" : nav === "starred" ? "Starred messages" : nav === "archived" ? "Archived" : nav === "profile" ? "Profile" : "Settings"}</span>
+              {nav === "chats" && <><button className={styles.iconBtn} title="New chat" onClick={() => setNewChat((v) => !v)}><W.WaNewChat size={22} /></button><button className={styles.iconBtn} title="Menu" onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); menu.open({ x: r.left, y: r.bottom + 4, variant: "wa", items: [
+                  { label: "Starred messages", onClick: () => setNav("starred") },
+                  { label: "Archived", onClick: () => setNav("archived") },
+                  { label: "Read all", onClick: () => { for (const c of chats) if (c.unread) void api.markRead(c.contact.id); setTimeout(refreshChats, 150); } },
+                  { type: "sep" },
+                  { label: "Settings", onClick: () => setNav("settings") },
+                ] }); }}><W.WaMenu size={22} /></button></>}
             </div>
             <div className={styles.searchWrap}>
               <W.WaSearch size={20} className={styles.searchIcon} />
@@ -220,7 +260,45 @@ export function WhatsApp({ win }: { win: WinState }) {
                 </div>
               </>
             )}
-            {nav !== "chats" && <div className={styles.emptyList}>{nav === "calls" ? "To start calling contacts who have WhatsApp, click the new call button." : nav === "status" ? "No recent updates" : nav === "archived" ? "No archived chats" : nav === "starred" ? "No starred messages" : ""}</div>}
+            {nav === "starred" && (
+              <div className={styles.rows}>
+                {starred.map((m) => (
+                  <div key={m.id} className={styles.row} onClick={() => { if (m.chatId) { setCurrent(m.chatId); setNav("chats"); } }}>
+                    <div className={styles.rowText}>
+                      <div className={styles.rowTop}><span className={styles.rowName}>{m.name}</span><span className={styles.rowTime}>{listTime(m.at)}</span></div>
+                      <div className={styles.rowBottom}><span className={styles.rowPreview}>{m.text}</span></div>
+                    </div>
+                  </div>
+                ))}
+                {!starred.length && <div className={styles.emptyList}>No starred messages</div>}
+              </div>
+            )}
+            {(nav === "settings" || nav === "profile") && (
+              <div className={styles.settingsPane}>
+                <div className={styles.settingsMe}>
+                  <OwnerAvatar size={100} />
+                  <div className={styles.settingsName}>{os.profile.displayName}</div>
+                  <div className={styles.settingsSub}>{os.profile.accountEmail}</div>
+                </div>
+                {nav === "settings" && (
+                  <>
+                    <div className={styles.settingsGroup}>Notifications</div>
+                    <label className={styles.settingsRow}>
+                      <span>Message sounds</span>
+                      <input type="checkbox" checked={sys.settings.waSounds !== false} onChange={(e) => sys.set({ waSounds: e.target.checked })} />
+                    </label>
+                    <div className={styles.settingsGroup}>Chats</div>
+                    <button className={styles.settingsRow} onClick={() => setNav("archived")}>
+                      <span>Archived</span><span className={styles.settingsValue}>{Object.values(flags).filter((f) => f.archived).length}</span>
+                    </button>
+                    <div className={styles.settingsRow}><span>Chats on this device</span><span className={styles.settingsValue}>{chats.length}</span></div>
+                    <div className={styles.settingsGroup}>Help</div>
+                    <div className={styles.settingsRow}><span>Version</span><span className={styles.settingsValue}>2.2440.8</span></div>
+                  </>
+                )}
+              </div>
+            )}
+            {nav !== "chats" && nav !== "archived" && nav !== "settings" && nav !== "profile" && nav !== "starred" && <div className={styles.emptyList}>{nav === "calls" ? "To start calling contacts who have WhatsApp, click the new call button." : nav === "status" ? "No recent updates" : nav === "channels" ? "No channels" : "No communities"}</div>}
           </div>
           <div className={styles.conv}>
             {!contact ? (
@@ -233,18 +311,27 @@ export function WhatsApp({ win }: { win: WinState }) {
             ) : (
               <>
                 <div className={styles.convHead}>
-                  <Avatar contact={contact} size={40} />
-                  <div className={styles.convTitle}><span className={styles.convName}>{contact.name}</span><span className={`${styles.convStatus} ${typing[contact.id] ? styles.typing : ""}`}>{status}</span></div>
+                  <button className={styles.convWho} onClick={() => setInfo((v) => !v)}>
+                    <Avatar contact={contact} size={40} />
+                    <div className={styles.convTitle}><span className={styles.convName}>{contact.name}</span><span className={`${styles.convStatus} ${typing[contact.id] ? styles.typing : ""}`}>{status}</span></div>
+                  </button>
                   <button className={styles.iconBtn} title="Video call" onClick={() => setNotice("No camera or microphone is attached to this computer, so calls are not available.")}><W.WaVideo size={22} /></button>
                   <button className={styles.iconBtn} title="Voice call" onClick={() => setNotice("No microphone is attached to this computer, so calls are not available.")}><W.WaPhone size={22} /></button>
-                  <button className={styles.iconBtn} title="Search" onClick={() => setNotice(null)}><W.WaSearch size={22} /></button>
+                  <button className={styles.iconBtn} title="Search" onClick={() => setConvSearch((v) => (v === null ? "" : null))}><W.WaSearch size={22} /></button>
                   <button className={styles.iconBtn} title="Menu" onClick={headerMenu}><W.WaMenu size={22} /></button>
                 </div>
+                {convSearch !== null && (
+                  <div className={styles.convSearch}>
+                    <W.WaSearch size={18} />
+                    <input autoFocus placeholder="Search in this chat" value={convSearch} onChange={(e) => setConvSearch(e.target.value)} />
+                    <button className={styles.iconBtn} onClick={() => setConvSearch(null)}>Close</button>
+                  </div>
+                )}
                 <div className={styles.messages}>
                   <div className={styles.msgInner}>
                     <div className={styles.e2e}><W.WaLock size={11} /> Messages are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Click to learn more.</div>
-                    {messages.map((m, i) => {
-                      const prev = messages[i - 1];
+                    {(convSearch?.trim() ? messages.filter((m) => m.text.toLowerCase().includes(convSearch.trim().toLowerCase())) : messages).map((m, i, shown) => {
+                      const prev = shown[i - 1];
                       const newDay = !prev || !sameDay(new Date(prev.at), new Date(m.at));
                       const first = newDay || !prev || prev.sender !== m.sender;
                       const mine = m.sender === "me";
@@ -257,7 +344,7 @@ export function WhatsApp({ win }: { win: WinState }) {
                               {first && <span className={styles.tail} />}
                               {senderName && <div className={styles.senderName}>{senderName}</div>}
                               <span className={styles.msgText}>{m.text}</span>
-                              <span className={styles.meta}><span className={styles.metaTime}>{timeOf(m.at)}</span>{mine && <Ticks status={m.status} />}</span>
+                              <span className={styles.meta}>{isStarred(m.id) && <W.WaStarred size={11} />}<span className={styles.metaTime}>{timeOf(m.at)}</span>{mine && <Ticks status={m.status} />}</span>
                             </div>
                           </div>
                         </React.Fragment>
@@ -286,6 +373,25 @@ export function WhatsApp({ win }: { win: WinState }) {
                     : <button className={styles.iconBtn} title="Voice message" onClick={() => setNotice("No microphone is attached to this computer, so voice messages are not available.")}><W.WaMic size={24} /></button>}
                 </div>
               </>
+            )}
+            {info && contact && (
+              <aside className={styles.infoPane}>
+                <div className={styles.infoHead}><span>Contact info</span><button className={styles.iconBtn} onClick={() => setInfo(false)}><W.WaClose size={20} /></button></div>
+                <div className={styles.infoTop}>
+                  <Avatar contact={contact} size={140} />
+                  <div className={styles.infoName}>{contact.name}</div>
+                  {contact.phone && <div className={styles.infoSub}>{contact.phone}</div>}
+                </div>
+                {contact.about && <div className={styles.infoBlock}><span className={styles.infoLabel}>About</span><span>{contact.about}</span></div>}
+                {contact.isGroup && <div className={styles.infoBlock}><span className={styles.infoLabel}>Participants</span><span>{contact.participants?.length ?? 0}</span></div>}
+                <div className={styles.infoBlock}><span className={styles.infoLabel}>Messages</span><span>{messages.length}</span></div>
+                <button className={styles.infoRow} onClick={() => setFlag(contact.id, { muted: !flagsOf(contact.id).muted })}>
+                  <span>Mute notifications</span><span className={styles.infoValue}>{flagsOf(contact.id).muted ? "On" : "Off"}</span>
+                </button>
+                <button className={styles.infoRow} onClick={() => setFlag(contact.id, { favourite: !flagsOf(contact.id).favourite })}>
+                  <span>Favourite</span><span className={styles.infoValue}>{flagsOf(contact.id).favourite ? "Yes" : "No"}</span>
+                </button>
+              </aside>
             )}
           </div>
         </div>
