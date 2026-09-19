@@ -1,5 +1,5 @@
 {
-  "_comment": "Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). Paths elsewhere use the {user} token.",
+  "_comment": "Identity and look of the computer's owner. `wallpaper` is an asset-manifest key (content/assets.json). Paths elsewhere use the {user} token. `network` is this machine's own Wi-Fi: the SSID Settings, quick settings and the lock screen all show, the saved networks it knows, and what it can see from the flat.",
   "username": "wren",
   "displayName": "Wren Castellanos",
   "machineName": "WREN-THINKPAD",
@@ -8,14 +8,91 @@
   "accountEmail": "wren.castellanos@gmail.com",
   "wallpaper": "wallpaper.desktop",
   "accentColor": "#0067C0",
-  "taskbarPins": ["explorer", "chrome", "whatsapp", "terminal"],
-  "desktopIcons": ["recycle-bin"],
+  "taskbarPins": [
+    "explorer",
+    "chrome",
+    "whatsapp",
+    "terminal"
+  ],
+  "desktopIcons": [
+    "recycle-bin"
+  ],
   "recycleBinEmpty": false,
   "theme": "dark",
   "tempUnit": "C",
   "dateFormat": "yyyy-MM-dd",
   "laptop": true,
-  "inputLanguage": ["ENG", "CA"],
-  "weather": { "temp": 17, "text": "Fog", "icon": "fog" },
-  "trayIcons": ["onedrive", "whatsapp"]
+  "inputLanguage": [
+    "ENG",
+    "CA"
+  ],
+  "weather": {
+    "temp": 17,
+    "text": "Fog",
+    "icon": "fog"
+  },
+  "trayIcons": [
+    "onedrive",
+    "whatsapp"
+  ],
+  "network": {
+    "ssid": "Castellanos_5G",
+    "security": "WPA2-Personal",
+    "band": "5 GHz",
+    "protocol": "Wi-Fi 6 (802.11ax)",
+    "ipv4": "192.168.2.41",
+    "gateway": "192.168.2.1",
+    "dns": "192.168.2.1, 8.8.8.8",
+    "mac": "B4-6B-FC-1A-07-D2",
+    "router": "Bell Home Hub 4000",
+    "known": [
+      {
+        "ssid": "Castellanos_5G",
+        "security": "WPA2-Personal",
+        "auto": true
+      },
+      {
+        "ssid": "Castellanos",
+        "security": "WPA2-Personal",
+        "auto": true
+      },
+      {
+        "ssid": "Harbourlight-Guest",
+        "security": "WPA2-Personal",
+        "auto": false
+      },
+      {
+        "ssid": "NSCC-Waterfront",
+        "security": "WPA2-Enterprise",
+        "auto": false
+      }
+    ],
+    "nearby": [
+      {
+        "ssid": "BELL902",
+        "bars": 3,
+        "secure": true
+      },
+      {
+        "ssid": "TELUS7A41",
+        "bars": 2,
+        "secure": true
+      },
+      {
+        "ssid": "Eastlink-4F2B",
+        "bars": 2,
+        "secure": true
+      },
+      {
+        "ssid": "SETUP-9C10",
+        "bars": 1,
+        "secure": true
+      },
+      {
+        "ssid": "Free Public WiFi",
+        "bars": 1,
+        "secure": false
+      }
+    ]
+  }
 }

@@ -155,7 +155,8 @@ function DesktopInner() {
   const openUrl = useCallback((url: string) => { launch("chrome", { openUrl: url }); }, [launch]);
   const launchEntry = useCallback((a: AppEntry) => { if (a.app) launch(a.app, a.url ? { openUrl: a.url } : a.page ? { page: a.page } : undefined); }, [launch]);
 
-  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fs: fsOps } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, refreshTick, fsOps]);
+  const lock = useCallback(() => { setPanel(null); setLocked(true); }, []);
+  const os = useMemo<OS | null>(() => profile ? { profile, home, launch, openFile, openWith, openFolder, openUrl, lock, refreshTick, fs: fsOps } : null, [profile, home, launch, openFile, openWith, openFolder, openUrl, lock, refreshTick, fsOps]);
 
   const ICON_PX = { large: 64, medium: 48, small: 32 } as const;
   const ICON_BOX = { large: 100, medium: 76, small: 60 } as const;

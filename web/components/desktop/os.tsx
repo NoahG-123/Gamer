@@ -13,6 +13,8 @@ export interface OS {
   openWith: (path: string, app: OpenWith) => Promise<void>;
   openFolder: (path: string) => void;
   openUrl: (url: string) => void;
+  /** Lock the screen, the way the Start menu and Win+L do. */
+  lock: () => void;
   refreshTick: number;
   /** Real changes to the machine: create, rename, delete, copy/paste, wallpaper. */
   fs: {

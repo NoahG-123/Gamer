@@ -60,7 +60,7 @@ export function HistoryClient() {
               {g.items.map((v, i) => (
                 <div key={v.url + i} className={styles.row}>
                   <span className={styles.time}>{new Date(v.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</span>
-                  <img className={styles.fav} src={`https://www.google.com/s2/favicons?domain=${host(v.url)}&sz=32`} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                  <img className={styles.fav} src={`/api/favicon?host=${encodeURIComponent(host(v.url))}`} alt="" />
                   <a className={styles.link} href={v.url}>{v.title || v.url}</a>
                   <span className={styles.host}>{host(v.url)}</span>
                 </div>

@@ -137,10 +137,17 @@ test("browsing history is real and searchable", async () => {
 });
 
 test("dressing files open into something plausible; the README opens and unlocks Wren", async () => {
-  // Office documents (no Office on this machine) get the real "how do you want to open this" dialog...
+  // A stray Word document opens in the read-only viewer, not into a blank window.
   const docx = await post("/api/fs/open", { path: `${home}/Desktop/Untitled document.docx` });
-  assert.equal(docx.body.openable, false);
-  // ...but forcing an app opens them anyway, like Windows would.
+  assert.equal(docx.body.openable, true);
+  assert.equal(docx.body.kind, "document");
+  const docBody = await fetch(`${B}${docx.body.url}`);
+  assert.equal(docBody.status, 200);
+  assert.match(docBody.headers.get("content-type") ?? "", /text\/html/);
+  const docHtml = await docBody.text();
+  assert.ok(docHtml.length > 800, "the viewer renders a page with content on it");
+  assert.ok(/Read-only/.test(docHtml), "and says it cannot be edited");
+  // Forcing an app still opens it the way Windows would.
   const forced = await post("/api/fs/open", { path: `${home}/Desktop/Untitled document.docx`, with: "notepad" });
   assert.equal(forced.body.viewer, "notepad");
   assert.ok(forced.body.text.startsWith("PK"), "Notepad shows the raw bytes of a docx");
@@ -254,11 +261,124 @@ test("generic LLM endpoint uses character config and reports budget", async () =
   assert.equal(bad.status, 404);
 });
 
-test("asset manifest resolves fallbacks and leaves person slots blank", async () => {
+test("asset manifest resolves wallpapers, portraits and their fallbacks", async () => {
   const a = await j("/api/assets");
-  assert.ok(a.body.assets["wallpaper.desktop"].url, "wallpaper has a fallback url");
-  assert.equal(a.body.assets["people.owner"].url, null, "person image intentionally absent");
-  assert.equal(a.body.assets["people.owner"].placeholder, "silhouette");
+  assert.ok(a.body.assets["wallpaper.desktop"].url, "wallpaper has a url (fetched, or its fallback)");
   const img = await fetch(B + a.body.assets["wallpaper.desktop"].url);
   assert.equal(img.status, 200);
+
+  // A person slot either has a face on disk or stays blank behind a silhouette; both are
+  // fine, and the placeholder has to be declared either way so nothing renders empty.
+  const owner = a.body.assets["people.owner"];
+  assert.equal(owner.placeholder, "silhouette");
+  if (owner.url) {
+    const face = await fetch(B + owner.url);
+    assert.equal(face.status, 200, "a portrait that resolves must actually serve");
+  }
+
+  // The wallpaper picker needs more than one preset to be worth opening.
+  const wallpapers = Object.values(a.body.assets).filter((x) => x.wallpaper);
+  assert.ok(wallpapers.length >= 4, `wallpaper presets available (${wallpapers.length})`);
+  assert.ok(wallpapers.every((w) => w.title), "every preset is named");
+});
+
+test("the PDF filler renders a document rather than a blank page", async () => {
+  const pdf = await post("/api/fs/open", { path: `${home}/Desktop/passport scan (2).pdf` });
+  assert.equal(pdf.body.viewer, "chrome");
+  const r = await fetch(`${B}${pdf.body.url}`);
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("content-type") ?? "", /application\/pdf/);
+  const body = Buffer.from(await r.arrayBuffer()).toString("latin1");
+  assert.ok(body.startsWith("%PDF"), "a real PDF");
+  assert.ok(/\/BaseFont \/Helvetica/.test(body), "with a font resource");
+  assert.ok((body.match(/Tj/g) ?? []).length > 6, "and real text set on the page");
+});
+
+test("this computer's Wi-Fi comes from the world, and turning it off sticks", async () => {
+  const before = await j("/api/settings");
+  const ssid = before.body.network.ssid;
+  assert.ok(ssid && ssid.length > 2, "the network has a name");
+  assert.equal(before.body.settings.ssid, ssid, "and the machine is joined to it");
+  assert.ok(before.body.network.known.some((k) => k.ssid === ssid), "which is one of its saved networks");
+
+  const off = await post("/api/settings", { wifi: false });
+  assert.equal(off.body.settings.wifi, false);
+  const stillOff = await j("/api/settings");
+  assert.equal(stillOff.body.settings.wifi, false, "the setting survives a reload");
+  await post("/api/settings", { wifi: true });
+});
+
+test("the calendar can be written to, and story events are hidden rather than destroyed", async () => {
+  const from = new Date(Date.UTC(2026, 8, 1)).toISOString();
+  const to = new Date(Date.UTC(2026, 9, 1)).toISOString();
+
+  const made = await post("/api/calendar", { title: "Test event", start: "2026-09-15T13:00:00Z", end: "2026-09-15T14:00:00Z", calendar: "wren" });
+  assert.equal(made.status, 200);
+  const id = made.body.id;
+  let list = await j(`/api/calendar?from=${from}&to=${to}&record=0`);
+  assert.ok(list.body.events.some((e) => e.seriesId === id && e.title === "Test event"), "the new event shows up");
+
+  const edited = await j("/api/calendar", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, title: "Renamed" }) });
+  assert.equal(edited.status, 200);
+  list = await j(`/api/calendar?from=${from}&to=${to}&record=0`);
+  assert.ok(list.body.events.some((e) => e.seriesId === id && e.title === "Renamed"), "the edit sticks");
+
+  const gone = await j(`/api/calendar?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+  assert.equal(gone.status, 200);
+  list = await j(`/api/calendar?from=${from}&to=${to}&record=0`);
+  assert.ok(!list.body.events.some((e) => e.seriesId === id), "and so does the delete");
+
+  // A story event can be hidden and put back without touching content/.
+  const story = list.body.events.find((e) => !String(e.seriesId).startsWith("user-"));
+  if (story) {
+    await j(`/api/calendar?id=${encodeURIComponent(story.seriesId)}`, { method: "DELETE" });
+    let after = await j(`/api/calendar?from=${from}&to=${to}&record=0`);
+    assert.ok(!after.body.events.some((e) => e.seriesId === story.seriesId), "story event hidden");
+    await j("/api/calendar", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: story.seriesId, title: story.title }) });
+    after = await j(`/api/calendar?from=${from}&to=${to}&record=0`);
+    assert.ok(after.body.events.some((e) => e.seriesId === story.seriesId), "and restored, still in content/");
+  }
+});
+
+test("saving a picture out of the browser puts it where File Explorer can see it", async () => {
+  const folders = await j("/api/fs/save-url");
+  assert.ok(folders.body.folders.some((f) => f.name === "Pictures"));
+  const pictures = folders.body.folders.find((f) => f.name === "Pictures").path;
+
+  // Whatever picture this seed put on the desktop; the point is that saving one works.
+  const desktop = await j(`/api/fs/list?path=${encodeURIComponent(`${home}/Desktop`)}`);
+  const pic = desktop.body.children.find((c) => !c.dir && /^(jpg|jpeg|png|heic|bmp|webp)$/i.test(c.ext)) ?? desktop.body.children.find((c) => !c.dir);
+  const src = `/lf/${encodeURIComponent(pic.path).replace(/%2F/g, "/")}`;
+  const saved = await post("/api/fs/save-url", { url: src, folder: pictures, name: "saved-from-browser.png" });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.equal(saved.body.folder, pictures);
+
+  const ls = await j(`/api/fs/list?path=${encodeURIComponent(pictures)}`);
+  assert.ok(ls.body.children.some((c) => c.name === "saved-from-browser.png"), "it is in the folder");
+  const back = await fetch(`${B}/lf/${encodeURIComponent(saved.body.path).replace(/%2F/g, "/")}`);
+  assert.equal(back.status, 200, "and it opens again afterwards");
+
+  // A second save of the same name does not overwrite the first.
+  const again = await post("/api/fs/save-url", { url: src, folder: pictures, name: "saved-from-browser.png" });
+  assert.notEqual(again.body.path, saved.body.path);
+});
+
+test("a fake site's own links stay inside that site", async () => {
+  const r = await fetch(`${B}/sites/harbourledger.ca/archive/`);
+  assert.equal(r.status, 200);
+  const html = await r.text();
+  assert.ok(!/href="\/(?!sites\/|api\/|lf\/|assets\/|player|chrome\/)/.test(html), "no link escapes to the shell root");
+  assert.ok(html.includes('href="/sites/harbourledger.ca/"'), "the front-page link points at the site");
+});
+
+test("Google account domains are intercepted, so no real sign-in is reachable", async () => {
+  const hosts = await j("/api/sites/hosts");
+  for (const h of ["mail.google.com", "gmail.com", "calendar.google.com", "accounts.google.com", "myaccount.google.com"]) {
+    assert.ok(hosts.body.match.includes(h), `${h} is intercepted`);
+  }
+  const page = await fetch(`${B}/sites/accounts.google.com/`);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.ok(/not connected to Google/i.test(html), "and answers with this machine's own copy");
+  assert.ok(!/type="password"/i.test(html), "with nowhere to type a password");
 });

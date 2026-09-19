@@ -25,7 +25,8 @@ async function post<T>(url: string, body: unknown): Promise<T> {
 
 export interface BinItem { name: string; path: string; origin: string; dir: boolean; size: number; modified: string; ext: string; deletedHere: boolean }
 export interface DownloadItem { id: number; name: string; url: string; path: string; size: number; state: string; at: string }
-export interface SettingsState { volume: number; muted: boolean; brightness: number; wifi: boolean; bluetooth: boolean; airplane: boolean; nightLight: boolean; theme: "dark" | "light"; accent: string; wallpaper: string | null; wallpaperFit: string; chromeBookmarksBar: boolean; chromeTabGroups: boolean; chromeZoom: number; chromeStartup: "ntp" | "continue"; chatFlags: Record<string, ChatFlags>; waSounds: boolean; starredMessages: StarredMessage[] }
+export interface SettingsState { volume: number; muted: boolean; brightness: number; wifi: boolean; ssid: string; bluetooth: boolean; airplane: boolean; nightLight: boolean; theme: "dark" | "light"; accent: string; wallpaper: string | null; wallpaperFit: string; chromeBookmarksBar: boolean; chromeTabGroups: boolean; chromeZoom: number; chromeStartup: "ntp" | "continue"; chromeNtpBackground: string | null; resolution: string; scaling: number; lockScreenStatus: "weather" | "calendar" | "mail" | "none"; lockScreenTips: boolean; textScale: number; transparency: boolean; animations: boolean; autoTime: boolean; time24: boolean; chatFlags: Record<string, ChatFlags>; waSounds: boolean; starredMessages: StarredMessage[] }
+export interface NetworkProfile { ssid: string; security: string; band: string; protocol: string; ipv4: string; gateway: string; dns: string; mac: string; router: string; known: { ssid: string; security: string; auto: boolean }[]; nearby: { ssid: string; bars: number; secure: boolean }[] }
 export interface StarredMessage { id: number; chatId: string; name: string; text: string; at: string }
 export interface ChatFlags { pinned?: boolean; muted?: boolean; archived?: boolean; favourite?: boolean; unread?: boolean }
 
@@ -53,8 +54,8 @@ export const api = {
   paste: (paths: string[], dest: string, move = false) => post<{ ok: true; created: string[] }>("/api/fs/mutate", { op: "copy", paths, dest, move }),
   bin: () => get<{ items: BinItem[] }>("/api/fs/mutate"),
   downloads: () => get<{ downloads: DownloadItem[] }>("/api/downloads"),
-  settings: () => get<{ settings: SettingsState }>("/api/settings"),
-  setSettings: (patch: Partial<SettingsState>) => post<{ settings: SettingsState }>("/api/settings", patch),
+  settings: () => get<{ settings: SettingsState; network: NetworkProfile }>("/api/settings"),
+  setSettings: (patch: Partial<SettingsState>) => post<{ settings: SettingsState; network: NetworkProfile }>("/api/settings", patch),
   tasks: () => get<{ processes: { name: string; pid: number; cpu: number; memMb: number; disk: number; network: number; app: boolean; status?: string }[]; totals: { cpu: number; memPct: number; memUsedGb: number; memTotalGb: number; diskPct: number; netMbps: number } }>("/api/tasks"),
 };
 

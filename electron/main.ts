@@ -21,7 +21,26 @@ let mainWindow: BrowserWindow | null = null;
 let netOnline = true;
 
 Menu.setApplicationMenu(null);
-app.commandLine.appendSwitch("disable-features", "OutOfBlinkCors");
+/**
+ * Everything Chromium has that could offer to sign this machine in to a Google account is
+ * turned off here, at the command line, before any window exists. Electron does not ship
+ * Chrome Sync, but the identity plumbing that puts up account and profile prompts is still
+ * compiled in; with these off there is nothing left to prompt with, and the URL intercept
+ * below means a real sign-in page is never reachable in the first place.
+ */
+app.commandLine.appendSwitch("disable-features", [
+  "OutOfBlinkCors",
+  "AccountConsistency", "IdentityConsistency", "MirrorAccountConsistency",
+  "SigninSupport", "ChromeSignin", "DiceWebSigninInterception", "ForceSigninReauth",
+  "SyncEnableHistoryDataType", "EnableSyncPromos", "SigninPromo",
+  "AutofillServerCommunication", "OptimizationHints", "InterestFeedV2",
+  "MediaRouter", "TranslateUI", "SafeBrowsingEnhancedProtection",
+].join(","));
+app.commandLine.appendSwitch("disable-sync");
+app.commandLine.appendSwitch("disable-signin-promo");
+app.commandLine.appendSwitch("disable-background-networking");
+app.commandLine.appendSwitch("disable-client-side-phishing-detection");
+app.commandLine.appendSwitch("disable-domain-reliability");
 
 // ---------- environment ----------
 function loadEnvFiles(): void {
@@ -99,6 +118,50 @@ async function refreshHosts(): Promise<void> {
 }
 
 // ---------- URL intercept ----------
+
+/**
+ * Anything that would put a real Google sign-in in front of the player. The account
+ * domains themselves are story hosts (content/sites/hosts.json) and are caught by name;
+ * this catches the sign-in and OAuth paths that live under domains which are not.
+ */
+const SIGNIN_PATH = /^\/(accounts|signin|ServiceLogin|o\/oauth2|AccountChooser|logout|CheckCookie|AddSession)(\/|$)/i;
+function isSignIn(u: URL): boolean {
+  const host = u.hostname.toLowerCase();
+  if (!/(^|\.)(google\.[a-z.]+|googleapis\.com|youtube\.com|gstatic\.com)$/.test(host)) return false;
+  return SIGNIN_PATH.test(u.pathname) || /[?&](service|continue)=/i.test(u.search) && /signin|accounts/i.test(u.pathname);
+}
+
+/**
+ * A browser tab must never be able to read the disk this is running on.
+ *
+ * The world has its own filesystem, and its paths look exactly like Windows paths
+ * ("C:/Users/<owner>/Desktop/..."). When one of those reaches Chromium as a real
+ * file:// URL it goes looking on the host machine for a file that only exists inside
+ * the story, which is both a dead end and a way out of the sandbox. Every file:// request
+ * in the browser partition is therefore answered by the content server instead, from the
+ * virtual filesystem, and nothing else is served from disk at all.
+ */
+function containFileUrls(ses: Electron.Session): void {
+  try {
+    ses.protocol.handle("file", async (request) => {
+      let inner = "";
+      try {
+        const u = new URL(request.url);
+        inner = decodeURIComponent(u.pathname).replace(/^\/+/, "");
+        if (!inner) return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
+        const target = `${serverOrigin}/lf/${inner.split("/").map(encodeURIComponent).join("/")}${u.search}`;
+        const range = request.headers.get("range");
+        return await fetch(target, { headers: range ? { range } : {} });
+      } catch {
+        return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
+      }
+    });
+  } catch (e) {
+    // An older Electron without protocol.handle: the renderer-side guard still applies.
+    console.warn("[found] file:// containment unavailable:", (e as Error).message);
+  }
+}
+
 function setupBrowserSession(): void {
   const ses = session.fromPartition(PARTITION);
   // Identify as the real Chrome build we are (Electron's default UA advertises Electron).
@@ -118,11 +181,20 @@ function setupBrowserSession(): void {
         callback({ redirectURL: `${serverOrigin}/sites/${canonical}${u.pathname}${u.search}` });
         return;
       }
+      // A sign-in page under a Google domain that is not itself a story host.
+      if (isSignIn(u)) {
+        if (details.resourceType === "mainFrame") { callback({ redirectURL: `${serverOrigin}/sites/accounts.google.com/` }); return; }
+        callback({ cancel: true });
+        return;
+      }
     } catch { /* fall through */ }
     callback({});
   });
   ses.setPermissionRequestHandler((_wc, permission, callback) => callback(permission === "fullscreen" || permission === "clipboard-read" || permission === "clipboard-sanitized-write"));
   ses.setPermissionCheckHandler((_wc, permission) => permission === "fullscreen" || permission === "clipboard-read" || permission === "clipboard-sanitized-write");
+  // Chromium asks for these on its own; nothing in here has an account to sign in to.
+  ses.setSpellCheckerEnabled(false);
+  containFileUrls(ses);
   captureDownloads(ses);
 }
 
@@ -154,6 +226,30 @@ function captureDownloads(ses: Electron.Session): void {
   });
 }
 
+/**
+ * Chrome's keyboard shortcuts, while the page itself has focus.
+ *
+ * A <webview> is its own process: once the player clicks into a page, every key goes to
+ * the guest and the browser chrome around it never sees Ctrl+T, Ctrl+F or Ctrl+Shift+I
+ * again. Chrome handles those above the page, so they are lifted out of the guest here
+ * and handed back to the shell, which acts on them exactly as it does from the toolbar.
+ */
+const SHORTCUTS: { key: string; ctrl?: boolean; shift?: boolean; alt?: boolean; name: string }[] = [
+  { key: "I", ctrl: true, shift: true, name: "inspect" },
+  { key: "U", ctrl: true, name: "view-source" },
+  { key: "F", ctrl: true, name: "find" },
+  { key: "T", ctrl: true, name: "new-tab" },
+  { key: "W", ctrl: true, name: "close-tab" },
+  { key: "L", ctrl: true, name: "omnibox" },
+  { key: "D", ctrl: true, name: "bookmark" },
+  { key: "H", ctrl: true, name: "history" },
+  { key: "J", ctrl: true, name: "downloads" },
+  { key: "S", ctrl: true, name: "save-page" },
+  { key: "R", ctrl: true, name: "reload" },
+  { key: "ArrowLeft", alt: true, name: "back" },
+  { key: "ArrowRight", alt: true, name: "forward" },
+];
+
 app.on("web-contents-created", (_e, contents: WebContents) => {
   if (contents.getType() === "webview") {
     // Anything that wants a new window becomes a new tab in the fake Chrome.
@@ -161,6 +257,16 @@ app.on("web-contents-created", (_e, contents: WebContents) => {
       const host = contents.hostWebContents;
       if (host && !host.isDestroyed()) host.send("open-tab", url);
       return { action: "deny" };
+    });
+    contents.on("before-input-event", (event, input) => {
+      if (input.type !== "keyDown") return;
+      const hit = SHORTCUTS.find((s) => s.key.toLowerCase() === String(input.key).toLowerCase()
+        && !!s.ctrl === (input.control || input.meta) && !!s.shift === input.shift && !!s.alt === input.alt);
+      if (!hit) return;
+      const host = contents.hostWebContents;
+      if (!host || host.isDestroyed()) return;
+      event.preventDefault();
+      host.send("chrome-shortcut", hit.name);
     });
     contents.on("will-attach-webview" as never, () => {});
     return; // a browser tab keeps its devtools: Inspect is a real Chrome feature

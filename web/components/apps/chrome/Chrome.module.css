@@ -85,3 +85,19 @@
 .findInput { all: unset; flex: 1; padding: 6px 10px; border-radius: 4px; background: #202124; color: #e8eaed; font-size: 13px; }
 .findCount { font-size: 12px; color: #9aa0a6; padding: 0 6px; min-width: 44px; text-align: right; }
 .note { position: absolute; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 20; padding: 9px 18px; border-radius: 6px; background: rgba(32,33,36,.95); color: #e8eaed; font-size: 12.5px; box-shadow: 0 6px 24px rgba(0,0,0,.45); }
+
+/* "Save as": Chrome's own save box, over the tab content. */
+.saveWrap { position: absolute; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; background: rgba(0,0,0,.35); }
+.saveBox { width: min(460px, 92%); background: #292a2d; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; box-shadow: 0 12px 48px rgba(0,0,0,.6); padding: 20px 22px 16px; color: var(--cr-text); }
+.saveTitle { font-size: 15px; margin-bottom: 14px; }
+.saveLabel { display: block; font-size: 11px; color: var(--cr-text-2); margin: 12px 0 5px; }
+.saveField { width: 100%; box-sizing: border-box; padding: 8px 10px; font: inherit; font-size: 13px; color: var(--cr-text); background: #202124; border: 1px solid rgba(255,255,255,.14); border-radius: 4px; }
+.saveField:focus { outline: none; border-color: #8ab4f8; }
+.saveField option { background: #292a2d; }
+.saveError { margin-top: 10px; font-size: 12px; color: #f28b82; }
+.saveFoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.saveBtn { padding: 7px 18px; border-radius: 4px; font-size: 13px; border: 1px solid rgba(255,255,255,.16); background: transparent; color: var(--cr-text); cursor: default; }
+.saveBtn:hover { background: rgba(255,255,255,.08); }
+.savePrimary { background: #8ab4f8; color: #202124; border-color: transparent; }
+.savePrimary:hover { filter: brightness(1.08); }
+.savePrimary:disabled { opacity: .5; }

@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { api, SettingsState } from "./api";
+import { api, SettingsState, NetworkProfile } from "./api";
 
 /**
  * Machine-level state every app shares: volume, brightness, the radios, theme and
@@ -9,6 +9,8 @@ import { api, SettingsState } from "./api";
  */
 export interface System {
   settings: SettingsState;
+  /** This machine's own Wi-Fi, from the world data. */
+  network: NetworkProfile;
   set: (patch: Partial<SettingsState>) => void;
   /** Play a UI sound at the current volume (silent while muted). */
   play: (name: SoundName) => void;
@@ -19,16 +21,18 @@ export interface System {
 
 export type SoundName = "notify" | "message" | "send" | "error" | "unlock" | "click" | "empty-bin" | "device-connect" | "discovery";
 
-const DEFAULTS: SettingsState = { volume: 34, muted: true, brightness: 100, wifi: true, bluetooth: false, airplane: false, nightLight: false, theme: "dark", accent: "#0067C0", wallpaper: "wallpaper.desktop", wallpaperFit: "fill", chromeBookmarksBar: true, chromeTabGroups: true, chromeZoom: 1, chromeStartup: "ntp", chatFlags: {}, waSounds: true, starredMessages: [] };
+const DEFAULTS: SettingsState = { volume: 34, muted: true, brightness: 100, wifi: true, ssid: "", bluetooth: false, airplane: false, nightLight: false, theme: "dark", accent: "#0067C0", wallpaper: "wallpaper.desktop", wallpaperFit: "fill", chromeBookmarksBar: true, chromeTabGroups: true, chromeZoom: 1, chromeStartup: "ntp", chromeNtpBackground: "chrome.ntpBackground", resolution: "1920 x 1080", scaling: 100, lockScreenStatus: "weather", lockScreenTips: true, textScale: 100, transparency: true, animations: true, autoTime: true, time24: true, chatFlags: {}, waSounds: true, starredMessages: [] };
+const NO_NETWORK: NetworkProfile = { ssid: "", security: "", band: "", protocol: "", ipv4: "", gateway: "", dns: "", mac: "", router: "", known: [], nearby: [] };
 const Ctx = createContext<System | null>(null);
 
 export function SystemProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<SettingsState>(DEFAULTS);
+  const [network, setNetwork] = useState<NetworkProfile>(NO_NETWORK);
   const media = useRef(new Set<HTMLMediaElement>());
   const audioCtx = useRef<AudioContext | null>(null);
   const settingsRef = useRef(settings); settingsRef.current = settings;
 
-  useEffect(() => { api.settings().then((d) => setSettings(d.settings)).catch(() => {}); }, []);
+  useEffect(() => { api.settings().then((d) => { setSettings(d.settings); setNetwork(d.network); }).catch(() => {}); }, []);
 
   // Volume applies to everything already playing, and to anything that starts later.
   useEffect(() => {
@@ -44,7 +48,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       if (patch.wifi === true || patch.bluetooth === true) next.airplane = false;
       return next;
     });
-    api.setSettings(patch).then((d) => setSettings(d.settings)).catch(() => {});
+    api.setSettings(patch).then((d) => { setSettings(d.settings); setNetwork(d.network); }).catch(() => {});
   }, []);
 
   const attachMedia = useCallback((el: HTMLMediaElement | null) => {
@@ -65,7 +69,16 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     } catch { /* no audio device */ }
   }, []);
 
-  const value = useMemo<System>(() => ({ settings, set, play, attachMedia, online: settings.wifi && !settings.airplane }), [settings, set, play, attachMedia]);
+  // Accessibility settings are real: the shell reads them straight off the root element.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--ui-scale", String(settings.textScale / 100));
+    root.style.setProperty("--shell-blur", settings.transparency ? "60px" : "0px");
+    root.style.setProperty("--anim", settings.animations ? "1" : "0");
+    root.dataset.animations = settings.animations ? "on" : "off";
+  }, [settings.textScale, settings.transparency, settings.animations]);
+
+  const value = useMemo<System>(() => ({ settings, network, set, play, attachMedia, online: settings.wifi && !settings.airplane }), [settings, network, set, play, attachMedia]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

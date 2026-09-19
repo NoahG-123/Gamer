@@ -10,7 +10,14 @@ data/
 .DS_Store
 tests/e2e/output/
 tsconfig.tsbuildinfo
+.claude/settings.local.json
 
-# Third-party portraits fetched per-install by `npm run fetch:people`; still packaged from your
-# working tree. Delete these two lines if you want one fixed cast committed for every build.
-content/assets/people/*.jpg
+# Portraits used to be fetched per-install from a service that serves photographs of real
+# people, so they were kept out of the repo. They are generated now (faces that belong to
+# nobody, about 40 kB each), so the cast is committed and every build has it with no key.
+# Re-roll the whole cast with: npm run fetch:people -- --force
+
+# Keys dropped in by hand for a session; never commit.
+claude.env.env
+*.env.env
+content/assets.json.mine.bak

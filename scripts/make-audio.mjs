@@ -31,11 +31,14 @@ function hum(seconds, { base = 94, breath = 0.16, level = 0.18, voice = 0.5 } = 
     const swell = 0.6 + 0.4 * Math.sin(2 * Math.PI * breath * t);
     let v = Math.sin(2 * Math.PI * base * t) * 0.6;
     v += Math.sin(2 * Math.PI * base * 2 * t) * 0.15;
-    // moving formant-ish partials
-    const f1 = 470 + 40 * Math.sin(2 * Math.PI * 0.05 * t);
-    const f2 = 1180 + 90 * Math.sin(2 * Math.PI * 0.037 * t + 1);
-    v += Math.sin(2 * Math.PI * f1 * t) * 0.05 * voice;
-    v += Math.sin(2 * Math.PI * f2 * t) * 0.03 * voice;
+    // Moving formant-ish partials, with the phase integrated rather than written as
+    // f(t)·t — the same fix web/lib/audio.ts carries. Written the naive way the pitch
+    // climbs with the length of the file instead of drifting a few Hz either side.
+    const w1 = 2 * Math.PI * 0.05, w2 = 2 * Math.PI * 0.037;
+    const phase1 = 2 * Math.PI * (470 * t + (40 / w1) * (1 - Math.cos(w1 * t)));
+    const phase2 = 2 * Math.PI * (1180 * t - (90 / w2) * (Math.cos(w2 * t + 1) - Math.cos(1)));
+    v += Math.sin(phase1) * 0.05 * voice;
+    v += Math.sin(phase2) * 0.03 * voice;
     // pink-ish noise floor
     v += (Math.random() * 2 - 1) * 0.04;
     s[i] = v * swell * level;

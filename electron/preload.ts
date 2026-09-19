@@ -16,4 +16,10 @@ contextBridge.exposeInMainWorld("__host", {
     ipcRenderer.on("open-tab", handler);
     return () => ipcRenderer.removeListener("open-tab", handler);
   },
+  /** Chrome shortcuts pressed while a page had focus, lifted out of the guest. */
+  onChromeShortcut: (cb: (name: string) => void) => {
+    const handler = (_e: unknown, name: string) => cb(name);
+    ipcRenderer.on("chrome-shortcut", handler);
+    return () => ipcRenderer.removeListener("chrome-shortcut", handler);
+  },
 });

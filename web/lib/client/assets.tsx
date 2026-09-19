@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-export interface ClientAsset { key: string; kind: string; url: string | null; exists: boolean; placeholder?: string; value?: string }
+export interface ClientAsset { key: string; kind: string; url: string | null; exists: boolean; placeholder?: string; value?: string; title?: string; wallpaper?: boolean }
 type AssetMap = Record<string, ClientAsset>;
 const Ctx = createContext<AssetMap>({});
 

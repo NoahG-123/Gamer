@@ -3,7 +3,9 @@ import fs from "node:fs";
 import { getStoryFile, assetPath, getNode, resolveText, contentSeed } from "@/lib/vfs";
 import { getOverlay } from "@/lib/fsmut";
 import { mimeFor } from "@/lib/http";
-import { dressingKind, synthWav, synthPng, synthPdf, junkText } from "@/lib/synth";
+import { dressingKind, synthWav, synthPng, synthPdf, junkText, DIALOG_EXTS } from "@/lib/synth";
+import { isOfficeExt, synthDoc, renderDoc } from "@/lib/synthdoc";
+import { synthText } from "@/lib/synthtext";
 import { getRecording, recordingBytes, recordingStream } from "@/lib/audio";
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,14 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ parts: stri
   const name = p.slice(p.lastIndexOf("/") + 1);
   const as = req.nextUrl.searchParams.get("as");
   const headers: Record<string, string> = { "cache-control": "no-store", "content-disposition": `inline; filename="${name.replace(/"/g, "")}"` };
+  /**
+   * Chromium decides what to do with a response partly from the filename in the
+   * content-disposition header: an extension it cannot render turns the navigation into a
+   * download however the disposition is spelt, the tab stays where it was, and a copy
+   * quietly piles up in the download folder every time. Where the body being served is not
+   * what the extension claims, the filename is therefore left off and the response renders.
+   */
+  const inlineNoName = { "cache-control": "no-store", "content-disposition": "inline" };
 
   const f = getStoryFile(p);
   if (f?.render) {
@@ -74,17 +84,57 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ parts: stri
   }
 
   const seed = contentSeed(p);
+
+  // A stray office document opens into the read-only viewer rather than a blank window.
+  if (as !== "raw" && isOfficeExt(node.ext)) {
+    return new Response(renderDoc(synthDoc(node.path, node.ext), node.name), { headers: { ...headers, "content-type": "text/html; charset=utf-8" } });
+  }
+
+  // An archive or an installer: Chrome itself cannot show one. Say so on the page rather
+  // than starting a download nobody asked for.
+  if (as !== "raw" && DIALOG_EXTS.has(node.ext)) {
+    const kb = Math.max(1, Math.round(node.size / 1024)).toLocaleString("en-CA");
+    const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const page = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(name)}</title>`
+      + `<style>:root{color-scheme:light}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;`
+      + `background:#f1f3f4;font-family:"Segoe UI",system-ui,Arial,sans-serif;color:#202124}`
+      + `.c{max-width:min(520px,90vw);text-align:center;padding:40px 28px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.14)}`
+      + `h1{font-size:18px;font-weight:500;margin:0 0 10px}p{margin:0 0 6px;color:#5f6368;font-size:13px;line-height:1.6;overflow-wrap:anywhere}`
+      + `code{background:#f1f3f4;border-radius:3px;padding:1px 5px}</style></head><body><div class="c">`
+      + `<h1>${esc(name)}</h1>`
+      + `<p>${kb} KB. Chrome cannot display this kind of file.</p>`
+      + `<p>Open it from File Explorer, or use the Terminal — <code>7z l</code> lists what is inside an archive and <code>7z x</code> extracts it.</p>`
+      + `</div></body></html>`;
+    return new Response(page, { headers: { ...inlineNoName, "content-type": "text/html; charset=utf-8" } });
+  }
+
   const kind = as === "image" ? "image" : as === "audio" ? "audio" : as === "raw" ? "other" : dressingKind(node.ext);
   switch (kind) {
     case "audio": case "video":
       return new Response(new Uint8Array(synthWav(seed)), { headers: { ...headers, "content-type": "audio/wav" } });
     case "image":
       return new Response(new Uint8Array(synthPng(seed)), { headers: { ...headers, "content-type": "image/png" } });
-    case "pdf":
-      return new Response(new Uint8Array(synthPdf(seed, 1 + (node.size > 900_000 ? 2 : 0))), { headers: { ...headers, "content-type": "application/pdf" } });
+    case "pdf": {
+      // Real type on the page, not grey bars: a blank-looking PDF reads as a broken viewer.
+      const pages = 1 + (node.size > 900_000 ? 2 : 0);
+      return new Response(new Uint8Array(synthPdf(seed, pages, synthText(node.path, "txt", node.size))), { headers: { ...headers, "content-type": "application/pdf" } });
+    }
     case "text":
       return new Response(resolveText(p) ?? "", { headers: { ...headers, "content-type": "text/plain; charset=utf-8" } });
-    default:
-      return new Response(junkText(seed, node.ext, node.size), { headers: { ...headers, "content-type": "text/plain; charset=utf-8" } });
+    default: {
+      // The "raw bytes" view of a binary file, which is what Notepad would show.
+      //
+      // It is served as HTML rather than text/plain on purpose: Chromium sniffs a
+      // text/plain body that looks binary, decides it is a download, refuses to navigate
+      // and quietly drops a copy in the download folder every time the page is opened.
+      // An HTML document is always rendered.
+      const junk = junkText(seed, node.ext, node.size);
+      const esc = junk.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const page = `<!doctype html><html><head><meta charset="utf-8"><title>${name.replace(/[<>&]/g, "")}</title>`
+        + `<style>:root{color-scheme:light}body{margin:0;background:#fff;color:#202124}`
+        + `pre{margin:0;padding:12px 16px;font-family:Consolas,"Courier New",monospace;font-size:12px;line-height:1.4;`
+        + `white-space:pre-wrap;overflow-wrap:anywhere}</style></head><body><pre>${esc}</pre></body></html>`;
+      return new Response(page, { headers: { ...inlineNoName, "content-type": "text/html; charset=utf-8" } });
+    }
   }
 }

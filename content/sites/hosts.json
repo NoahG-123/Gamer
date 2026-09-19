@@ -1,12 +1,68 @@
 {
-  "_comment": "Story hosts. Any request to these hosts (any scheme, with or without www.) is served from content/sites/<host>/ instead of the internet. `spa` hosts serve index.html for any path (single-page clones). Everything else loads the live web untouched.",
+  "_comment": "Story hosts. Any request to these hosts (any scheme, with or without www.) is served from content/sites/<host>/ instead of the internet. `spa` hosts serve index.html for any path (single-page clones). Everything else loads the live web untouched. The Google entries are here for account safety as much as for the story: a real sign-in page must never be reachable from inside the machine, so every Google account domain is caught.",
   "hosts": [
-    { "host": "mail.google.com", "title": "Gmail", "spa": true },
-    { "host": "calendar.google.com", "title": "Google Calendar", "spa": true },
-    { "host": "wrencastellanos.com", "title": "Wren Castellanos", "aliases": ["www.wrencastellanos.com"] },
-    { "host": "harbourlightfilms.ca", "title": "Harbourlight Films", "aliases": ["www.harbourlightfilms.ca"] },
-    { "host": "fureymarine.ca", "title": "Furey Marine Services", "aliases": ["www.fureymarine.ca"] },
-    { "host": "harbourledger.ca", "title": "The Harbour Ledger", "aliases": ["www.harbourledger.ca"] },
-    { "host": "fieldrecordists.net", "title": "fieldrecordists.net", "aliases": ["www.fieldrecordists.net"] }
+    {
+      "host": "mail.google.com",
+      "title": "Gmail",
+      "spa": true,
+      "aliases": [
+        "gmail.com",
+        "www.gmail.com",
+        "inbox.google.com"
+      ]
+    },
+    {
+      "host": "calendar.google.com",
+      "title": "Google Calendar",
+      "spa": true
+    },
+    {
+      "host": "accounts.google.com",
+      "title": "Google Account",
+      "spa": true,
+      "aliases": [
+        "myaccount.google.com",
+        "www.myaccount.google.com",
+        "account.google.com",
+        "signin.google.com",
+        "oauth2.googleapis.com",
+        "accounts.youtube.com"
+      ]
+    },
+    {
+      "host": "wrencastellanos.com",
+      "title": "Wren Castellanos",
+      "aliases": [
+        "www.wrencastellanos.com"
+      ]
+    },
+    {
+      "host": "harbourlightfilms.ca",
+      "title": "Harbourlight Films",
+      "aliases": [
+        "www.harbourlightfilms.ca"
+      ]
+    },
+    {
+      "host": "fureymarine.ca",
+      "title": "Furey Marine Services",
+      "aliases": [
+        "www.fureymarine.ca"
+      ]
+    },
+    {
+      "host": "harbourledger.ca",
+      "title": "The Harbour Ledger",
+      "aliases": [
+        "www.harbourledger.ca"
+      ]
+    },
+    {
+      "host": "fieldrecordists.net",
+      "title": "fieldrecordists.net",
+      "aliases": [
+        "www.fieldrecordists.net"
+      ]
+    }
   ]
 }

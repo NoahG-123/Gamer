@@ -68,7 +68,9 @@ the first time you open it, which makes the machine feel sluggish.
 `npm run play` (and `npm run dev`) creates `.env` for you on first run (copied from
 `.env.example`) and tells you so. Paste your API key after `DEEPSEEK_API_KEY=` in it and restart to
 give the characters a voice — without it everything else still works, messages just
-never get answered. A `GEMINI_API_KEY` works too: it is what generates the spoken lines,
+never get answered. An `OPENAI_API_KEY` covers the rest: it draws the portraits and the
+weather and news pictures, and stands in for replies when DeepSeek cannot be reached.
+A `GEMINI_API_KEY` is only for the spoken lines,
 and it stands in for replies whenever DeepSeek is missing or not answering, so people
 still get back to you. That file is gitignored, so your key stays on your machine.
 
@@ -139,21 +141,19 @@ her friends answer in character over WhatsApp, and email replies arrive from the
 consultant and the victim's daughter.
 
 1. Put a key in `.env` next to the executable (or in the app's data folder):
-   `DEEPSEEK_API_KEY=sk-...` (default provider). Any OpenAI-compatible endpoint
-   works via `DEEPSEEK_API_BASE` + `LLM_DEFAULT_MODEL`, so you can point it at
-   another model later. For **OpenRouter**, set `DEEPSEEK_API_BASE=https://openrouter.ai/api/v1`,
-   put your OpenRouter key in `DEEPSEEK_API_KEY`, and use OpenRouter's slugs
-   (`deepseek/deepseek-r1`, `deepseek/deepseek-chat`) as the `model` in
-   `content/characters/*.json`. Unknown slugs just fall back to the default row in
-   `content/llm/pricing.json`, so the spend estimate goes approximate — the hard cap
-   still works.
+   `DEEPSEEK_API_KEY=sk-...` from [platform.deepseek.com](https://platform.deepseek.com).
+   This calls DeepSeek's own API (`https://api.deepseek.com`) directly — a key
+   beginning `sk-or-` belongs to OpenRouter and will be rejected. `OPENAI_API_KEY`
+   stands in whenever DeepSeek is missing or not answering, so people still reply.
+   Unknown model slugs fall back to the default row in `content/llm/pricing.json`, so
+   the spend estimate goes approximate — the hard cap still works.
 2. `LLM_BUDGET_USD` (default 10) is a hard spend cap for the whole install; when
    reached, characters simply stop reading messages. Every character is set to
    `deepseek-chat` (V3): cheaper than the reasoning models, and it texts in short
    bursts instead of dumping paragraphs.
-3. `PEXELS_API_KEY` (optional) fills in stock imagery (wallpaper, backgrounds) on
-   first run. Character portraits come from `npm run fetch:people` instead and need
-   no key.
+3. `OPENAI_API_KEY` also draws the cast's portraits and the weather and news pictures
+   on first run — OpenAI is the only image provider. `PEXELS_API_KEY` (optional)
+   fills in the stock photography: the wallpaper presets and page backgrounds.
 
 So: add the key, download/run, and it starts as a stray file on your machine.
 
@@ -168,7 +168,7 @@ empty. Add the key once under **Settings → Secrets and variables → Actions**
 | Name | Kind | Notes |
 | --- | --- | --- |
 | `DEEPSEEK_API_KEY` | Secret | Only read when you tick `bake_key` on a manual run. |
-| `DEEPSEEK_API_BASE` | Variable | Optional, e.g. the OpenRouter endpoint. |
+| `DEEPSEEK_API_BASE` | Variable | Optional; defaults to DeepSeek's own API. |
 | `LLM_DEFAULT_MODEL` | Variable | Optional. |
 | `LLM_BUDGET_USD` | Variable | Optional, defaults to 10. |
 

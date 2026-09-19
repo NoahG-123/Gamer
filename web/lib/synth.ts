@@ -49,6 +49,10 @@ export function synthWav(seed: string, seconds = 14): Buffer {
     const r = rng(seed);
     const base = 55 + r() * 90, breath = 0.08 + r() * 0.16, level = 0.12 + r() * 0.1, noise = 0.02 + r() * 0.05;
     const f1 = 380 + r() * 260, f2 = 900 + r() * 600, voice = r() * 0.8;
+    // The two drifting partials have their phase integrated rather than written as
+    // f(t)·t: a frequency that wobbles has to accumulate phase, or the pitch climbs
+    // steadily with the length of the file instead of moving a few Hz either way.
+    const w1 = 0.3, w2 = 0.23, d1 = 30, d2 = 70;
     const n = Math.floor(SR * seconds);
     const buf = Buffer.alloc(44 + n * 2);
     buf.write("RIFF", 0); buf.writeUInt32LE(36 + n * 2, 4); buf.write("WAVE", 8);
@@ -60,8 +64,8 @@ export function synthWav(seed: string, seconds = 14): Buffer {
       const t = i / SR;
       const swell = 0.6 + 0.4 * Math.sin(2 * Math.PI * breath * t);
       let v = Math.sin(2 * Math.PI * base * t) * 0.6 + Math.sin(2 * Math.PI * base * 2 * t) * 0.15;
-      v += Math.sin(2 * Math.PI * (f1 + 30 * Math.sin(0.3 * t)) * t) * 0.05 * voice;
-      v += Math.sin(2 * Math.PI * (f2 + 70 * Math.sin(0.23 * t + 1)) * t) * 0.03 * voice;
+      v += Math.sin(2 * Math.PI * (f1 * t + (d1 / w1) * (1 - Math.cos(w1 * t)))) * 0.05 * voice;
+      v += Math.sin(2 * Math.PI * (f2 * t - (d2 / w2) * (Math.cos(w2 * t + 1) - Math.cos(1)))) * 0.03 * voice;
       v += (r() * 2 - 1) * noise;
       v *= swell * level;
       if (i < fade) v *= i / fade; else if (n - 1 - i < fade) v *= (n - 1 - i) / fade;
@@ -170,26 +174,73 @@ export function synthPng(seed: string, w = 800, h = 600): Buffer {
 }
 
 // ---------- pdf ----------
-/** A one-page "scan": off-white page with a faint grey band, no text. Chrome's PDF viewer renders it. */
-export function synthPdf(seed: string, pages = 1): Buffer {
-  return memo(`pdf:${seed}:${pages}`, () => {
+/**
+ * A filler PDF that reads as a document rather than as a blank page.
+ *
+ * It used to draw grey bars where text would be, which on screen is indistinguishable
+ * from a viewer that has failed to load anything. Now it sets real type in Helvetica —
+ * a heading, a date line and a few paragraphs of mundane text from lib/synthtext — so a
+ * stray PDF on the desktop opens into something a person would recognise as a letter or
+ * a statement. Deterministic, so a file reads the same every time it is opened.
+ */
+function pdfEscape(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+}
+
+/** Break a line of text to a column width, measured in characters at the given point size. */
+function wrap(text: string, cols: number): string[] {
+  const out: string[] = [];
+  for (const para of text.split(/\n/)) {
+    if (!para.trim()) { out.push(""); continue; }
+    let line = "";
+    for (const word of para.split(/\s+/)) {
+      if (line && (line + " " + word).length > cols) { out.push(line); line = word; }
+      else line = line ? `${line} ${word}` : word;
+    }
+    if (line) out.push(line);
+  }
+  return out;
+}
+
+export function synthPdf(seed: string, pages = 1, text?: string): Buffer {
+  return memo(`pdf:${seed}:${pages}:${text ? text.length : 0}`, () => {
     const r = rng(seed);
+    const name = seed.slice(seed.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Document";
+    const dated = `${2024 + Math.floor(r() * 3)}-${String(1 + Math.floor(r() * 12)).padStart(2, "0")}-${String(1 + Math.floor(r() * 28)).padStart(2, "0")}`;
+    const lines = wrap(text ?? "", 88);
+    const perPage = 44;
+
     const objs: string[] = [];
     const kids: number[] = [];
-    let n = 3;
+    let n = 4; // 1 catalog, 2 pages, 3 font
     for (let p = 0; p < pages; p++) {
       const pageId = n++, contentId = n++;
       kids.push(pageId);
-      const shade = (0.9 + r() * 0.06).toFixed(3);
-      const lines: string[] = [`${shade} ${shade} ${(Number(shade) - 0.02).toFixed(3)} rg 0 0 612 792 re f`];
-      // a few faint grey blocks where text would be, like a low-contrast scan
-      for (let i = 0; i < 6 + Math.floor(r() * 8); i++) { const y = 700 - i * (28 + r() * 30); const wdt = 200 + r() * 300; lines.push(`0.80 0.80 0.80 rg 72 ${y.toFixed(1)} ${wdt.toFixed(1)} 9 re f`); }
-      const content = lines.join("\n");
-      objs[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${contentId} 0 R /Resources << >> >>`;
-      objs[contentId] = `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`;
+      const body: string[] = ["0.99 0.99 0.98 rg 0 0 612 792 re f", "0.12 0.12 0.12 rg"];
+      let y = 720;
+      if (p === 0) {
+        body.push(`BT /F1 17 Tf 72 ${y} Td (${pdfEscape(name)}) Tj ET`);
+        y -= 26;
+        body.push("0.42 0.42 0.42 rg", `BT /F1 9 Tf 72 ${y} Td (${pdfEscape(dated)}) Tj ET`, "0.12 0.12 0.12 rg");
+        y -= 10;
+        body.push(`0.80 0.80 0.80 RG 0.7 w 72 ${y} m 540 ${y} l S`);
+        y -= 26;
+      }
+      const slice = lines.slice(p * perPage, (p + 1) * perPage);
+      for (const line of slice) {
+        if (y < 72) break;
+        if (line) body.push(`BT /F1 10.5 Tf 72 ${y} Td (${pdfEscape(line)}) Tj ET`);
+        y -= 15;
+      }
+      body.push("0.55 0.55 0.55 rg", `BT /F1 8 Tf 72 48 Td (Page ${p + 1} of ${pages}) Tj ET`);
+      const content = body.join("\n");
+      objs[pageId] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents ${contentId} 0 R /Resources << /Font << /F1 3 0 R >> >> >>`;
+      objs[contentId] = `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`;
     }
     objs[1] = "<< /Type /Catalog /Pages 2 0 R >>";
     objs[2] = `<< /Type /Pages /Kids [${kids.map((k) => `${k} 0 R`).join(" ")}] /Count ${kids.length} >>`;
+    objs[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+
     let out = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
     const offsets: number[] = [];
     for (let i = 1; i < n; i++) { offsets[i] = Buffer.byteLength(out, "latin1"); out += `${i} 0 obj\n${objs[i]}\nendobj\n`; }

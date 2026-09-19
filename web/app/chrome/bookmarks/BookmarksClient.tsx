@@ -60,7 +60,7 @@ export function BookmarksClient() {
                   <svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" /></svg>
                 </span>
               ) : (
-                <img className={styles.fav} src={`https://www.google.com/s2/favicons?domain=${host(b.url)}&sz=32`} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = "hidden"; }} />
+                <img className={styles.fav} src={`/api/favicon?host=${encodeURIComponent(host(b.url))}`} alt="" />
               )}
               {b.folder
                 ? <a className={styles.link} onClick={() => setFolder(b.id)}>{b.title}</a>

@@ -7,6 +7,7 @@ import { useMenu, MenuItem } from "@/components/desktop/ContextMenu";
 import { useOS } from "@/components/desktop/os";
 import { useSystem } from "@/lib/client/system";
 import { WebPane, PaneHandle } from "./WebPane";
+import { DevTools } from "./DevTools";
 import { api, Bookmark, HistoryEntry } from "@/lib/client/api";
 import { host as hostBridge } from "@/lib/client/host";
 import * as M from "@/components/icons/material";
@@ -29,9 +30,28 @@ function toDisplay(actual: string, origin: string): string {
     const m = rest.match(/^\/sites\/([^/?#]+)(.*)$/);
     if (m) return `https://${m[1]}${m[2] || "/"}`;
     const f = rest.match(/^\/lf\/(.*)$/);
-    if (f) return `file:///${decodeURIComponent(f[1])}`;
+    if (f) return `file:///${decodeURIComponent(f[1].replace(/\?.*$/, ""))}`;
   }
   return actual;
+}
+
+/**
+ * The inverse of the /lf/ branch above: a file:/// address is a path in this computer's
+ * own filesystem, which lives on the content server, not on the machine the app is
+ * running on. Without this a history entry, a bookmark or a typed address would hand
+ * "C:/Users/<owner>/Desktop/..." to Chromium as a real path and send it looking on the
+ * host's disk for a file that only exists inside the story.
+ */
+function fileToLocal(url: string, origin: string): string {
+  const m = url.match(/^file:\/*(.*)$/i);
+  if (!m) return url;
+  const [, rest] = m;
+  const q = rest.indexOf("?");
+  const raw = q >= 0 ? rest.slice(0, q) : rest;
+  const search = q >= 0 ? rest.slice(q) : "";
+  const parts = decodeURIComponent(raw).split("/").filter(Boolean);
+  if (!parts.length) return `${origin}${NTP_PATH}`;
+  return `${origin}/lf/${parts.map(encodeURIComponent).join("/")}${search}`;
 }
 /** Chrome hides the scheme and "www." for http(s) pages in the omnibox. */
 function prettyUrl(display: string): string {
@@ -46,7 +66,8 @@ function fromInput(text: string, origin = ""): string {
     const page = CHROME_PAGES[chrome[1].toLowerCase()];
     return page ? `${origin}${page}` : `${origin}${NTP_PATH}`;
   }
-  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t) || /^(about|chrome|file):/i.test(t)) return t;
+  if (/^file:/i.test(t)) return fileToLocal(t, origin);
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(t) || /^(about|chrome):/i.test(t)) return t;
   if (/^localhost(:\d+)?(\/|$)/.test(t) || /^[\w.-]+\.[a-z]{2,}(:\d+)?([/?#].*)?$/i.test(t) || /^\d{1,3}(\.\d{1,3}){3}(:\d+)?([/?#].*)?$/.test(t)) return `https://${t}`;
   return `https://www.google.com/search?q=${encodeURIComponent(t)}&sourceid=chrome&ie=UTF-8`;
 }
@@ -75,6 +96,10 @@ export function Chrome({ win }: { win: WinState }) {
   const [find, setFind] = useState<string | null>(null);
   const [findHits, setFindHits] = useState({ active: 0, total: 0 });
   const [note, setNote] = useState<string | null>(null);
+  /** Which tab has Inspect open, if any. */
+  const [devtools, setDevtools] = useState<string | null>(null);
+  /** An open "Save as" for something on a page. */
+  const [saving, setSaving] = useState<{ url: string; name: string } | null>(null);
   const omniRef = useRef<HTMLInputElement>(null);
   const active = wm.activeId === win.id;
   const handledNonce = useRef<unknown>(null);
@@ -100,9 +125,12 @@ export function Chrome({ win }: { win: WinState }) {
   const activeTab = tabs.find((t) => t.id === activeId) ?? tabs[0];
   const update = useCallback((id: string, patch: Partial<Tab>) => setTabs((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t))), []);
 
+  /** Every address that reaches a tab passes through here first. */
+  const toLoadable = useCallback((url: string) => (/^file:/i.test(url) ? fileToLocal(url, origin) : url), [origin]);
+
   const openTab = useCallback((url?: string, opts: { background?: boolean; after?: string } = {}) => {
     const id = `tab${tabSeq++}`;
-    const target = url || `${origin}${NTP_PATH}`;
+    const target = url ? toLoadable(url) : `${origin}${NTP_PATH}`;
     const tab: Tab = { id, url: target, title: url ? "" : "New Tab", favicon: null, loading: !!url, canBack: false, canForward: false };
     setTabs((ts) => {
       if (opts.after) { const i = ts.findIndex((t) => t.id === opts.after); return [...ts.slice(0, i + 1), tab, ...ts.slice(i + 1)]; }
@@ -110,7 +138,7 @@ export function Chrome({ win }: { win: WinState }) {
     });
     if (!opts.background) setActiveId(id);
     return id;
-  }, [origin]);
+  }, [origin, toLoadable]);
 
   const closeTab = useCallback((id: string) => {
     setTabs((ts) => {
@@ -119,6 +147,7 @@ export function Chrome({ win }: { win: WinState }) {
       if (!next.length) { setTimeout(() => wm.close(win.id), 0); return ts; }
       if (id === activeId) setActiveId(next[Math.min(i, next.length - 1)].id);
       panes.current.delete(id);
+      setDevtools((d) => (d === id ? null : d));
       return next;
     });
   }, [activeId, wm, win.id]);
@@ -129,7 +158,7 @@ export function Chrome({ win }: { win: WinState }) {
     if (nonce !== undefined && nonce === handledNonce.current) return;
     handledNonce.current = nonce;
     const url = win.props.openUrl as string | undefined;
-    if (url) openTab(url.startsWith("/") ? `${origin}${url}` : url);
+    if (url) openTab(url.startsWith("/") ? `${origin}${url}` : toLoadable(url));
     else if (!tabs.length) {
       // "Continue where you left off" reopens what was on screen when Chrome last closed.
       let restored = false;
@@ -155,6 +184,14 @@ export function Chrome({ win }: { win: WinState }) {
     return h.onOpenTab((url) => openTab(url));
   }, [openTab]);
 
+  // The shortcuts the shell never sees once a page has focus, handed back by main.
+  const shortcutRef = useRef<(name: string) => void>(() => {});
+  useEffect(() => {
+    const h = hostBridge().onChromeShortcut;
+    if (!h) return;
+    return h((name) => shortcutRef.current(name));
+  }, []);
+
   // Address bar follows the active tab unless the user is typing.
   const display = activeTab ? toDisplay(activeTab.url, origin) : "";
   useEffect(() => { if (!omniFocus) setOmniText(prettyUrl(display)); }, [display, omniFocus, activeId]);
@@ -163,9 +200,9 @@ export function Chrome({ win }: { win: WinState }) {
     const pane = panes.current.get(id);
     if (!pane) return;
     update(id, { loading: true });
-    pane.loadURL(url);
+    pane.loadURL(toLoadable(url));
     setTimeout(() => panes.current.get(id)?.focus(), 30);
-  }, [update]);
+  }, [update, toLoadable]);
 
   const commitOmni = (text: string) => {
     const url = fromInput(text, origin);
@@ -211,6 +248,16 @@ export function Chrome({ win }: { win: WinState }) {
     else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "i") { e.preventDefault(); if (activeTab) inspect(activeTab.id); }
     else if (e.ctrlKey && e.key.toLowerCase() === "f") { e.preventDefault(); setFind((f) => (f === null ? "" : f)); }
     else if (e.ctrlKey && e.key.toLowerCase() === "d") { e.preventDefault(); void toggleBookmark(); }
+    else if (e.ctrlKey && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      const url = activeTab ? panes.current.get(activeTab.id)?.getURL() ?? activeTab.url : "";
+      if (url) {
+        let name = "page.html";
+        try { name = decodeURIComponent(new URL(url, origin).pathname.split("/").filter(Boolean).pop() || "page.html"); } catch { /* keep the default */ }
+        if (!/\.[a-z0-9]{1,5}$/i.test(name)) name += ".html";
+        setSaving({ url, name });
+      }
+    }
     else if (e.ctrlKey && (e.key === "+" || e.key === "=")) { e.preventDefault(); applyZoom(zoom * 1.1); }
     else if (e.ctrlKey && e.key === "-") { e.preventDefault(); applyZoom(zoom / 1.1); }
     else if (e.ctrlKey && e.key === "0") { e.preventDefault(); applyZoom(1); }
@@ -248,6 +295,23 @@ export function Chrome({ win }: { win: WinState }) {
       ]);
       return;
     }
+    // An image (or any media) on the page: Chrome offers to save it, and here that means
+    // saving it into this computer's own filesystem, not just the browser's download list.
+    if (p.srcURL && (p.mediaType === "image" || /\.(png|jpe?g|gif|webp|bmp|svg|avif)(\?|$)/i.test(p.srcURL))) {
+      const guess = (() => {
+        try { return decodeURIComponent(new URL(p.srcURL!, origin).pathname.split("/").filter(Boolean).pop() ?? "image.png"); }
+        catch { return "image.png"; }
+      })();
+      chromeMenu(x, y, [
+        { label: "Open image in new tab", icon: <span />, onClick: () => openTab(p.srcURL!, { after: t.id }) },
+        { label: "Save image as...", icon: <M.MDownload />, onClick: () => setSaving({ url: p.srcURL!, name: guess }) },
+        { label: "Copy image address", icon: <span />, onClick: () => navigator.clipboard?.writeText(p.srcURL!).catch(() => {}) },
+        { type: "sep" },
+        ...(p.linkURL ? [{ label: "Open link in new tab", icon: <span />, onClick: () => openTab(p.linkURL!, { background: true, after: t.id }) } as const, { type: "sep" } as const] : []),
+        { label: "Inspect", icon: <M.MInspect />, onClick: () => inspect(t.id) },
+      ]);
+      return;
+    }
     if (p.selectionText) {
       const sel = p.selectionText.trim().slice(0, 40);
       chromeMenu(x, y, [
@@ -277,7 +341,11 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "New tab", icon: <M.MTab />, shortcut: "Ctrl+T", onClick: () => openTab() },
       { label: "New window", icon: <M.MWindow />, shortcut: "Ctrl+N", onClick: () => openTab() },
       { type: "sep" },
-      { label: os.profile.displayName, icon: <M.MAccount />, children: [{ label: "Manage your Google Account", onClick: () => openTab("https://myaccount.google.com/") }] },
+      { label: os.profile.displayName, icon: <M.MAccount />, children: [
+        { label: os.profile.accountEmail, disabled: true },
+        { type: "sep" },
+        { label: "Manage your Google Account", onClick: () => openTab("https://myaccount.google.com/") },
+      ] },
       { label: "Passwords and autofill", icon: <M.MKey />, children: [{ label: "No saved passwords", disabled: true }] },
       { label: "History", icon: <M.MHistory />, children: [{ label: "History", shortcut: "Ctrl+H", onClick: () => openChromePage("history") }, { type: "sep" }, ...history.slice(0, 8).map((h) => ({ label: h.title || h.url, onClick: () => openTab(h.url) }))] },
       { label: "Downloads", icon: <M.MDownload />, shortcut: "Ctrl+J", onClick: () => openChromePage("downloads") },
@@ -299,6 +367,14 @@ export function Chrome({ win }: { win: WinState }) {
       { label: "Print...", icon: <M.MPrint />, shortcut: "Ctrl+P", onClick: () => { setNote("No printers are installed."); setTimeout(() => setNote(null), 3000); } },
       { label: "Find...", icon: <M.MFind />, shortcut: "Ctrl+F", onClick: () => setFind("") },
       { label: "Copy link", icon: <M.MShare />, disabled: !display, onClick: () => navigator.clipboard?.writeText(display).catch(() => {}) },
+      { label: "Save page as...", icon: <M.MDownload />, shortcut: "Ctrl+S", disabled: !activeTab, onClick: () => {
+        const url = activeTab ? panes.current.get(activeTab.id)?.getURL() ?? activeTab.url : "";
+        if (!url) return;
+        let name = "page.html";
+        try { name = decodeURIComponent(new URL(url, origin).pathname.split("/").filter(Boolean).pop() || "page.html"); } catch { /* keep the default */ }
+        if (!/\.[a-z0-9]{1,5}$/i.test(name)) name += ".html";
+        setSaving({ url, name });
+      } },
       { label: "More tools", icon: <span />, children: [{ label: "Task manager", shortcut: "Shift+Esc", onClick: () => os.launch("taskmgr") }, { label: "Developer tools", shortcut: "Ctrl+Shift+I", onClick: () => activeTab && inspect(activeTab.id) }] },
       { type: "sep" },
       { label: "Help", icon: <M.MHelp />, children: [{ label: "About Google Chrome", onClick: () => { setNote("Google Chrome is up to date — Version 138.0.7204.101 (Official Build) (64-bit)"); setTimeout(() => setNote(null), 4000); } }] },
@@ -339,10 +415,14 @@ export function Chrome({ win }: { win: WinState }) {
     chromeMenu(r.left, r.bottom + 2, (b.children ?? []).map((c) => ({ label: c.title, icon: <Favicon url={c.url} />, onClick: () => c.url && navigate(activeTab!.id, c.url) })).concat(b.children?.length ? [] : [{ label: "(empty)", icon: <span />, onClick: () => {} }]));
   };
 
-  /** Chrome's Inspect: opens Chromium's own devtools on the page in this tab. */
+  /**
+   * Chrome's Inspect. Chromium's own devtools open as a separate top-level window, which
+   * sits behind a fullscreen frameless shell and so looks like nothing happened; the
+   * panel below docks into the tab instead, the way Chrome's does.
+   */
   const inspect = useCallback((tabId: string) => {
-    const id = panes.current.get(tabId)?.webContentsId();
-    if (id != null) void hostBridge().tabDevTools?.(id);
+    setActiveId(tabId);
+    setDevtools((cur) => (cur === tabId ? null : tabId));
   }, []);
   const viewSource = useCallback((tabId: string) => {
     const url = panes.current.get(tabId)?.getURL();
@@ -368,6 +448,36 @@ export function Chrome({ win }: { win: WinState }) {
   }, [activeTab, sys]);
   // A zoom set from chrome://settings applies to the page already on screen.
   useEffect(() => { if (activeTab) panes.current.get(activeTab.id)?.setZoom(zoom); }, [zoom, activeTab?.id]);
+
+  shortcutRef.current = (name: string) => {
+    if (!active) return; // another window is in front; the keys are not ours
+    const id = activeTab?.id;
+    const pane = id ? panes.current.get(id) : null;
+    switch (name) {
+      case "inspect": if (id) inspect(id); break;
+      case "view-source": if (id) viewSource(id); break;
+      case "find": setFind((f) => (f === null ? "" : f)); break;
+      case "new-tab": openTab(); setTimeout(() => omniRef.current?.focus(), 50); break;
+      case "close-tab": if (id) closeTab(id); break;
+      case "omnibox": omniRef.current?.focus(); omniRef.current?.select(); break;
+      case "bookmark": void toggleBookmark(); break;
+      case "history": openChromePage("history"); break;
+      case "downloads": openChromePage("downloads"); break;
+      case "reload": pane?.reload(); break;
+      case "back": pane?.goBack(); break;
+      case "forward": pane?.goForward(); break;
+      case "save-page": {
+        const url = pane?.getURL() ?? activeTab?.url ?? "";
+        if (!url) break;
+        let fname = "page.html";
+        try { fname = decodeURIComponent(new URL(url, origin).pathname.split("/").filter(Boolean).pop() || "page.html"); } catch { /* keep the default */ }
+        if (!/\.[a-z0-9]{1,5}$/i.test(fname)) fname += ".html";
+        setSaving({ url, name: fname });
+        break;
+      }
+      default: break;
+    }
+  };
 
   const contentRef = useRef<HTMLDivElement>(null);
   const isNtp = !display;
@@ -497,21 +607,115 @@ export function Chrome({ win }: { win: WinState }) {
           {!active && <div className={styles.contentBlocker} onMouseDown={() => wm.focus(win.id)} />}
           {menu.isOpen && <div className={styles.contentBlocker} />}
         </div>
+        {saving && (
+          <SaveAsDialog
+            initial={saving}
+            onClose={() => setSaving(null)}
+            onSaved={(where) => { setSaving(null); setNote(`Saved to ${where.replace(/\//g, "\\")}`); setTimeout(() => setNote(null), 3500); sys.play("click"); }}
+          />
+        )}
+        {devtools && activeTab && devtools === activeTab.id && (
+          <DevTools pane={panes.current.get(activeTab.id)} url={activeTab.url} onClose={() => setDevtools(null)} />
+        )}
       </div>
     </Window>
   );
 }
 
+/**
+ * A site's icon, without asking anybody for it.
+ *
+ * Chrome's real omnibox fetches favicons from google.com. Doing that here would send a
+ * list of everywhere the player has been to a third party, would keep working while this
+ * computer is supposed to be offline, and would leave a blank square whenever it failed.
+ * So: the page's own icon if it declared one, then the site's own favicon file, and
+ * otherwise a lettered tile coloured from the hostname.
+ */
+const TILE_COLOURS = ["#5b6d8a", "#7b5cd6", "#1a73e8", "#188038", "#c5221f", "#e37400", "#9334e6", "#007b83"];
+function hostTile(hostname: string): { letter: string; colour: string } {
+  const name = hostname.replace(/^www\./, "");
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return { letter: (name[0] ?? "?").toUpperCase(), colour: TILE_COLOURS[h % TILE_COLOURS.length] };
+}
+
+/**
+ * Chrome's "Save as" box. The folder list is this computer's own, so a picture saved out
+ * of a page lands somewhere File Explorer can see it and Photos, Paint and the wallpaper
+ * picker can all find it afterwards.
+ */
+function SaveAsDialog({ initial, onClose, onSaved }: { initial: { url: string; name: string }; onClose: () => void; onSaved: (folder: string) => void }) {
+  const [folders, setFolders] = useState<{ name: string; path: string }[]>([]);
+  const [folder, setFolder] = useState("");
+  const [name, setName] = useState(initial.name);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/fs/save-url", { cache: "no-store" }).then((r) => r.json()).then((d: { folders: { name: string; path: string }[] }) => {
+      setFolders(d.folders);
+      const pictures = d.folders.find((f) => f.name === "Pictures");
+      const downloads = d.folders.find((f) => f.name === "Downloads");
+      setFolder((/\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(initial.name) ? pictures : downloads)?.path ?? d.folders[0]?.path ?? "");
+    }).catch(() => setError("This computer's folders could not be read."));
+  }, [initial.name]);
+
+  const save = async () => {
+    if (!folder || !name.trim()) return;
+    setBusy(true); setError(null);
+    try {
+      const r = await fetch("/api/fs/save-url", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: initial.url, folder, name: name.trim() }),
+      });
+      const d = (await r.json()) as { ok?: boolean; error?: string; folder?: string };
+      if (!r.ok || !d.ok) { setError(d.error ?? "It could not be saved."); setBusy(false); return; }
+      onSaved(d.folder ?? folder);
+    } catch (e) {
+      setError((e as Error).message);
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={styles.saveWrap} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={styles.saveBox} onKeyDown={(e) => { if (e.key === "Escape") onClose(); if (e.key === "Enter") void save(); }}>
+        <div className={styles.saveTitle}>Save as</div>
+        <label className={styles.saveLabel}>Save in</label>
+        <select className={styles.saveField} value={folder} onChange={(e) => setFolder(e.target.value)}>
+          {folders.map((f) => <option key={f.path} value={f.path}>{f.path.replace(/\//g, "\\")}</option>)}
+        </select>
+        <label className={styles.saveLabel}>File name</label>
+        <input className={styles.saveField} value={name} autoFocus onChange={(e) => setName(e.target.value)} spellCheck={false} />
+        {error && <div className={styles.saveError}>{error}</div>}
+        <div className={styles.saveFoot}>
+          <button className={styles.saveBtn} onClick={onClose}>Cancel</button>
+          <button className={`${styles.saveBtn} ${styles.savePrimary}`} disabled={busy || !folder || !name.trim()} onClick={() => void save()}>{busy ? "Saving..." : "Save"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Favicon({ url, favicon }: { url?: string; favicon?: string | null }) {
-  const [broken, setBroken] = useState(false);
-  useEffect(() => setBroken(false), [favicon, url]);
-  if (favicon && !broken) return <img src={favicon} alt="" onError={() => setBroken(true)} />;
+  const [broken, setBroken] = useState(0);
+  useEffect(() => setBroken(0), [favicon, url]);
+  if (favicon && broken === 0) return <img src={favicon} alt="" onError={() => setBroken(1)} />;
   if (!url) return <M.MGlobe size={16} />;
   try {
-    const u = new URL(url);
+    const u = new URL(url, typeof location !== "undefined" ? location.origin : "http://localhost");
     if (u.protocol === "file:") return <M.MFolder size={16} />;
-    if (!favicon && u.hostname.endsWith(".example")) return <M.MGlobe size={16} />;
-    if (!broken) return <img src={`https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`} alt="" onError={() => setBroken(true)} />;
-  } catch { /* ignore */ }
+    if (u.protocol === "chrome:" || u.pathname.startsWith("/chrome/")) return <M.MGlobe size={16} />;
+    // One endpoint on this machine answers for every host: the site's own icon when it
+    // has one, a lettered tile when it does not, and never a 404.
+    if (broken < 2) return <img src={`/api/favicon?host=${encodeURIComponent(u.hostname)}`} alt="" onError={() => setBroken(2)} />;
+    const { letter, colour } = hostTile(u.hostname);
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+        <rect width="16" height="16" rx="3" fill={colour} />
+        <text x="8" y="12" textAnchor="middle" fontSize="10" fontFamily="Arial, sans-serif" fill="#fff">{letter}</text>
+      </svg>
+    );
+  } catch { /* not a URL we can read */ }
   return <M.MGlobe size={16} />;
 }

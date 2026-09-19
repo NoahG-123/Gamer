@@ -1,0 +1,109 @@
+{
+  "_comment": "Filler mail. Nothing here is story content and nothing here is ever in Primary — these exist so the Promotions and Social tabs are not empty, the way they never are on a real account. Keep it boring on purpose.",
+  "threads": [
+    {
+      "id": "promo-gearhut-sale",
+      "subject": "48 hours only: 20% off cables, clamps and cases",
+      "labels": ["promotions"],
+      "messages": [
+        {
+          "from": { "name": "GearHut", "email": "offers@mail.gearhut.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-15T11:02:00Z",
+          "body": "Our autumn clear-out starts today.\n\n20% off every cable, clamp, case and stand until Thursday at midnight. Use code AUTUMN20 at the checkout. Free delivery over $75.\n\nYou are receiving this because you bought something from us in 2023.\n\nUnsubscribe: https://mail.gearhut.example/unsubscribe"
+        }
+      ]
+    },
+    {
+      "id": "promo-order-shipped",
+      "subject": "Your order has shipped",
+      "labels": ["promotions"],
+      "messages": [
+        {
+          "from": { "name": "Northpoint Supply", "email": "no-reply@northpointsupply.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-11T16:41:00Z",
+          "body": "Order #NP-4471821 is on its way.\n\n1 x windjammer, small\n2 x XLR 1m\n\nExpected Tuesday between 9am and 6pm. Tracking updates will appear at the link below.\n\nThis is an automated message. Please do not reply."
+        }
+      ]
+    },
+    {
+      "id": "promo-newsletter",
+      "subject": "This week: five things worth listening to",
+      "labels": ["promotions"],
+      "messages": [
+        {
+          "from": { "name": "The Quiet List", "email": "hello@thequietlist.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-14T08:00:00Z",
+          "body": "Hello,\n\nFive links, as always. Two field recordings, a piece about hydrophones, a long read about a disused railway, and a playlist somebody else made that we liked.\n\nIf this is not for you any more there is an unsubscribe link at the bottom and we will not be offended.\n\n— The Quiet List"
+        }
+      ]
+    },
+    {
+      "id": "promo-renewal",
+      "subject": "Your subscription renews on 1 October",
+      "labels": ["promotions"],
+      "messages": [
+        {
+          "from": { "name": "Cloudstore", "email": "billing@cloudstore.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-08T04:12:00Z",
+          "body": "Your 2 TB plan renews on 1 October 2026 at $13.99/month.\n\nNo action is needed. You can change or cancel your plan at any time from your account settings.\n\nThis is an automated message."
+        }
+      ]
+    },
+    {
+      "id": "promo-groceries",
+      "subject": "Your receipt from Harbourside Market",
+      "labels": ["promotions"],
+      "messages": [
+        {
+          "from": { "name": "Harbourside Market", "email": "receipts@harboursidemarket.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-16T18:27:00Z",
+          "body": "Thanks for shopping with us.\n\nSubtotal   $41.86\nTax         $1.94\nTotal      $43.80\n\nPaid by card ending 4417. Keep this receipt for returns within 30 days."
+        }
+      ]
+    },
+    {
+      "id": "social-forum-reply",
+      "subject": "Someone replied to your post",
+      "labels": ["social"],
+      "messages": [
+        {
+          "from": { "name": "fieldrecordists.net", "email": "notifications@fieldrecordists.net" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-13T21:15:00Z",
+          "body": "There is a new reply on a thread you are watching.\n\nYou can turn these off in your notification settings.\n\nThis is an automated message from the forum."
+        }
+      ]
+    },
+    {
+      "id": "social-connection",
+      "subject": "You have 3 new connection requests",
+      "labels": ["social"],
+      "messages": [
+        {
+          "from": { "name": "Workwith", "email": "invitations@workwith.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-10T12:30:00Z",
+          "body": "Three people want to connect with you. Sign in to see who.\n\nYou are getting this because your notification frequency is set to weekly."
+        }
+      ]
+    },
+    {
+      "id": "social-photos",
+      "subject": "Your memories from 5 years ago",
+      "labels": ["social"],
+      "messages": [
+        {
+          "from": { "name": "Photos", "email": "no-reply@photos.example" },
+          "to": [{ "name": "Wren Castellanos", "email": "wren.castellanos@gmail.com" }],
+          "at": "2026-09-19T06:00:00Z",
+          "body": "We found some photographs from this week in 2021.\n\nOpen the app to look through them. You can turn memories off in settings."
+        }
+      ]
+    }
+  ]
+}

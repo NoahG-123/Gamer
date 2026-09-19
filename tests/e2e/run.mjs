@@ -76,6 +76,96 @@ const st = await (await fetch(`${SERVER}/api/state`)).json();
 assert.equal(st.flags.decrypted_excerpt, true, "decryption set the flag");
 console.log("terminal + decrypt ok");
 
+/** The webview of the tab actually on screen (there is one per tab). */
+const activeWebview = () => page.evaluate(() => {
+  const all = [...document.querySelectorAll("webview")];
+  const shown = all.find((w) => getComputedStyle(w).display !== "none") ?? all[0];
+  return shown ? shown.getURL() : "";
+});
+/** Run an expression in the tab on screen. */
+const inActiveWebview = (code) => page.evaluate((c) => {
+  const all = [...document.querySelectorAll("webview")];
+  const shown = all.find((w) => getComputedStyle(w).display !== "none") ?? all[0];
+  return shown ? shown.executeJavaScript(c) : "";
+}, code);
+/** Bring Chrome to the front without toggling it shut, and return its omnibox. */
+async function chromeOmni() {
+  const win = page.locator("[data-window='chrome']");
+  if (!(await win.count()) || !(await win.isVisible().catch(() => false))) {
+    await page.click("[data-taskbar] [data-app='chrome']").catch(async () => {
+      await page.click("[data-start]"); await sleep(400); await page.click("button:has-text('Google Chrome')");
+    });
+  }
+  await page.waitForSelector("[data-window='chrome']", { state: "visible", timeout: 20000 });
+  await win.click({ position: { x: 300, y: 8 } }).catch(() => {});
+  await sleep(300);
+  return page.locator("[data-window='chrome'] input[placeholder='Search Google or type a URL']");
+}
+
+// 3b. A file:// address must never reach the disk this is running on.
+//     The world's paths look exactly like Windows paths, so an untouched one would send
+//     Chromium looking on the host machine for a file that only exists inside the story.
+{
+  const o = await chromeOmni();
+  await o.click();
+  await o.fill("file:///C:/Users/wren/Desktop/slow_rooms_AF.7z?as=raw");
+  await o.press("Enter");
+  await sleep(3000);
+  const u = await activeWebview();
+  assert.ok(u.startsWith(`${SERVER}/lf/`), `file:// went to this computer's filesystem, not the host's: ${u}`);
+  assert.ok(!u.startsWith("file:"), `no raw file: URL survived: ${u}`);
+  const shown = await o.inputValue();
+  assert.match(shown, /^file:\/\/\//, `and the address bar still reads as a file path: ${shown}`);
+  await page.screenshot({ path: `${out}/07-file-url.png` });
+  console.log("file:// contained:", u.slice(SERVER.length));
+}
+
+// 3c. The Chrome profile icon must never reach a real Google sign-in.
+{
+  const o = await chromeOmni();
+  for (const target of ["myaccount.google.com", "accounts.google.com/ServiceLogin"]) {
+    await o.click(); await o.fill(target); await o.press("Enter");
+    await sleep(3000);
+    const u = await activeWebview();
+    assert.ok(u.startsWith(SERVER), `${target} was intercepted, not loaded from Google: ${u}`);
+    const body = String(await inActiveWebview("document.body.innerText"));
+    assert.ok(!/Forgot email|Create account|Use your Google Account/i.test(body), `${target} shows no real sign-in`);
+  }
+  await page.screenshot({ path: `${out}/08-account.png` });
+  console.log("google account intercepted");
+}
+
+// 3d. Inspect opens a panel inside the tab rather than a window nobody can see.
+{
+  const o = await chromeOmni();
+  await o.click(); await o.fill("harbourledger.ca"); await o.press("Enter");
+  await sleep(2500);
+
+  // The way a player reaches it: the ⋮ menu, More tools, Developer tools.
+  await page.click("[data-window='chrome'] button[title='Customize and control Google Chrome']");
+  await sleep(400);
+  await page.click("[data-menu-root] >> text=More tools");
+  await sleep(600);
+  await page.click("[data-menu-root] >> text=Developer tools");
+  await sleep(1500);
+  assert.ok(await page.locator("[data-window='chrome'] >> text=Elements").count() > 0, "Inspect docks a devtools panel into the tab");
+  assert.ok(await page.locator("[data-window='chrome'] >> text=Console").count() > 0, "with a console in it");
+
+  // It reads the page it is docked to, rather than showing an empty tree.
+  await sleep(1200);
+  const tree = await page.locator("[data-window='chrome'] >> text=harbourledger").count().catch(() => 0);
+  const nodes = await page.locator("[data-window='chrome'] [class*='node']").count();
+  assert.ok(nodes > 3, `the element tree has the page in it (${nodes} nodes)`);
+  void tree;
+  await page.screenshot({ path: `${out}/09-inspect.png` });
+
+  // And the keyboard shortcut closes it again from the browser chrome.
+  await o.click();
+  await page.keyboard.press("Control+Shift+I");
+  await sleep(600);
+  console.log("inspect ok:", nodes, "nodes in the element tree");
+}
+
 // 4. WhatsApp: Wren unlocked (README), send -> mock reply
 await page.click("[data-taskbar] [data-app='whatsapp']");
 await page.waitForSelector("[data-window='whatsapp']");

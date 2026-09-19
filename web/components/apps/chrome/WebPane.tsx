@@ -28,11 +28,14 @@ export interface PaneHandle {
   setZoom: (factor: number) => void;
   find: (text: string, forward?: boolean) => void;
   stopFind: () => void;
+  /** Run an expression against the page in this tab (what Inspect is built on). */
+  eval: (code: string) => Promise<unknown>;
 }
 
 type WebviewEl = HTMLElement & {
   loadURL: (u: string) => Promise<void>; reload: () => void; stop: () => void; goBack: () => void; goForward: () => void; canGoBack: () => boolean; canGoForward: () => boolean; getURL: () => string; src: string; focus: () => void; getWebContentsId: () => number;
   setZoomFactor: (f: number) => void; findInPage: (t: string, o?: { forward?: boolean; findNext?: boolean }) => number; stopFindInPage: (a: string) => void;
+  executeJavaScript: (code: string, userGesture?: boolean) => Promise<unknown>;
 };
 
 /**
@@ -63,6 +66,20 @@ export const WebPane = React.forwardRef<PaneHandle, { initialUrl: string; visibl
     setZoom: (factor) => { try { if (h.isElectron) wvRef.current?.setZoomFactor(factor); else if (ifRef.current?.contentDocument) ifRef.current.contentDocument.body.style.zoom = String(factor); } catch { /* page not ready */ } },
     find: (text, forward = true) => { try { if (h.isElectron && text) wvRef.current?.findInPage(text, { forward, findNext: !firstFind.current }); firstFind.current = true; } catch { /* page not ready */ } },
     stopFind: () => { try { firstFind.current = false; if (h.isElectron) wvRef.current?.stopFindInPage("clearSelection"); } catch { /* page not ready */ } },
+    /**
+     * Inspect runs here. In Electron the guest evaluates it; in the plain-browser fallback
+     * only a same-origin frame can be reached, which is every page this machine serves.
+     */
+    eval: async (code) => {
+      if (h.isElectron) {
+        const el = wvRef.current;
+        if (!el) throw new Error("This tab is not ready yet.");
+        return el.executeJavaScript(code, false);
+      }
+      const w = ifRef.current?.contentWindow as (Window & { eval: (c: string) => unknown }) | null | undefined;
+      if (!w) throw new Error("This tab is not ready yet.");
+      return w.eval(code);
+    },
   }), [h.isElectron, resolveForFrame]);
 
   useEffect(() => {

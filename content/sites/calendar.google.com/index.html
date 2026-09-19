@@ -33,6 +33,28 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 #pop .dt,#pop .row{padding:6px 16px 6px 52px;color:#3c4043;font-size:14px;position:relative}#pop .row::before{content:attr(data-ic);position:absolute;left:22px;top:6px;color:#5f6368}
 #pop .desc{white-space:pre-wrap;line-height:1.5;max-height:260px;overflow:auto}
 .dayview{display:none}
+#edit{position:fixed;inset:0;background:rgba(32,33,36,.55);display:none;align-items:center;justify-content:center;z-index:40}
+#edit.on{display:flex}
+#edit .box{background:#fff;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.35);width:min(520px,94vw);max-height:92vh;overflow:auto;padding:20px 24px 18px}
+#edit h2{margin:0 0 14px;font-size:18px;font-weight:400;color:#3c4043}
+#edit label{display:block;margin:10px 0 4px;font-size:12px;color:#5f6368}
+#edit input,#edit textarea,#edit select{width:100%;box-sizing:border-box;font:inherit;font-size:14px;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;background:#fff;color:#202124}
+#edit textarea{min-height:72px;resize:vertical}
+#edit .two{display:flex;gap:10px}
+#edit .two>div{flex:1;min-width:0}
+#edit .chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#3c4043}
+#edit .chk input{width:auto}
+#edit .foot{display:flex;align-items:center;gap:8px;margin-top:18px}
+#edit .sp{flex:1}
+#edit button{font:inherit;font-size:14px;padding:8px 18px;border-radius:4px;border:1px solid transparent;cursor:pointer}
+#edit .save{background:#1a73e8;color:#fff}
+#edit .save:hover{background:#1b66ca}
+#edit .cancel{background:#fff;color:#1a73e8;border-color:#dadce0}
+#edit .del{background:#fff;color:#c5221f;border-color:#dadce0}
+#edit .err{margin-top:10px;color:#c5221f;font-size:12px;min-height:16px}
+#toast{position:fixed;left:24px;bottom:24px;background:#323232;color:#fff;padding:12px 18px;border-radius:4px;font-size:13px;display:none;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.day{cursor:pointer}
+.create{cursor:pointer}
 .agenda{flex:1;overflow:auto;padding:16px 24px}.ag{display:flex;gap:24px;padding:12px 0;border-bottom:1px solid #eee}.ag .d{width:80px;color:#3c4043;font-weight:500;flex:none}.ag .d small{display:block;color:#70757a;font-weight:400}.ag .items{flex:1}.ag .it{display:flex;gap:12px;padding:6px 8px;border-radius:6px;cursor:pointer}.ag .it:hover{background:#f1f3f4}.ag .it i{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}.ag .it .tm{width:120px;color:#5f6368;flex:none}
 </style>
 </head>
@@ -40,37 +62,145 @@ button{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 <div id="top">
   <div class="logo"><div class="ic" id="todayNum">18</div><span>Calendar</span></div>
   <button class="today" onclick="goToday()">Today</button><button class="nav" onclick="shift(-1)">‹</button><button class="nav" onclick="shift(1)">›</button><span class="title" id="title"></span>
-  <div class="right"><button class="nav" title="Search">⌕</button><button class="nav" title="Support">?</button><button class="nav" title="Settings">⚙</button><div class="sel" id="modeSel"><span id="modeLabel">Month</span> ▾</div><div class="avatar" id="av"></div></div>
+  <div class="right"><button class="nav" title="Search" onclick="searchEvents()">⌕</button><button class="nav" title="Create an event" onclick="openEdit(null)">+</button><button class="nav" title="Refresh" onclick="render()">⟳</button><div class="sel" id="modeSel"><span id="modeLabel">Month</span> ▾</div><div class="avatar" id="av"></div></div>
 </div>
 <div id="main">
   <div id="side">
-    <button class="create"><b>+</b> Create ▾</button>
+    <button class="create" onclick="openEdit(null)"><b>+</b> Create</button>
     <div class="mh"><span id="miniTitle"></span><button onclick="miniShift(-1)">‹</button><button onclick="miniShift(1)">›</button></div>
     <table class="mini" id="mini"></table>
     <div class="cals"><h4>My calendars</h4><div id="calList"></div><h4>Other calendars</h4><div class="cal"><span class="sw" style="background:#0b8043"></span>Holidays in Canada</div><div class="cal"><span class="sw" style="background:#616161"></span>Birthdays</div></div>
   </div>
   <div id="grid"><div class="dow"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div><div class="weeks" id="weeks"></div><div class="agenda" id="agenda" style="display:none"></div></div>
 </div>
-<div id="pop"><div class="x"><button title="Edit">✎</button><button title="Delete">🗑</button><button title="Email guests">✉</button><button title="Options">⋮</button><button onclick="hidePop()" title="Close">✕</button></div><h3 id="pt"><i id="pi"></i></h3><div class="dt" id="pd"></div><div class="row" id="pl" data-ic="⌖" style="display:none"></div><div class="row desc" id="pdesc" data-ic="≡" style="display:none"></div><div class="row" id="pg" data-ic="👥" style="display:none"></div><div class="row" id="pc" data-ic="▦"></div></div>
+<div id="edit"><div class="box">
+  <h2 id="editTitle">New event</h2>
+  <label for="evTitle">Title</label><input id="evTitle" placeholder="Add title">
+  <div class="two">
+    <div><label for="evDate">Date</label><input id="evDate" type="date"></div>
+    <div><label for="evStart">Start</label><input id="evStart" type="time"></div>
+    <div><label for="evEnd">End</label><input id="evEnd" type="time"></div>
+  </div>
+  <div class="chk"><input id="evAllDay" type="checkbox"><label for="evAllDay" style="margin:0">All day</label></div>
+  <label for="evCal">Calendar</label><select id="evCal"></select>
+  <label for="evLoc">Location</label><input id="evLoc" placeholder="Add location">
+  <label for="evDesc">Description</label><textarea id="evDesc" placeholder="Add description"></textarea>
+  <div class="err" id="evErr"></div>
+  <div class="foot">
+    <button class="del" id="evDelete" onclick="deleteEditing()" style="display:none">Delete</button>
+    <span class="sp"></span>
+    <button class="cancel" onclick="closeEdit()">Cancel</button>
+    <button class="save" onclick="saveEdit()">Save</button>
+  </div>
+</div></div>
+<div id="toast"></div>
+<div id="pop"><div class="x"><button title="Edit" onclick="editOpen()">✎</button><button title="Delete" onclick="deleteOpen()">🗑</button><button title="Duplicate" onclick="duplicateOpen()">⧉</button><button onclick="hidePop()" title="Close">✕</button></div><h3 id="pt"><i id="pi"></i></h3><div class="dt" id="pd"></div><div class="row" id="pl" data-ic="⌖" style="display:none"></div><div class="row desc" id="pdesc" data-ic="≡" style="display:none"></div><div class="row" id="pg" data-ic="👥" style="display:none"></div><div class="row" id="pc" data-ic="▦"></div></div>
 <script>
 const $=s=>document.querySelector(s);const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;");
-let cur=new Date(),mini=new Date(),cals=[],events=[],mode="month";const TODAY=new Date();
+let cur=new Date(),mini=new Date(),cals=[],events=[],mode="month";const TODAY=new Date();const hidden=new Set();let popId=null;
 $("#todayNum").textContent=TODAY.getDate();
 function key(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function colorOf(e){const c=cals.find(x=>x.id===e.calendar);return e.color||(c?c.color:"#039be5")}
-async function load(from,to){const r=await fetch(`/api/calendar?from=${from.toISOString()}&to=${to.toISOString()}&record=0`,{cache:"no-store"});const d=await r.json();cals=d.calendars;events=d.events;$("#calList").innerHTML=cals.map(c=>`<div class="cal"><span class="sw" style="background:${c.color}"></span>${esc(c.name)}</div>`).join("");$("#av").textContent=(cals[0]&&cals[0].initials)||"WC";$("#av").style.background=(cals[0]&&cals[0].avatarColor)||"#7b5cd6"}
+async function load(from,to){const r=await fetch(`/api/calendar?from=${from.toISOString()}&to=${to.toISOString()}&record=0`,{cache:"no-store"});const d=await r.json();cals=d.calendars;events=d.events;$("#calList").innerHTML=cals.map(c=>`<div class="cal" data-cal="${c.id}" style="cursor:pointer;opacity:${hidden.has(c.id)?.45:1}"><span class="sw" style="background:${hidden.has(c.id)?"transparent":c.color};border:2px solid ${c.color}"></span>${esc(c.name)}</div>`).join("");
+  $("#calList").querySelectorAll("[data-cal]").forEach(el=>el.addEventListener("click",()=>{const id=el.dataset.cal;if(hidden.has(id))hidden.delete(id);else hidden.add(id);render()}));
+  events=events.filter(e=>!hidden.has(e.calendar));$("#av").textContent=(cals[0]&&cals[0].initials)||"WC";$("#av").style.background=(cals[0]&&cals[0].avatarColor)||"#7b5cd6"}
 function fmtT(iso){return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}).replace(":00","").toLowerCase().replace(" ","")}
 async function render(){const y=cur.getFullYear(),m=cur.getMonth();const first=new Date(y,m,1);const start=new Date(y,m,1-first.getDay());const end=new Date(start);end.setDate(start.getDate()+42);await load(start,end);$("#title").textContent=cur.toLocaleDateString("en-US",{month:"long",year:"numeric"});document.title="Google Calendar - "+$("#title").textContent;
 if(mode==="agenda"){renderAgenda();return}$("#weeks").style.display="grid";$("#agenda").style.display="none";
 const byDay={};for(const e of events){const s=new Date(e.start),en=new Date(e.end);for(let d=new Date(s.getFullYear(),s.getMonth(),s.getDate());d<en;d.setDate(d.getDate()+1)){const k=key(d);(byDay[k]=byDay[k]||[]).push(e);if(!e.allDay)break}}
-let html="";const d=new Date(start);for(let w=0;w<6;w++){html+='<div class="week">';for(let i=0;i<7;i++){const k=key(d);const list=(byDay[k]||[]).sort((a,b)=>(b.allDay-a.allDay)||a.start.localeCompare(b.start));const cls=(d.getMonth()!==m?"o":"")+(k===key(TODAY)?" t":"");html+=`<div class="day ${cls}"><div class="n">${d.getDate()===1?d.toLocaleDateString("en-US",{month:"short"})+" ":""}${d.getDate()}</div>`;const max=4;list.slice(0,max).forEach(e=>{html+=e.allDay?`<div class="ev" style="background:${colorOf(e)}" data-id="${e.id}">${esc(e.title)}</div>`:`<div class="ev tm" data-id="${e.id}"><i style="background:${colorOf(e)}"></i>${fmtT(e.start)} ${esc(e.title)}</div>`});if(list.length>max)html+=`<div class="more">${list.length-max} more</div>`;html+="</div>";d.setDate(d.getDate()+1)}html+="</div>"}$("#weeks").innerHTML=html;renderMini()}
+let html="";const d=new Date(start);for(let w=0;w<6;w++){html+='<div class="week">';for(let i=0;i<7;i++){const k=key(d);const list=(byDay[k]||[]).sort((a,b)=>(b.allDay-a.allDay)||a.start.localeCompare(b.start));const cls=(d.getMonth()!==m?"o":"")+(k===key(TODAY)?" t":"");html+=`<div class="day ${cls}" data-day="${k}"><div class="n">${d.getDate()===1?d.toLocaleDateString("en-US",{month:"short"})+" ":""}${d.getDate()}</div>`;const max=4;list.slice(0,max).forEach(e=>{html+=e.allDay?`<div class="ev" style="background:${colorOf(e)}" data-id="${e.id}">${esc(e.title)}</div>`:`<div class="ev tm" data-id="${e.id}"><i style="background:${colorOf(e)}"></i>${fmtT(e.start)} ${esc(e.title)}</div>`});if(list.length>max)html+=`<div class="more">${list.length-max} more</div>`;html+="</div>";d.setDate(d.getDate()+1)}html+="</div>"}$("#weeks").innerHTML=html;renderMini()}
 function renderAgenda(){$("#weeks").style.display="none";const a=$("#agenda");a.style.display="block";const groups={};for(const e of events){const k=key(new Date(e.start));(groups[k]=groups[k]||[]).push(e)}a.innerHTML=Object.keys(groups).sort().map(k=>{const d=new Date(k+"T12:00:00");return `<div class="ag"><div class="d">${d.getDate()} ${d.toLocaleDateString("en-US",{month:"short"})}<small>${d.toLocaleDateString("en-US",{weekday:"long"})}</small></div><div class="items">${groups[k].map(e=>`<div class="it" data-id="${e.id}"><i style="background:${colorOf(e)}"></i><span class="tm">${e.allDay?"All day":fmtT(e.start)+" – "+fmtT(e.end)}</span><span>${esc(e.title)}</span></div>`).join("")}</div></div>`}).join("")||'<div style="color:#70757a">No events this month.</div>'}
 function renderMini(){const y=mini.getFullYear(),m=mini.getMonth();$("#miniTitle").textContent=mini.toLocaleDateString("en-US",{month:"long",year:"numeric"});const first=new Date(y,m,1);const d=new Date(y,m,1-first.getDay());let h="<tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>";for(let w=0;w<6;w++){h+="<tr>";for(let i=0;i<7;i++){h+=`<td class="${d.getMonth()!==m?"o":""}"><span class="${key(d)===key(TODAY)?"t":""}" data-d="${key(d)}">${d.getDate()}</span></td>`;d.setDate(d.getDate()+1)}h+="</tr>"}$("#mini").innerHTML=h}
 function shift(n){cur=new Date(cur.getFullYear(),cur.getMonth()+n,1);mini=new Date(cur);render()}function miniShift(n){mini=new Date(mini.getFullYear(),mini.getMonth()+n,1);renderMini()}function goToday(){cur=new Date();mini=new Date();render()}
-document.addEventListener("click",e=>{const ev=e.target.closest("[data-id]");if(ev){showPop(ev.dataset.id,ev);return}const md=e.target.closest("[data-d]");if(md){cur=new Date(md.dataset.d+"T12:00:00");render();return}if(!e.target.closest("#pop"))hidePop()});
+document.addEventListener("click",e=>{
+  if(e.target.closest("#edit"))return;
+  const ev=e.target.closest("[data-id]");if(ev){showPop(ev.dataset.id,ev);return}
+  const md=e.target.closest("[data-d]");if(md){cur=new Date(md.dataset.d+"T12:00:00");render();return}
+  if(!e.target.closest("#pop"))hidePop();
+});
+// Double-clicking an empty day starts an event on it, the way the real calendar does.
+$("#weeks").addEventListener("dblclick",e=>{if(e.target.closest("[data-id]"))return;const cell=e.target.closest(".day");if(!cell)return;openEdit(null,cell.dataset.day)});
+
+// ---- create / edit / delete ----
+let editing=null;
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>{t.style.display="none"},3500)}
+function pad(n){return String(n).padStart(2,"0")}
+function localDate(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function localTime(d){return pad(d.getHours())+":"+pad(d.getMinutes())}
+function openEdit(ev,dayKey){
+  editing=ev;
+  $("#editTitle").textContent=ev?"Edit event":"New event";
+  $("#evDelete").style.display=ev?"inline-block":"none";
+  $("#evErr").textContent="";
+  $("#evCal").innerHTML=cals.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  if(ev){
+    const s=new Date(ev.start),e2=new Date(ev.end);
+    $("#evTitle").value=ev.title||"";$("#evDate").value=localDate(s);
+    $("#evStart").value=localTime(s);$("#evEnd").value=localTime(e2);
+    $("#evAllDay").checked=!!ev.allDay;$("#evCal").value=ev.calendar||cals[0]&&cals[0].id;
+    $("#evLoc").value=ev.location||"";$("#evDesc").value=ev.description||"";
+  }else{
+    const base=dayKey?new Date(dayKey+"T09:00:00"):new Date();
+    if(!dayKey)base.setMinutes(0,0,0);
+    const end=new Date(base.getTime()+3600000);
+    $("#evTitle").value="";$("#evDate").value=localDate(base);
+    $("#evStart").value=localTime(base);$("#evEnd").value=localTime(end);
+    $("#evAllDay").checked=false;$("#evCal").value=(cals[0]&&cals[0].id)||"wren";
+    $("#evLoc").value="";$("#evDesc").value="";
+  }
+  $("#edit").classList.add("on");
+  setTimeout(()=>$("#evTitle").focus(),30);
+}
+function closeEdit(){$("#edit").classList.remove("on");editing=null}
+function editOpen(){const e=events.find(x=>x.id===popId);if(e){hidePop();openEdit(e)}}
+function duplicateOpen(){const e=events.find(x=>x.id===popId);if(!e)return;hidePop();openEdit(null);$("#evTitle").value=(e.title||"")+" (copy)";const s2=new Date(e.start),e2=new Date(e.end);$("#evDate").value=localDate(s2);$("#evStart").value=localTime(s2);$("#evEnd").value=localTime(e2);$("#evAllDay").checked=!!e.allDay;$("#evCal").value=e.calendar;$("#evLoc").value=e.location||"";$("#evDesc").value=e.description||""}
+function deleteOpen(){const e=events.find(x=>x.id===popId);if(!e)return;hidePop();removeEvent(e)}
+function deleteEditing(){if(editing)removeEvent(editing)}
+async function removeEvent(ev){
+  if(!confirm("Delete \""+(ev.title||"this event")+"\"?"))return;
+  const r=await fetch("/api/calendar?id="+encodeURIComponent(ev.seriesId||ev.id),{method:"DELETE"});
+  closeEdit();
+  if(r.ok){toast("Event deleted");await render()}else toast("Could not delete that event.");
+}
+async function saveEdit(){
+  const title=$("#evTitle").value.trim();
+  const date=$("#evDate").value;
+  const allDay=$("#evAllDay").checked;
+  if(!date){$("#evErr").textContent="Pick a date.";return}
+  let start,end;
+  if(allDay){start=new Date(date+"T00:00:00");end=new Date(start.getTime()+86400000)}
+  else{
+    const st=$("#evStart").value||"09:00",en=$("#evEnd").value||"10:00";
+    start=new Date(date+"T"+st+":00");end=new Date(date+"T"+en+":00");
+    if(end<=start)end=new Date(start.getTime()+3600000);
+  }
+  const body={title:title||"(No title)",start:start.toISOString(),end:end.toISOString(),allDay:allDay,
+    calendar:$("#evCal").value,location:$("#evLoc").value.trim(),description:$("#evDesc").value.trim()};
+  let r;
+  if(editing){body.id=editing.seriesId||editing.id;r=await fetch("/api/calendar",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify(body)})}
+  else r=await fetch("/api/calendar",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){$("#evErr").textContent="That could not be saved.";return}
+  const wasEditing=!!editing;
+  closeEdit();
+  cur=new Date(start.getFullYear(),start.getMonth(),1);mini=new Date(cur);
+  await render();
+  toast(wasEditing?"Event updated":"Event created");
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#edit").classList.contains("on"))closeEdit()});
 $("#modeSel").addEventListener("click",()=>{mode=mode==="month"?"agenda":"month";$("#modeLabel").textContent=mode==="month"?"Month":"Schedule";render()});
-function showPop(id,el){const e=events.find(x=>x.id===id);if(!e)return;const c=cals.find(x=>x.id===e.calendar);$("#pt").childNodes[1]&&$("#pt").removeChild($("#pt").childNodes[1]);$("#pt").appendChild(document.createTextNode(e.title));$("#pi").style.background=colorOf(e);const s=new Date(e.start),en=new Date(e.end);$("#pd").textContent=e.allDay?s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}):s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" ⋅ "+fmtT(e.start)+" – "+fmtT(e.end);$("#pl").style.display=e.location?"block":"none";$("#pl").textContent=e.location||"";$("#pdesc").style.display=e.description?"block":"none";$("#pdesc").textContent=e.description||"";$("#pg").style.display=e.guests&&e.guests.length?"block":"none";$("#pg").textContent=e.guests?e.guests.length+" guests: "+e.guests.join(", "):"";$("#pc").textContent=c?c.name:e.calendar;const p=$("#pop");p.style.display="block";const r=el.getBoundingClientRect();let left=r.right+8;if(left+448>window.innerWidth)left=Math.max(8,r.left-456);let top=Math.min(r.top,window.innerHeight-p.offsetHeight-16);p.style.left=left+"px";p.style.top=Math.max(8,top)+"px";fetch("/api/state/events",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"calendar.opened",subject:e.seriesId||e.id})}).catch(()=>{})}
-function hidePop(){$("#pop").style.display="none"}
+function searchEvents(){
+  const q=prompt("Search for an event");
+  if(q===null)return;
+  const t=q.trim().toLowerCase();
+  if(!t){render();return}
+  const hit=events.filter(e=>(e.title+" "+(e.location||"")+" "+(e.description||"")).toLowerCase().includes(t));
+  if(!hit.length){toast("No events this month matched \""+q+"\".");return}
+  mode="agenda";$("#modeLabel").textContent="Schedule";
+  events=hit;renderAgenda();
+  toast(hit.length+" event"+(hit.length===1?"":"s")+" matched. Press Today to go back.");
+}
+function showPop(id,el){const e=events.find(x=>x.id===id);if(!e)return;popId=id;const c=cals.find(x=>x.id===e.calendar);$("#pt").childNodes[1]&&$("#pt").removeChild($("#pt").childNodes[1]);$("#pt").appendChild(document.createTextNode(e.title));$("#pi").style.background=colorOf(e);const s=new Date(e.start),en=new Date(e.end);$("#pd").textContent=e.allDay?s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}):s.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})+" ⋅ "+fmtT(e.start)+" – "+fmtT(e.end);$("#pl").style.display=e.location?"block":"none";$("#pl").textContent=e.location||"";$("#pdesc").style.display=e.description?"block":"none";$("#pdesc").textContent=e.description||"";$("#pg").style.display=e.guests&&e.guests.length?"block":"none";$("#pg").textContent=e.guests?e.guests.length+" guests: "+e.guests.join(", "):"";$("#pc").textContent=c?c.name:e.calendar;const p=$("#pop");p.style.display="block";const r=el.getBoundingClientRect();let left=r.right+8;if(left+448>window.innerWidth)left=Math.max(8,r.left-456);let top=Math.min(r.top,window.innerHeight-p.offsetHeight-16);p.style.left=left+"px";p.style.top=Math.max(8,top)+"px";fetch("/api/state/events",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"calendar.opened",subject:e.seriesId||e.id})}).catch(()=>{})}
+function hidePop(){$("#pop").style.display="none";popId=null}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")hidePop()});
 try{const es=new EventSource("/api/events");es.onmessage=m=>{try{const ev=JSON.parse(m.data);if(ev.type==="calendar.changed"||ev.type==="trigger.fired")render()}catch(_){}}}catch(_){}
 render();

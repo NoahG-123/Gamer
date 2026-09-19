@@ -8,6 +8,7 @@ import * as A from "@/components/icons/apps";
 import { DataUsage as TaskMgrIcon } from "@/components/icons/fluent";
 import { Search, ChevronRight, Close, Gear, Globe, Wifi, WifiOff, Bluetooth, Airplane, NightLight, Accessibility, Brightness, Speaker, SpeakerMute, Battery, NearbyShare, Cast, Pin } from "@/components/icons/fluent";
 import { useSystem } from "@/lib/client/system";
+import { useAssets } from "@/lib/client/assets";
 import { Ico } from "@/lib/icons/Ico";
 import type { Toast } from "./Toasts";
 
@@ -169,29 +170,63 @@ export function NotificationPanel({ open, onClose, history, onOpen, onClear }: {
   );
 }
 
-/** Widgets board: weather from the profile plus headlines from a story site. */
+/**
+ * Widgets board: weather from the profile, headlines from a story site, and a picture on
+ * each. The pictures come from the asset manifest (generated on first run, see
+ * lib/fetchAssets) rather than being fetched here, so the board draws instantly and looks
+ * the same every time. A headline gets its picture from a hash of its own URL, so nothing
+ * chooses a photograph for a particular story.
+ */
 export function WidgetsPanel({ open, weather, unit, onOpenUrl }: { open: boolean; weather: { temp: number; text: string; icon?: string }; unit: string; onOpenUrl: (u: string) => void }) {
   const [news, setNews] = useState<{ title: string; url: string }[]>([]);
+  const [failed, setFailed] = useState(false);
+  const assets = useAssets();
+  const sys = useSystem();
   useEffect(() => {
     if (!open || news.length) return;
     fetch("/sites/harbourledger.ca/").then((r) => r.text()).then((html) => {
       const out: { title: string; url: string }[] = [];
-      for (const m of html.matchAll(/<h2><a href="([^"]*)">([^<]+)<\/a><\/h2>/g)) out.push({ title: m[2], url: `https://harbourledger.ca${m[1]}` });
-      setNews(out.slice(0, 4));
-    }).catch(() => {});
+      // The page is served through /sites/<host>/, so its links arrive scoped to that
+      // prefix; strip it back off to get the address the browser should actually show.
+      for (const m of html.matchAll(/<h2><a href="([^"]*)">([^<]+)<\/a><\/h2>/g)) {
+        const href = m[1].replace(/^\/sites\/harbourledger\.ca/, "") || "/";
+        out.push({ title: m[2], url: `https://harbourledger.ca${href}` });
+      }
+      // Several headlines can point at the same page; keep the first of each.
+      const seen = new Set<string>();
+      setNews(out.filter((n) => (seen.has(n.title) ? false : (seen.add(n.title), true))).slice(0, 4));
+      setFailed(out.length === 0);
+    }).catch(() => setFailed(true));
   }, [open, news.length]);
   if (!open) return null;
+
+  const pictureFor = (key: string): string | null => {
+    let h = 0;
+    for (const c of key) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return assets[`widgets.news.${(h % 4) + 1}`]?.url ?? null;
+  };
+  const weatherPhoto = assets["widgets.weatherPhoto"]?.url ?? null;
+
   return (
     <div className={styles.widgets} data-widgets>
       <div className={styles.widgetCard}>
         <div className={styles.widgetCardHead}>Weather</div>
+        {weatherPhoto && <div className={styles.widgetPhoto} style={{ backgroundImage: `url(${weatherPhoto})` }} />}
         <div className={styles.weatherRow}><Ico name={`fluent-emoji-flat:${weather.icon ?? "sun-behind-cloud"}`} size={48} /><div><div className={styles.weatherTemp}>{weather.temp}°{unit}</div><div className={styles.weatherText}>{weather.text} · Halifax</div></div></div>
         <div className={styles.weatherDays}>{["Fri", "Sat", "Sun", "Mon"].map((d, i) => <span key={d}><b>{d}</b><br />{weather.temp + [1, -2, -1, 2][i]}°</span>)}</div>
       </div>
       <div className={styles.widgetCard}>
         <div className={styles.widgetCardHead}>Top stories</div>
-        {news.length === 0 && <div className={styles.widgetMuted}>Loading…</div>}
-        {news.map((n) => <button key={n.url} className={styles.newsRow} onClick={() => onOpenUrl(n.url)}>{n.title}<small>The Harbour Ledger</small></button>)}
+        {!news.length && <div className={styles.widgetMuted}>{failed ? (sys.online ? "Stories could not be loaded." : "You are offline.") : "Loading…"}</div>}
+        {news.map((n) => {
+          const pic = pictureFor(n.url);
+          return (
+            <button key={n.title} className={styles.newsRow} onClick={() => onOpenUrl(n.url)}>
+              {pic && <span className={styles.newsThumb} style={{ backgroundImage: `url(${pic})` }} />}
+              <span className={styles.newsText}>{n.title}<small>The Harbour Ledger</small></span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -223,7 +258,7 @@ export function QuickSettingsPanel({ open, onClose, onOpenSettings }: { open: bo
   return (
     <div className={styles.qs} data-quicksettings>
       <div className={styles.qsTiles}>
-        {tile("wifi", "Wi-Fi", s.airplane ? "Airplane mode" : s.wifi ? "Bell-902" : "Not connected", s.wifi && !s.airplane, s.wifi && !s.airplane ? <Wifi size={20} /> : <WifiOff size={20} />, () => { sys.set({ wifi: !s.wifi }); sys.play("click"); }, () => { onClose(); onOpenSettings("network"); })}
+        {tile("wifi", "Wi-Fi", s.airplane ? "Airplane mode" : s.wifi ? s.ssid : "Not connected", s.wifi && !s.airplane, s.wifi && !s.airplane ? <Wifi size={20} /> : <WifiOff size={20} />, () => { sys.set(s.wifi ? { wifi: false } : { wifi: true, airplane: false }); sys.play("click"); }, () => { onClose(); onOpenSettings("network"); })}
         {tile("bt", "Bluetooth", "No adapter", false, <Bluetooth size={20} />, () => { setNote("No Bluetooth adapter found."); sys.play("error"); }, () => { onClose(); onOpenSettings("bluetooth"); })}
         {tile("air", "Airplane mode", s.airplane ? "On" : "Off", s.airplane, <Airplane size={20} />, () => { sys.set({ airplane: !s.airplane }); sys.play("click"); })}
         {tile("night", "Night light", s.nightLight ? "On" : "Off", s.nightLight, <NightLight size={20} />, () => { sys.set({ nightLight: !s.nightLight }); sys.play("click"); })}
@@ -245,7 +280,7 @@ export function QuickSettingsPanel({ open, onClose, onOpenSettings }: { open: bo
       <div className={styles.qsFoot}>
         <span className={styles.qsBattery}><Battery size={16} /> 71%</span>
         <span style={{ flex: 1 }} />
-        <button className={styles.qsFootBtn} title="Edit quick settings" onClick={() => setNote("Pinning is turned off by your organisation.")}><Pin size={16} /></button>
+        <button className={styles.qsFootBtn} title="Edit quick settings" onClick={() => { onClose(); onOpenSettings("system"); }}><Pin size={16} /></button>
         <button className={styles.qsFootBtn} title="Settings" onClick={() => { onClose(); onOpenSettings(); }}><Gear size={16} /></button>
       </div>
     </div>

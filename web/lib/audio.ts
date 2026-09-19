@@ -213,11 +213,16 @@ export function recordingStream(rec: Recording, start: number, end: number): Rea
       const dataFrom = Math.max(pos, HEADER) - HEADER;
       const dataTo = upto - HEADER + 1;
       if (dataTo > dataFrom) {
+        // A range can start part-way through a sample — a player seeking to an arbitrary
+        // byte does it all the time. Render from the sample that byte falls inside and
+        // then drop the leading bytes, rather than starting the render one byte late:
+        // getting this wrong shifts every 16-bit sample by a byte, and byte-swapped PCM
+        // is a loud, harsh buzz rather than the recording.
         const firstSample = Math.floor(dataFrom / BYTES_PER_SAMPLE);
         const lastSample = Math.min(totalSamples, Math.ceil(dataTo / BYTES_PER_SAMPLE));
         if (lastSample > firstSample) {
           const pcm = renderSamples(rec, clips, firstSample, lastSample);
-          const offset = dataFrom - firstSample * BYTES_PER_SAMPLE;
+          const offset = dataFrom - firstSample * BYTES_PER_SAMPLE; // 0 or 1
           parts.push(pcm.subarray(offset, offset + (dataTo - dataFrom)));
         }
       }

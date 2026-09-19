@@ -10,6 +10,8 @@ export interface HostBridge {
   setNetwork?: (online: boolean) => void;
   /** Open devtools on a browser tab (Chrome's Inspect). */
   tabDevTools?: (webContentsId: number) => Promise<boolean>;
+  /** Chrome shortcuts pressed while a page had focus. Returns an unsubscribe function. */
+  onChromeShortcut?: (cb: (name: string) => void) => () => void;
 }
 
 declare global {
@@ -27,5 +29,6 @@ export function host(): HostBridge {
     toggleDevTools: h?.toggleDevTools,
     setNetwork: h?.setNetwork,
     tabDevTools: h?.tabDevTools,
+    onChromeShortcut: h?.onChromeShortcut,
   };
 }

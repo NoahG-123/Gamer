@@ -3,9 +3,9 @@ import path from "node:path";
 import { loadContent, contentPath } from "./content";
 import { dataDir } from "./paths";
 
-export interface AssetEntry { kind: "stock" | "generated" | "person" | "text"; file?: string; fallback?: string; optional?: boolean; placeholder?: "silhouette" | "group" | "none"; value?: string; pexels?: { query: string; orientation?: string; size?: string } }
+export interface AssetEntry { kind: "stock" | "generated" | "person" | "text"; file?: string; fallback?: string; optional?: boolean; placeholder?: "silhouette" | "group" | "none"; value?: string; title?: string; wallpaper?: boolean; pexels?: { query: string; orientation?: string; size?: string; index?: number }; openai?: { prompt: string; size?: "1024x1024" | "1536x1024" | "1024x1536"; quality?: string } }
 interface ManifestFile { assets: Record<string, AssetEntry> }
-export interface ResolvedAsset { key: string; kind: AssetEntry["kind"]; url: string | null; exists: boolean; placeholder?: string; value?: string }
+export interface ResolvedAsset { key: string; kind: AssetEntry["kind"]; url: string | null; exists: boolean; placeholder?: string; value?: string; title?: string; wallpaper?: boolean }
 
 export function assetsRoot(): string { return contentPath("assets"); }
 /** Images fetched at runtime live here, so a read-only install folder is not a problem. */
@@ -37,7 +37,7 @@ export function resolveAssets(): Record<string, ResolvedAsset> {
     const exists = !!a.file && !!locateAsset(a.file);
     let url: string | null = exists && a.file ? `/assets/${a.file}` : null;
     if (!url && a.fallback && locateAsset(a.fallback)) url = `/assets/${a.fallback}`;
-    out[key] = { key, kind: a.kind, url, exists, placeholder: a.placeholder };
+    out[key] = { key, kind: a.kind, url, exists, placeholder: a.placeholder, title: a.title, wallpaper: a.wallpaper };
   }
   return out;
 }

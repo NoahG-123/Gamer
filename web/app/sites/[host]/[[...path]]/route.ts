@@ -18,6 +18,29 @@ const NOT_FOUND = (host: string, p: string) => `<!DOCTYPE HTML PUBLIC "-//IETF//
 </body></html>
 `;
 
+/**
+ * Paths the shell owns, which a page inside a site is allowed to point straight at.
+ * Everything else beginning with "/" belongs to the site it is written in.
+ */
+const SHELL_PREFIXES = ["/sites/", "/api/", "/lf/", "/assets/", "/player", "/chrome/"];
+
+/**
+ * Root-relative links inside a served page are rewritten to sit under the site.
+ *
+ * A story page is written the way the real site would be — `href="/"` for its own front
+ * page — but the browser is looking at it through this server, so an untouched `/` would
+ * resolve against the server root and drop the player out onto the desktop shell inside
+ * the tab. Prefixing every site-owned path with /sites/<host> keeps a link inside the site
+ * it was written in, under Electron and in the plain-browser fallback alike.
+ */
+function scopeLinks(html: string, host: string): string {
+  return html.replace(/\b(href|src|action|poster|data-href)=("|')(\/[^"'>]*)\2/gi, (whole, attr: string, q: string, url: string) => {
+    if (url.startsWith("//")) return whole;                                   // protocol-relative: leave alone
+    if (SHELL_PREFIXES.some((pre) => url === pre || url.startsWith(pre))) return whole;
+    return `${attr}=${q}/sites/${host}${url}${q}`;
+  });
+}
+
 /** Serves content/sites/<host>/... as if it were the live site. */
 export async function GET(req: NextRequest, ctx: { params: Promise<{ host: string; path?: string[] }> }) {
   const { host, path: parts = [] } = await ctx.params;
@@ -45,8 +68,12 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ host: strin
       return new Response(NOT_FOUND(canonical, urlPath), { status: 404, headers: { "content-type": "text/html; charset=iso-8859-1", server: "Apache/2.4.58 (Ubuntu)" } });
     }
   }
-  const body = fs.readFileSync(full);
   const name = path.basename(full);
-  if (isMainNav && mimeFor(name).startsWith("text/html")) recordEvent("site.visited", `${canonical}${urlPath}`, { status: 200 });
-  return new Response(new Uint8Array(body), { headers: { "content-type": mimeFor(name), "cache-control": "no-cache", server: "Apache/2.4.58 (Ubuntu)", "last-modified": fs.statSync(full).mtime.toUTCString() } });
+  const type = mimeFor(name);
+  const headers = { "content-type": type, "cache-control": "no-cache", server: "Apache/2.4.58 (Ubuntu)", "last-modified": fs.statSync(full).mtime.toUTCString() };
+  if (type.startsWith("text/html")) {
+    if (isMainNav) recordEvent("site.visited", `${canonical}${urlPath}`, { status: 200 });
+    return new Response(scopeLinks(fs.readFileSync(full, "utf8"), canonical), { headers });
+  }
+  return new Response(new Uint8Array(fs.readFileSync(full)), { headers });
 }

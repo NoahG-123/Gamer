@@ -1,0 +1,62 @@
+/* Chrome's docked DevTools: dark surface, 11px monospace, a tab strip on top. */
+.dt {
+  display: flex;
+  flex-direction: column;
+  height: 42%;
+  min-height: 160px;
+  flex: none;
+  background: #282828;
+  color: #e8eaed;
+  border-top: 1px solid #454545;
+  font-family: Menlo, Consolas, "Roboto Mono", monospace;
+  font-size: 11px;
+  overflow: hidden;
+}
+.bar { display: flex; align-items: center; gap: 2px; height: 28px; flex: none; padding: 0 6px; border-bottom: 1px solid #454545; background: #333; }
+.tab { all: unset; padding: 0 10px; height: 26px; line-height: 26px; color: #9aa0a6; border-radius: 4px 4px 0 0; cursor: default; font-size: 11px; white-space: nowrap; }
+.tab:hover { color: #e8eaed; background: rgba(255, 255, 255, 0.06); }
+.tabOn { color: #e8eaed; background: #282828; box-shadow: inset 0 -2px 0 #8ab4f8; }
+.spacer { flex: 1; }
+.iconBtn { all: unset; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; color: #9aa0a6; cursor: default; }
+.iconBtn:hover { background: rgba(255, 255, 255, 0.08); color: #e8eaed; }
+
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.note { padding: 12px 14px; color: #9aa0a6; font-size: 11px; line-height: 1.6; }
+
+/* Elements */
+.tree { flex: 1; overflow: auto; padding: 6px 0 12px; }
+.node { white-space: nowrap; line-height: 17px; padding-right: 10px; cursor: default; }
+.node:hover { background: rgba(255, 255, 255, 0.05); }
+.nodeOn { background: #073763; }
+.punct { color: #9aa0a6; }
+.tag { color: #8ab4f8; }
+.attr { color: #f28b82; }
+.val { color: #ceb6ff; overflow-wrap: anywhere; }
+.text { color: #e8eaed; margin-left: 6px; opacity: 0.85; }
+.kids { color: #5f6368; margin-left: 6px; }
+
+/* Styles / Network */
+.pane { flex: 1; overflow: auto; padding: 8px 12px 16px; }
+.head { color: #9aa0a6; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; margin: 14px 0 6px; }
+.head:first-child { margin-top: 2px; }
+.box { display: inline-block; margin: 4px 0 2px; padding: 3px 8px; border-radius: 3px; background: #3c4043; color: #e8eaed; }
+.prop { display: flex; gap: 10px; line-height: 18px; }
+.prop .attr { flex: 0 0 auto; min-width: 150px; }
+.prop .val { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.pre { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #9aa0a6; line-height: 1.5; }
+
+.netHead, .netRow { display: grid; grid-template-columns: minmax(0, 1fr) 90px 80px 70px; gap: 10px; line-height: 20px; }
+.netHead { color: #9aa0a6; border-bottom: 1px solid #454545; position: sticky; top: 0; background: #282828; }
+.netRow > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.netRow:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* Console */
+.console { flex: 1; overflow: auto; padding: 6px 0; }
+.line { padding: 2px 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; border-bottom: 1px solid #2f2f2f; }
+.in { color: #9aa0a6; }
+.out { color: #e8eaed; }
+.err { color: #f28b82; }
+.prompt { display: flex; align-items: center; gap: 8px; flex: none; padding: 6px 12px; border-top: 1px solid #454545; background: #2b2b2b; }
+.caret { color: #8ab4f8; }
+.prompt input { all: unset; flex: 1; min-width: 0; color: #e8eaed; font-family: inherit; font-size: 11px; }
+.prompt input::placeholder { color: #5f6368; }

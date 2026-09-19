@@ -1,0 +1,68 @@
+{
+  "wallpaper.desktop": {
+    "photographer": "GEORGE DESIPRIS",
+    "photographer_url": "https://www.pexels.com/@george-desipris",
+    "pexels_url": "https://www.pexels.com/photo/timelapse-photo-of-city-skyline-920077/",
+    "query": "foggy harbour at night long exposure"
+  },
+  "taskbar.searchHighlight": {
+    "photographer": "Karly Barker",
+    "photographer_url": "https://www.pexels.com/@karly-barker-197096531",
+    "pexels_url": "https://www.pexels.com/photo/halifax-skyline-at-night-11503985/",
+    "query": "halifax nova scotia waterfront"
+  },
+  "chrome.ntpBackground": {
+    "photographer": "Gilles QUERTIER",
+    "photographer_url": "https://www.pexels.com/@gilles",
+    "pexels_url": "https://www.pexels.com/photo/serene-mist-over-rocky-coastline-in-brittany-33401408/",
+    "query": "atlantic coast fog rocks"
+  },
+  "start.phoneLinkIllustration": {
+    "photographer": "Vladislav Šmigelski",
+    "photographer_url": "https://www.pexels.com/@vladislavsmigelski",
+    "pexels_url": "https://www.pexels.com/photo/electronic-device-on-a-backpack-11713445/",
+    "query": "field recorder microphone"
+  },
+  "pic.family": {
+    "photographer": "Tobias Penner",
+    "photographer_url": "https://www.pexels.com/@tobias-penner-309253",
+    "pexels_url": "https://www.pexels.com/photo/glass-bottle-on-brown-wooden-table-904503/",
+    "query": "empty kitchen morning light"
+  },
+  "wallpaper.harbour": {
+    "photographer": "kin cheung",
+    "photographer_url": "https://www.pexels.com/@kin-cheung-55268",
+    "pexels_url": "https://www.pexels.com/photo/cityscape-view-over-sea-with-lights-turned-on-during-night-194730/",
+    "query": "foggy harbour at night long exposure"
+  },
+  "wallpaper.coast": {
+    "photographer": "Philippe Donn",
+    "photographer_url": "https://www.pexels.com/@philippedonn",
+    "pexels_url": "https://www.pexels.com/photo/black-rock-with-fog-1379807/",
+    "query": "atlantic coast fog rocks"
+  },
+  "wallpaper.spruce": {
+    "photographer": "Bogdan Krupin",
+    "photographer_url": "https://www.pexels.com/@bogdankrupin",
+    "pexels_url": "https://www.pexels.com/photo/foggy-beach-landscape-in-nova-scotia-canada-29976454/",
+    "query": "misty spruce forest nova scotia"
+  },
+  "wallpaper.rain": {
+    "photographer": "Sebastiaan Stam",
+    "photographer_url": "https://www.pexels.com/@sebastiaan9977",
+    "pexels_url": "https://www.pexels.com/photo/selective-focus-photography-of-water-drops-on-glass-1545732/",
+    "query": "rain on window glass bokeh night"
+  },
+  "wallpaper.dunes": {
+    "photographer": "Roda Agnas",
+    "photographer_url": "https://www.pexels.com/@roda-agnas-1581723",
+    "pexels_url": "https://www.pexels.com/photo/man-is-strolling-on-dune-in-winter-19959946/",
+    "query": "cold beach dunes overcast morning"
+  },
+  "wallpaper.lighthouse": {
+    "photographer": "Ray Bilcliff",
+    "photographer_url": "https://www.pexels.com/@raybilcliff",
+    "pexels_url": "https://www.pexels.com/photo/ocean-waves-crashing-near-the-lighthouse-7977273/",
+    "query": "lighthouse storm sea"
+  }
+}
