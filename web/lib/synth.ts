@@ -162,7 +162,10 @@ export function synthPng(seed: string, w = 800, h = 600): Buffer {
         const grain = (r() * 2 - 1) * 6.5;
         const vig = 1 - 0.46 * ((nx - cx) ** 2 + (ny - cy) ** 2) * 1.8;
         const o = y * (w * 3 + 1) + 1 + x * 3;
-        const wr = 1 + 0.13 * (warm - 1) * tint, wb = 1 - 0.13 * (warm - 1) * tint;
+        // 0.13 here made the warm/cool cast a few pixel values wide at most - indistinguishable
+        // from grayscale once JPEG-style grain and a vignette were on top of it. A photograph
+        // needs the cast to actually read.
+        const wr = 1 + 0.4 * (warm - 1) * tint, wb = 1 - 0.4 * (warm - 1) * tint;
         raw[o] = Math.max(0, Math.min(255, (lum * wr + grain) * vig));
         raw[o + 1] = Math.max(0, Math.min(255, (lum + grain) * vig));
         raw[o + 2] = Math.max(0, Math.min(255, (lum * wb + grain) * vig));

@@ -337,7 +337,7 @@ export function Settings({ win }: { win: WinState }) {
       case "time": return (
         <>
           <h2 className={styles.h2}>Time &amp; language</h2>
-          <Row title="Set time automatically" sub="The clock follows this computer's own time." right={<Toggle on={s.autoTime} onChange={(v) => { sys.set({ autoTime: v }); if (!v) say("The clock still follows this computer's time; there is nothing else here to set it from."); }} />} />
+          <Row title="Set time automatically" sub="This computer has no manual clock to fall back to, so it always follows its own time." right={<Toggle on onChange={() => {}} disabled />} />
           <Row title="Time zone" sub={os.profile.timezone.replace("_", " ")} right={<span className={styles.value}>(UTC−04:00)</span>} />
           <Row title="24-hour clock" sub={new Date().toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit", hour12: !s.time24 })} right={<Toggle on={s.time24} onChange={(v) => sys.set({ time24: v })} />} />
           <div className={styles.group}>Language &amp; region</div>
@@ -380,7 +380,7 @@ export function Settings({ win }: { win: WinState }) {
           <Row
             title="Clear browsing history"
             sub="Everything Chrome has recorded on this computer"
-            right={<button className={styles.btn} onClick={async () => { await fetch("/api/browser/history", { method: "DELETE" }); say("Browsing history cleared."); }}>Clear</button>}
+            right={<button className={styles.btn} onClick={async () => { const r = await fetch("/api/browser/history", { method: "DELETE" }); const d = await r.json().catch(() => ({})); say(r.ok ? "Browsing history cleared." : (d.error || "Browsing history could not be cleared.")); }}>Clear</button>}
           />
         </>
       );

@@ -219,7 +219,10 @@ export function WidgetsPanel({ open, weather, unit, onOpenUrl }: { open: boolean
         <div className={styles.widgetCardHead}>Top stories</div>
         {!news.length && <div className={styles.widgetMuted}>{failed ? (sys.online ? "Stories could not be loaded." : "You are offline.") : "Loading…"}</div>}
         {news.map((n) => {
-          const pic = pictureFor(n.url);
+          // By url, not title: several of these front-page teasers link back to the same
+          // page (they have no separate article of their own), which made every one of
+          // them hash to the same picture. The title is always distinct.
+          const pic = pictureFor(n.title);
           return (
             <button key={n.title} className={styles.newsRow} onClick={() => onOpenUrl(n.url)}>
               {pic && <span className={styles.newsThumb} style={{ backgroundImage: `url(${pic})` }} />}

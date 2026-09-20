@@ -180,7 +180,7 @@ function linkify(s){return s.replace(/(https?:\/\/[^\s<]+[^\s<.,)])/g,'<a href="
 function icon(n){const e=n.split(".").pop().toLowerCase();return {pdf:"📄",wav:"🎧",mp3:"🎧",flac:"🎧",zip:"🗜",jpg:"🖼",jpeg:"🖼",png:"🖼",docx:"📝",doc:"📝",xlsx:"📊",csv:"📊",txt:"📃",gpg:"🔒","7z":"🗜"}[e]||"📎"}
 function size(b){return b<1024?b+" B":b<1048576?Math.round(b/1024)+" KB":(b/1048576).toFixed(1)+" MB"}
 function openAttachment(path,name){if(!path){location.href="/api/mail/attachment?thread="+encodeURIComponent(openId)+"&name="+encodeURIComponent(name);return}fetch("/api/fs/open",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({path})}).then(r=>r.json()).then(d=>{if(d.openable&&d.url)location.href=d.url;else location.href="/lf/"+encodeURIComponent(path).replace(/%2F/g,"/")}).catch(()=>{location.href="/lf/"+encodeURIComponent(path).replace(/%2F/g,"/")})}
-async function trash(){if(!openId)return;const t=threads.find(x=>x.id===openId);if(t)t.trashed=true;await fetch("/api/mail/state",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:openId,trashed:true})});toast("Conversation moved to Trash.");location.hash=back}
+async function trash(){if(!openId)return;const restoring=view==="trash";const t=threads.find(x=>x.id===openId);if(t)t.trashed=!restoring;await fetch("/api/mail/state",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:openId,trashed:!restoring})});toast(restoring?"Conversation moved to Inbox.":"Conversation moved to Trash.");location.hash=back}
 function openCompose(to,sub,body){if(!to&&!sub&&!body)draftId=null;$("#compose").classList.add("on");$("#cto").value=to||"";$("#csub").value=sub||"";$("#cbody").value=body||"";$("#ctitle").textContent=sub?sub:"New Message";(to?$("#cbody"):$("#cto")).focus()}
 function closeCompose(){$("#compose").classList.remove("on")}
 function reply(fwd){const t=window.currentThread;if(!t)return;const last=[...t.messages].reverse().find(m=>m.from.email!==box.account.email)||t.messages[t.messages.length-1];window.composeThread=fwd?null:t.id;openCompose(fwd?"":(last.from.name?`${last.from.name} <${last.from.email}>`:last.from.email),(fwd?"Fwd: ":"Re: ")+t.subject.replace(/^(Re|Fwd): /i,""),fwd?"\n\n---------- Forwarded message ---------\nFrom: "+(last.from.name||"")+" <"+last.from.email+">\n\n"+last.body:"")}
@@ -193,6 +193,8 @@ async function send(){const to=$("#cto").value.trim(),subject=$("#csub").value.t
 function updateToolbar(){
   const any=picked.size>0;
   ["tbArchive","tbSpam","tbTrash","tbRead"].forEach(id=>{const el=$("#"+id);if(el)el.classList.toggle("off",!any)});
+  const tbTrash=$("#tbTrash");
+  if(tbTrash){tbTrash.title=view==="trash"?"Move to Inbox":"Delete";tbTrash.textContent=view==="trash"?"↩":"🗑"}
   const all=$("#selAll");
   if(all){const list=filtered();all.classList.toggle("on",list.length>0&&picked.size===list.length)}
 }
@@ -216,7 +218,7 @@ function moreMenu(e){
     {label:"Mark all as read",act:async()=>{for(const t of filtered().filter(x=>x.unread))await setState(t.id,{read:true});toast("Marked as read");await refresh()}},
     {label:"Select all",act:()=>{const l=filtered();picked.clear();l.forEach(t=>picked.add(t.id))}},
     {sep:true},
-    {label:"Empty Trash now",disabled:view!=="trash",act:async()=>{const l=filtered();for(const t of l)await setState(t.id,{trashed:true});toast("Trash is already empty on this computer.")}},
+    {label:"Empty Trash now",disabled:view!=="trash",act:()=>toast("Can't permanently delete: your organisation's administrator has placed a retention hold on this account.")},
   ]);
 }
 function setState(id,patch){return fetch("/api/mail/state",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({id:id},patch))})}
@@ -228,11 +230,12 @@ async function bulk(what){
     if(!t)continue;
     if(what==="archive"){await setState(id,{labels:t.labels.filter(l=>l!=="inbox")})}
     else if(what==="spam"){await setState(id,{labels:t.labels.filter(l=>l!=="inbox").concat("spam")})}
-    else if(what==="trash"){await setState(id,{trashed:true})}
+    else if(what==="trash"){await setState(id,{trashed:view!=="trash"})}
     else if(what==="read"){await setState(id,{read:!t.unread?false:true})}
   }
   picked.clear();
-  toast(ids.length+" conversation"+(ids.length===1?"":"s")+" "+({archive:"archived",spam:"reported as spam",trash:"moved to Trash",read:"marked as read"})[what]+".");
+  const trashLabel=view==="trash"?"moved to Inbox":"moved to Trash";
+  toast(ids.length+" conversation"+(ids.length===1?"":"s")+" "+({archive:"archived",spam:"reported as spam",trash:trashLabel,read:"marked as read"})[what]+".");
   await refresh();
 }
 

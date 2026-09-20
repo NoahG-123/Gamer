@@ -7,6 +7,8 @@ import { dressingKind, synthWav, synthPng, synthPdf, junkText, DIALOG_EXTS } fro
 import { isOfficeExt, synthDoc, renderDoc } from "@/lib/synthdoc";
 import { synthText } from "@/lib/synthtext";
 import { getRecording, recordingBytes, recordingStream } from "@/lib/audio";
+import { pickFillerVideo } from "@/lib/fillerVideo";
+import { pickFillerPhoto } from "@/lib/fillerPhoto";
 export const dynamic = "force-dynamic";
 
 /**
@@ -110,10 +112,40 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ parts: stri
 
   const kind = as === "image" ? "image" : as === "audio" ? "audio" : as === "raw" ? "other" : dressingKind(node.ext);
   switch (kind) {
-    case "audio": case "video":
-      return new Response(new Uint8Array(synthWav(seed)), { headers: { ...headers, "content-type": "audio/wav" } });
-    case "image":
+    case "video": {
+      // A real clip from the filler-video pool (lib/fetchAssets, content/filler-videos.json),
+      // picked deterministically so this file always plays the same one. Falls through to the
+      // ambient-only placeholder below until PIXABAY_API_KEY_VIDEOS has fetched the pool.
+      const clip = pickFillerVideo(seed);
+      if (clip) {
+        const stat = fs.statSync(clip);
+        const range = req.headers.get("range");
+        const m = range?.match(/bytes=(\d*)-(\d*)/);
+        const start = m && m[1] ? Math.min(Number(m[1]), stat.size - 1) : 0;
+        const end = m && m[2] ? Math.min(Number(m[2]), stat.size - 1) : stat.size - 1;
+        const body = new Uint8Array(fs.readFileSync(clip)).subarray(start, end + 1);
+        const common = { ...headers, "content-type": "video/mp4", "accept-ranges": "bytes" };
+        if (m) return new Response(body, { status: 206, headers: { ...common, "content-range": `bytes ${start}-${end}/${stat.size}`, "content-length": String(end - start + 1) } });
+        return new Response(body, { headers: { ...common, "content-length": String(stat.size) } });
+      }
+      // Fall through: no clip fetched yet, so this junk file stays ambient-sound-only.
+    }
+    // eslint-disable-next-line no-fallthrough
+    case "audio": {
+      // There is no synthetic video track for the fallback above — a filler "video" without
+      // a fetched clip is ambient sound only. Naming it inline with its real .mp4/.mov
+      // extension while the bytes are a WAV makes Chromium try to lay out a video player for
+      // a file with no picture: a black, misplaced frame rather than the clean native audio
+      // view it would give an honestly-named .wav.
+      const wavName = name.replace(/\.[^.]+$/, "") + ".wav";
+      const disposition = `inline; filename="${wavName.replace(/"/g, "")}"`;
+      return new Response(new Uint8Array(synthWav(seed)), { headers: { ...headers, "content-disposition": disposition, "content-type": "audio/wav" } });
+    }
+    case "image": {
+      const photo = pickFillerPhoto(node.path, seed);
+      if (photo) return new Response(new Uint8Array(fs.readFileSync(photo)), { headers: { ...headers, "content-type": "image/jpeg" } });
       return new Response(new Uint8Array(synthPng(seed)), { headers: { ...headers, "content-type": "image/png" } });
+    }
     case "pdf": {
       // Real type on the page, not grey bars: a blank-looking PDF reads as a broken viewer.
       const pages = 1 + (node.size > 900_000 ? 2 : 0);

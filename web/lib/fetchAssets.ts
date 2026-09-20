@@ -7,9 +7,15 @@
  *    in; nothing chooses a face for anyone. If generation is unavailable, two free portrait
  *    services are tried, and if those fail too the silhouettes stay and nothing else changes.
  *  - **Stock photography** for any manifest entry with a `pexels` query (wallpapers and the
- *    like), when PEXELS_API_KEY is set.
- *  - **Generated imagery** for any entry with an `openai` prompt — the weather and news
- *    pictures, and anything else a real photo library would not have.
+ *    like): Pixabay when PIXABAY_API_KEY is set, Pexels as a fallback.
+ *  - **Generated imagery** for any entry with an `openai` prompt — the weather picture and
+ *    anything else a real photo library would not have.
+ *  - **Filler video** (content/filler-videos.json): a small pool of real Pixabay clips that
+ *    the junk .mp4 files scattered through the machine pick from, in place of the silent
+ *    placeholder, when PIXABAY_API_KEY_VIDEOS is set.
+ *  - **Filler photos** (content/filler-photos.json): a pool of real photos, grouped by
+ *    folder, that the junk image files scattered through the machine pick from in place of
+ *    the procedural gradient render.
  *
  * Everything is written to the data folder rather than the install folder, which on a
  * packaged app is read-only.
@@ -20,6 +26,7 @@ import { loadContent } from "./content";
 import { assetsWritableRoot, locateAsset } from "./assets";
 import type { AssetEntry } from "./assets";
 import { generateImage, imageKey, portraitPrompt, seedOf } from "./images";
+import { allFillerPhotos } from "./fillerPhoto";
 
 interface Sourced extends AssetEntry {
   pexels?: { query: string; orientation?: string; size?: string; index?: number };
@@ -35,6 +42,8 @@ export function ensureStockAssets(): Promise<void> {
     fetchStock().catch((e) => console.warn("[assets] stock fetch failed:", (e as Error).message)),
     fetchGenerated().catch((e) => console.warn("[assets] generated imagery failed:", (e as Error).message)),
     fetchPeople().catch((e) => console.warn("[assets] portraits failed:", (e as Error).message)),
+    fetchFillerVideos().catch((e) => console.warn("[assets] filler video fetch failed:", (e as Error).message)),
+    fetchFillerPhotos().catch((e) => console.warn("[assets] filler photo fetch failed:", (e as Error).message)),
   ]).then(() => undefined);
   return g.__foundAssetFetch;
 }
@@ -125,9 +134,35 @@ async function pravatarPortrait(_gender: "male" | "female", seed: number): Promi
 }
 
 // ---------- stock photography ----------
+/** One still photo matching `query`: Pixabay first, Pexels only as a fallback. */
+async function fetchPhoto(query: string, orientation: string, size: string, index: number): Promise<{ bytes: Buffer; credit: Record<string, string> } | null> {
+  const pixabayKey = process.env.PIXABAY_API_KEY;
+  if (pixabayKey) {
+    const perPage = Math.max(3, index + 1);
+    const or = orientation === "landscape" ? "horizontal" : "vertical";
+    const res = await fetch(`https://pixabay.com/api/?key=${pixabayKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=${or}&safesearch=true&per_page=${perPage}`);
+    if (!res.ok) { if (res.status === 429) throw new Error(`Pixabay rate limited`); return null; }
+    const data = (await res.json()) as { hits?: { largeImageURL: string; user: string; user_id: number; pageURL: string }[] };
+    const hit = data.hits?.[Math.min(index, (data.hits?.length ?? 1) - 1)];
+    if (!hit) return null;
+    const img = await fetch(hit.largeImageURL);
+    if (!img.ok) return null;
+    return { bytes: Buffer.from(await img.arrayBuffer()), credit: { photographer: hit.user, photographer_url: `https://pixabay.com/users/${hit.user}-${hit.user_id}/`, source_url: hit.pageURL, source: "Pixabay", query } };
+  }
+  const pexelsKey = process.env.PEXELS_API_KEY;
+  if (!pexelsKey) return null;
+  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=${index + 1}`, { headers: { Authorization: pexelsKey } });
+  if (!res.ok) { if (res.status === 429) throw new Error(`Pexels rate limited`); return null; }
+  const data = (await res.json()) as { photos?: { src: Record<string, string>; photographer: string; photographer_url: string; url: string }[] };
+  const photo = data.photos?.[Math.min(index, (data.photos?.length ?? 1) - 1)];
+  if (!photo) return null;
+  const img = await fetch(photo.src[size] ?? photo.src.large ?? photo.src.original);
+  if (!img.ok) return null;
+  return { bytes: Buffer.from(await img.arrayBuffer()), credit: { photographer: photo.photographer, photographer_url: photo.photographer_url, source_url: photo.url, source: "Pexels", query } };
+}
+
 async function fetchStock(): Promise<void> {
-  const key = process.env.PEXELS_API_KEY;
-  if (!key) return;
+  if (!process.env.PIXABAY_API_KEY && !process.env.PEXELS_API_KEY) return;
   const root = assetsWritableRoot();
   const attributionPath = path.join(root, "attribution.json");
   let attribution: Record<string, unknown> = {};
@@ -137,23 +172,68 @@ async function fetchStock(): Promise<void> {
     if (!a.pexels || !a.file || locateAsset(a.file)) continue;
     try {
       const { query, orientation = "landscape", size = "large", index = 0 } = a.pexels;
-      const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&orientation=${orientation}&per_page=${index + 1}`, { headers: { Authorization: key } });
-      if (!res.ok) { console.warn(`[assets] ${name}: Pexels HTTP ${res.status}`); if (res.status === 429) break; continue; }
-      const data = (await res.json()) as { photos?: { src: Record<string, string>; photographer: string; photographer_url: string; url: string }[] };
-      const photo = data.photos?.[Math.min(index, (data.photos?.length ?? 1) - 1)];
-      if (!photo) continue;
-      const img = await fetch(photo.src[size] ?? photo.src.large ?? photo.src.original);
-      if (!img.ok) continue;
-      save(destFor(a.file), Buffer.from(await img.arrayBuffer()));
-      attribution[name] = { photographer: photo.photographer, photographer_url: photo.photographer_url, pexels_url: photo.url, query };
+      const found = await fetchPhoto(query, orientation, size, index);
+      if (!found) continue;
+      save(destFor(a.file), found.bytes);
+      attribution[name] = found.credit;
       fetched++;
       fs.mkdirSync(root, { recursive: true });
       fs.writeFileSync(attributionPath, JSON.stringify(attribution, null, 2));
     } catch (e) {
       console.warn(`[assets] ${name}:`, (e as Error).message);
+      break; // rate limited: no point hammering the same provider for the rest of the list
     }
   }
-  if (fetched) console.log(`[assets] fetched ${fetched} stock image(s) from Pexels`);
+  if (fetched) console.log(`[assets] fetched ${fetched} stock image(s)`);
+}
+
+// ---------- filler video pool ----------
+interface FillerVideoPool { clips: { id: string; query: string }[] }
+async function fetchFillerVideos(): Promise<void> {
+  const key = process.env.PIXABAY_API_KEY_VIDEOS || process.env.PIXABAY_API_KEY;
+  if (!key) return;
+  const { clips } = loadContent<FillerVideoPool>("filler-videos.json");
+  let fetched = 0;
+  for (const clip of clips) {
+    const rel = `generated/filler-video/${clip.id}.mp4`;
+    if (locateAsset(rel)) continue;
+    try {
+      const res = await fetch(`https://pixabay.com/api/videos/?key=${key}&q=${encodeURIComponent(clip.query)}&safesearch=true&per_page=3`);
+      if (!res.ok) { if (res.status === 429) break; continue; }
+      const data = (await res.json()) as { hits?: { videos: Record<string, { url: string }>; user: string; user_id: number; pageURL: string }[] };
+      const hit = data.hits?.[0];
+      if (!hit) continue;
+      const v = hit.videos.medium ?? hit.videos.small ?? hit.videos.tiny;
+      const vid = await fetch(v.url);
+      if (!vid.ok) continue;
+      save(destFor(rel), Buffer.from(await vid.arrayBuffer()));
+      fetched++;
+    } catch (e) {
+      console.warn(`[assets] filler video ${clip.id}:`, (e as Error).message);
+      break;
+    }
+  }
+  if (fetched) console.log(`[assets] fetched ${fetched} filler video clip(s)`);
+}
+
+// ---------- filler photo pool ----------
+async function fetchFillerPhotos(): Promise<void> {
+  if (!process.env.PIXABAY_API_KEY && !process.env.PEXELS_API_KEY) return;
+  let fetched = 0;
+  for (const { category, id, query, index } of allFillerPhotos()) {
+    const rel = `generated/filler-photo/${category}-${id}.jpg`;
+    if (locateAsset(rel)) continue;
+    try {
+      const found = await fetchPhoto(query, "landscape", "large", index);
+      if (!found) continue;
+      save(destFor(rel), found.bytes);
+      fetched++;
+    } catch (e) {
+      console.warn(`[assets] filler photo ${category}-${id}:`, (e as Error).message);
+      break;
+    }
+  }
+  if (fetched) console.log(`[assets] fetched ${fetched} filler photo(s)`);
 }
 
 // ---------- generated imagery ----------

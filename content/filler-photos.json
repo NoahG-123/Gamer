@@ -1,0 +1,125 @@
+{
+  "_comment": "Real Pixabay photos for the junk image files scattered through the machine (Downloads, Pictures, phone backup, and the like) that carry no story significance - camera-roll clutter, not evidence. Replaces the procedural gray-ish gradient render for these specific files. A file's folder decides its category (longest matching prefix wins, 'life' is the default for anything unmatched); within a category a file picks one photo deterministically from a hash of its own path, the same way lib/synth.ts picks a filler scene. `overrides` pins a handful of files whose own name already says what they are (a saved 'cat.jpg' should be a cat) to an exact photo instead of a hash. Fetched by `npm run fetch:assets` and on first run (see web/lib/fetchAssets.ts) into generated/filler-photo/<category>-<id>.jpg; until fetched (no PIXABAY_API_KEY set) these files fall back to the old procedural render.",
+  "categories": {
+    "travel": {
+      "folders": ["C:/Users/{user}/Pictures/2019 Denver"],
+      "photos": [
+        { "id": "skyline", "query": "denver colorado skyline" },
+        { "id": "rockies", "query": "rocky mountains colorado landscape" },
+        { "id": "roadtrip", "query": "mountain road trip highway" },
+        { "id": "hiking", "query": "hiking trail rocky mountains" },
+        { "id": "overlook", "query": "national park scenic overlook" },
+        { "id": "downtown", "query": "denver downtown skyscrapers", "index": 3 },
+        { "id": "mtntown", "query": "colorado mountain town street" },
+        { "id": "aspen", "query": "aspen trees autumn colorado" },
+        { "id": "redrocks", "query": "red rocks amphitheater colorado" },
+        { "id": "mtnlake", "query": "mountain lake reflection colorado" }
+      ]
+    },
+    "lake": {
+      "folders": ["C:/Users/{user}/Pictures/Lake house"],
+      "photos": [
+        { "id": "dock", "query": "lake dock sunset" },
+        { "id": "canoe", "query": "canoe on calm lake" },
+        { "id": "cabin", "query": "cabin by the lake" },
+        { "id": "pier", "query": "lake house pier wooden" },
+        { "id": "fishing", "query": "fishing boat lake morning" },
+        { "id": "forestlake", "query": "lake surrounded by forest" },
+        { "id": "campfire", "query": "campfire lakeside evening" },
+        { "id": "kayak", "query": "kayak on lake water" }
+      ]
+    },
+    "saved": {
+      "folders": ["C:/Users/{user}/Pictures/Saved Pictures"],
+      "photos": [
+        { "id": "cat1", "query": "cute cat portrait" },
+        { "id": "cat2", "query": "fluffy cat closeup" },
+        { "id": "recipe", "query": "recipe cooking ingredients flatlay" },
+        { "id": "inspo1", "query": "aesthetic home decor inspiration" },
+        { "id": "inspo2", "query": "fashion outfit flatlay aesthetic" },
+        { "id": "birthday", "query": "birthday cake celebration candles" },
+        { "id": "map1", "query": "world map illustration vintage" },
+        { "id": "map2", "query": "road map navigation gps" },
+        { "id": "funnydog", "query": "funny dog expression" },
+        { "id": "art", "query": "abstract painting colorful art" }
+      ]
+    },
+    "wallpaper": {
+      "folders": ["C:/Users/{user}/Pictures/Wallpapers"],
+      "photos": [
+        { "id": "abstract1", "query": "abstract colorful wallpaper background" },
+        { "id": "galaxy", "query": "galaxy stars space wallpaper" },
+        { "id": "minimal", "query": "minimalist mountain landscape wallpaper" },
+        { "id": "neon", "query": "neon abstract background" },
+        { "id": "geometric", "query": "geometric pattern wallpaper colorful" },
+        { "id": "mistyforest", "query": "misty forest wallpaper landscape" }
+      ]
+    },
+    "car": {
+      "folders": ["C:/Users/{user}/Documents/Car"],
+      "photos": [
+        { "id": "parked", "query": "car parked on street" }
+      ]
+    },
+    "life": {
+      "folders": [
+        "C:/Users/{user}/Pictures/Phone backup/DCIM/Camera",
+        "C:/Users/{user}/Pictures/Camera Roll",
+        "C:/Users/{user}/Pictures/Screenshots",
+        "C:/Users/{user}/Pictures/Phone backup/WhatsApp Images",
+        "D:/Backup/Old PC/Pictures",
+        "C:/Users/{user}/Downloads",
+        "C:/Users/{user}/Documents/Old Laptop/Downloads",
+        "D:/Backup/Old PC/Desktop",
+        "C:/Users/{user}/Desktop",
+        "C:/Users/{user}/Pictures/Scanned Documents"
+      ],
+      "photos": [
+        { "id": "coffee", "query": "coffee cup wooden table" },
+        { "id": "sunsetocean", "query": "sunset over ocean water" },
+        { "id": "retriever", "query": "golden retriever dog outside" },
+        { "id": "citystreet", "query": "city street evening lights" },
+        { "id": "pasta", "query": "plate of pasta food" },
+        { "id": "hikingtrail", "query": "mountain hiking trail" },
+        { "id": "catwindow", "query": "cat sleeping on windowsill" },
+        { "id": "autumnpark", "query": "autumn leaves in park" },
+        { "id": "cakecandles", "query": "birthday cake with candles" },
+        { "id": "snowstreet", "query": "snow covered street winter" },
+        { "id": "farmersmkt", "query": "farmers market vegetables" },
+        { "id": "bicycle", "query": "bicycle parked wall", "index": 1 },
+        { "id": "bookshelf", "query": "cozy bookshelf reading nook", "index": 3 },
+        { "id": "rainwindow", "query": "rain on window bokeh" },
+        { "id": "campfirenight", "query": "campfire at night" },
+        { "id": "skateboard", "query": "skateboard on pavement" },
+        { "id": "guitar", "query": "acoustic guitar closeup" },
+        { "id": "houseplants", "query": "houseplants in sunlight" },
+        { "id": "laptopcafe", "query": "laptop coffee shop desk" },
+        { "id": "beachwaves", "query": "beach ocean waves" },
+        { "id": "forestpath", "query": "forest hiking path" },
+        { "id": "pizza", "query": "pizza slice closeup" },
+        { "id": "icecream", "query": "ice cream cone summer" },
+        { "id": "flowergarden", "query": "flower garden blooming" },
+        { "id": "sunrisemtn", "query": "sunrise over mountains" },
+        { "id": "dogpark", "query": "dog running in park" },
+        { "id": "kitten", "query": "kitten playing with yarn" },
+        { "id": "dashboard", "query": "car dashboard road trip" },
+        { "id": "cityskyline", "query": "city skyline night lights" },
+        { "id": "fruitstall", "query": "fresh fruit market stall" },
+        { "id": "typewriter", "query": "old typewriter vintage" },
+        { "id": "vinyl", "query": "vinyl records collection" },
+        { "id": "succulents", "query": "succulent plants windowsill" }
+      ]
+    }
+  },
+  "overrides": [
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/cat.jpg", "target": "saved:cat1" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/cat (1).jpg", "target": "saved:cat2" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/recipe card.png", "target": "saved:recipe" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/inspo.jpg", "target": "saved:inspo1" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/inspo2.jpg", "target": "saved:inspo2" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/birthday.png", "target": "saved:birthday" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/map.png", "target": "saved:map1" },
+    { "path": "C:/Users/{user}/Pictures/Saved Pictures/directions.png", "target": "saved:map2" },
+    { "path": "C:/Users/{user}/Documents/Car/IMG_2210.jpg", "target": "car:parked" }
+  ]
+}

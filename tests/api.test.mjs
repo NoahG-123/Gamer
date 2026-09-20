@@ -158,7 +158,9 @@ test("dressing files open into something plausible; the README opens and unlocks
   assert.match(pdfBody.headers.get("content-type"), /application\/pdf/);
   const img = await post("/api/fs/open", { path: `${home}/Desktop/IMG_4471.HEIC` });
   assert.equal(img.body.kind, "image");
-  assert.match((await fetch(`${B}${img.body.url}`)).headers.get("content-type"), /image\/png/);
+  // A real Pixabay photo from the filler-photo pool (image/jpeg) when one has been fetched,
+  // else the procedural gradient render (image/png) - both are "something plausible".
+  assert.match((await fetch(`${B}${img.body.url}`)).headers.get("content-type"), /image\/(png|jpeg)/);
   const before = await j("/api/messages");
   assert.ok(!before.body.chats.some((c) => c.contact.id === "wren"), "Wren hidden before README");
   const readme = await post("/api/fs/open", { path: `${home}\\Desktop\\READ ME.txt` });

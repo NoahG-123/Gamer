@@ -49,7 +49,16 @@ export function HistoryClient() {
       <div className={styles.body}>
         <nav className={styles.side}>
           <a className={styles.sideOn}>Chrome history</a>
-          <button className={styles.clear} onClick={() => { if (confirm("Clear all browsing history from this device?")) fetch("/api/browser/history", { method: "DELETE" }).then(() => load(q)); }}>Clear browsing data</button>
+          <button
+            className={styles.clear}
+            onClick={async () => {
+              if (!confirm("Clear all browsing history from this device?")) return;
+              const r = await fetch("/api/browser/history", { method: "DELETE" });
+              const d = await r.json().catch(() => ({}));
+              if (!r.ok) alert(d.error || "Browsing data could not be cleared.");
+              else load(q);
+            }}
+          >Clear browsing data</button>
         </nav>
         <main className={styles.list}>
           {busy && <div className={styles.empty}>Loading…</div>}

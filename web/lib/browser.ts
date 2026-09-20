@@ -30,7 +30,12 @@ function seedOnce(): void {
   }
 }
 
-export function historyVisits(limit = 400, query = ""): Visit[] {
+// Wren's own seeded past (content/browser/history.json) alone expands to several hundred
+// rows; a real play session logs a fresh row per navigation, no deduplication, same as real
+// Chrome. A small cap here quietly pushes her older visits out of "today" once anyone plays
+// for a while, which read as if her history had vanished. This table lives in one player's
+// local SQLite file and will never be large enough to matter, so the cap is generous instead.
+export function historyVisits(limit = 20000, query = ""): Visit[] {
   seedOnce();
   const like = `%${query.toLowerCase()}%`;
   const sql = query
@@ -38,12 +43,4 @@ export function historyVisits(limit = 400, query = ""): Visit[] {
     : "SELECT url, title, at FROM browser_history ORDER BY at DESC LIMIT ?";
   const rows = query ? db().prepare(sql).all(like, like, limit) : db().prepare(sql).all(limit);
   return rows as unknown as Visit[];
-}
-
-export function clearHistory(): number {
-  const n = (db().prepare("SELECT COUNT(*) AS n FROM browser_history").get() as { n: number }).n;
-  db().exec("DELETE FROM browser_history");
-  // Insert a marker row so the seed does not come back: cleared history stays cleared.
-  db().prepare("INSERT INTO browser_history(url, title, at) VALUES ('', '', strftime('%Y-%m-%dT%H:%M:%fZ','now'))").run();
-  return n;
 }

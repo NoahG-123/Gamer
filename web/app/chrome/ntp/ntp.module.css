@@ -9,10 +9,19 @@
 .avatar { width: 32px; height: 32px; border-radius: 50%; background: #5f6368; cursor: pointer; box-shadow: 0 0 0 2px #202124; }
 .center { position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 150px; }
 .logo { height: 92px; margin-bottom: 28px; }
-.searchBox { display: flex; align-items: center; width: 100%; max-width: 728px; height: 62px; background: #303134; border-radius: 31px; padding: 0 12px 0 14px; gap: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.35); }
+.searchWrap { position: relative; width: 100%; max-width: 728px; }
+.searchBox { display: flex; align-items: center; width: 100%; height: 62px; background: #303134; border-radius: 31px; padding: 0 12px 0 14px; gap: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.35); position: relative; z-index: 2; }
 .searchBox:hover, .searchBox:focus-within { background: #35363a; }
+.searchBoxOpen { border-radius: 22px 22px 0 0; }
 .searchInput { flex: 1; height: 100%; border: 0; background: transparent; color: #e8eaed; font-size: 16px; padding: 0 8px; user-select: text; cursor: text; }
 .searchInput::placeholder { color: #9aa0a6; }
+.searchDropdown { position: absolute; left: 0; right: 0; top: 52px; background: #303134; border-radius: 0 0 22px 22px; padding: 10px 0 12px; box-shadow: 0 4px 12px rgba(0,0,0,.5); z-index: 1; }
+.searchDdRow { display: flex; align-items: center; height: 36px; padding: 0 20px; gap: 14px; color: #e8eaed; font-size: 14px; cursor: default; }
+.searchDdRow:hover, .searchDdRowSel { background: rgba(255,255,255,.08); }
+.searchDdIcon { width: 20px; display: flex; justify-content: center; flex-shrink: 0; }
+.searchDdIcon img { width: 16px; height: 16px; }
+.searchDdText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.searchDdUrl { color: #9aa0a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; padding-left: 14px; }
 .searchIconBtn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e8eaed; cursor: pointer; }
 .searchIconBtn:hover { background: rgba(255,255,255,.08); }
 .aiChip { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 20px; background: rgba(255,255,255,.08); color: #e8eaed; font-size: 14px; cursor: pointer; }

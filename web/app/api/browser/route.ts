@@ -24,8 +24,12 @@ export async function GET() {
   ];
   const seeded = loadContent<HistoryFile>("browser/history.json").entries;
   const runtime = db().prepare("SELECT url, title, COUNT(*) AS visits, MAX(at) AS last FROM browser_history GROUP BY url ORDER BY last DESC LIMIT 300").all() as { url: string; title: string; visits: number; last: string }[];
+  // `runtime` already counts every row in browser_history, seeded ones included, so it is
+  // the authoritative count for any URL it covers; `seeded` is only a fallback for a URL
+  // old or rare enough to have fallen out of its top-300 window. Adding the two together
+  // (as this used to) double-counted every seeded URL that was still recent enough to show.
   const merged = new Map<string, { url: string; title: string; visits: number }>();
   for (const e of seeded) merged.set(e.url, { ...e });
-  for (const r of runtime) { const prev = merged.get(r.url); merged.set(r.url, { url: r.url, title: r.title || prev?.title || r.url, visits: (prev?.visits ?? 0) + Number(r.visits) }); }
+  for (const r of runtime) { const prev = merged.get(r.url); merged.set(r.url, { url: r.url, title: r.title || prev?.title || r.url, visits: Number(r.visits) }); }
   return json({ bookmarks, history: [...merged.values()].sort((a, b) => b.visits - a.visits) });
 }

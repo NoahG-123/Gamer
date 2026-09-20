@@ -6,7 +6,7 @@
       "file": "stock/wallpaper-desktop.jpg",
       "fallback": "generated/harbour-fog.png",
       "pexels": {
-        "query": "foggy harbour at night long exposure",
+        "query": "harbor boats fog",
         "orientation": "landscape",
         "size": "original"
       },
@@ -55,7 +55,7 @@
       "file": "stock/family-kitchen.jpg",
       "optional": true,
       "pexels": {
-        "query": "empty kitchen morning light",
+        "query": "kitchen interior morning light",
         "orientation": "landscape",
         "size": "large"
       },
@@ -133,7 +133,7 @@
       "wallpaper": true,
       "fallback": "generated/harbour-fog.png",
       "pexels": {
-        "query": "foggy harbour at night long exposure",
+        "query": "harbor boats fog",
         "orientation": "landscape",
         "size": "original",
         "index": 1
@@ -159,7 +159,7 @@
       "wallpaper": true,
       "fallback": "generated/harbour-fog.png",
       "pexels": {
-        "query": "misty spruce forest nova scotia",
+        "query": "spruce forest mist",
         "orientation": "landscape",
         "size": "original",
         "index": 0
@@ -216,47 +216,49 @@
       }
     },
     "widgets.news.1": {
-      "kind": "generated",
+      "kind": "stock",
       "file": "generated/widgets-news-1.jpg",
       "optional": true,
       "fallback": "generated/harbour-fog-light.png",
-      "openai": {
-        "prompt": "A local newspaper photograph of the working waterfront of a small Atlantic Canadian port: container cranes and a tug at a wharf, grey overcast, gulls. Shot on a phone camera held at chest height, f/1.8, ISO 400. Slightly crooked horizon, focus a little off, sensor noise in the shadows, a colour cast nothing corrected for. Framing is casual and not composed. This is an ordinary unedited JPEG straight off the card - no retouching, no colour grading, no stylisation, nothing tidied. No text, no watermark, no border, no logo, no people identifiable.",
-        "size": "1536x1024",
-        "quality": "medium"
+      "pexels": {
+        "query": "container crane harbor tugboat",
+        "orientation": "landscape",
+        "size": "large"
       }
     },
     "widgets.news.2": {
-      "kind": "generated",
+      "kind": "stock",
       "file": "generated/widgets-news-2.jpg",
       "optional": true,
       "fallback": "generated/harbour-fog-light.png",
-      "openai": {
-        "prompt": "A local newspaper photograph of the outside of a mid-century municipal building on a grey weekday, steps, a flagpole, no people. Shot on a phone camera held at chest height, f/1.8, ISO 400. Slightly crooked horizon, focus a little off, sensor noise in the shadows, a colour cast nothing corrected for. Framing is casual and not composed. This is an ordinary unedited JPEG straight off the card - no retouching, no colour grading, no stylisation, nothing tidied. No text, no watermark, no border, no logo, no people identifiable.",
-        "size": "1536x1024",
-        "quality": "medium"
+      "pexels": {
+        "query": "city hall government building",
+        "orientation": "landscape",
+        "size": "large"
       }
     },
     "widgets.news.3": {
-      "kind": "generated",
+      "kind": "stock",
       "file": "generated/widgets-news-3.jpg",
       "optional": true,
       "fallback": "generated/harbour-fog-light.png",
-      "openai": {
-        "prompt": "A local newspaper photograph of a residential street in heat haze, dry grass on the verge, an open fire hydrant, hard midday light. Shot on a phone camera held at chest height, f/1.8, ISO 400. Slightly crooked horizon, focus a little off, sensor noise in the shadows, a colour cast nothing corrected for. Framing is casual and not composed. This is an ordinary unedited JPEG straight off the card - no retouching, no colour grading, no stylisation, nothing tidied. No text, no watermark, no border, no logo, no people identifiable.",
-        "size": "1536x1024",
-        "quality": "medium"
+      "pexels": {
+        "query": "fire hydrant residential street summer",
+        "orientation": "landscape",
+        "size": "large",
+        "index": 1
       }
     },
     "widgets.news.4": {
-      "kind": "generated",
+      "kind": "stock",
       "file": "generated/widgets-news-4.jpg",
       "optional": true,
       "fallback": "generated/harbour-fog-light.png",
-      "openai": {
-        "prompt": "A local newspaper photograph of an old harbourfront warehouse in late afternoon light, peeling paint, a rusted bollard in the foreground. Shot on a phone camera held at chest height, f/1.8, ISO 400. Slightly crooked horizon, focus a little off, sensor noise in the shadows, a colour cast nothing corrected for. Framing is casual and not composed. This is an ordinary unedited JPEG straight off the card - no retouching, no colour grading, no stylisation, nothing tidied. No text, no watermark, no border, no logo, no people identifiable.",
-        "size": "1536x1024",
-        "quality": "medium"
+      "pexels": {
+        "query": "old brick warehouse harbor",
+        "orientation": "landscape",
+        "size": "large",
+        "index": 4
       }
     }
   }

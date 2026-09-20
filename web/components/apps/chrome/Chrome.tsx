@@ -357,7 +357,13 @@ export function Chrome({ win }: { win: WinState }) {
       ] },
 
       { label: "Extensions", icon: <M.MExtension />, children: [{ label: "No extensions are installed", disabled: true }] },
-      { label: "Delete browsing data...", icon: <M.MDelete />, shortcut: "Ctrl+Shift+Del", onClick: async () => { await fetch("/api/browser/history", { method: "DELETE" }); loadBrowserData(); setNote("Browsing data deleted"); setTimeout(() => setNote(null), 2500); } },
+      { label: "Delete browsing data...", icon: <M.MDelete />, shortcut: "Ctrl+Shift+Del", onClick: async () => {
+        const r = await fetch("/api/browser/history", { method: "DELETE" });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) loadBrowserData();
+        setNote(r.ok ? "Browsing data deleted" : (d.error || "Browsing data could not be deleted"));
+        setTimeout(() => setNote(null), 2500);
+      } },
       { type: "sep" },
       { label: "Zoom", icon: <M.MZoomIn />, children: [
         { label: "Zoom in", shortcut: "Ctrl++", onClick: () => applyZoom(zoom * 1.1) },

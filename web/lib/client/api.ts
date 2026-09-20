@@ -97,8 +97,8 @@ export function formatDate(d: Date, dateFormat = "yyyy-MM-dd", locale = "en-US")
   if (dateFormat === "yyyy-MM-dd") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   return d.toLocaleDateString(locale, { month: "numeric", day: "numeric", year: "numeric" });
 }
-export function formatTime(d: Date, locale = "en-US"): string {
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+export function formatTime(d: Date, locale = "en-US", time24 = false): string {
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: !time24 });
 }
 export function formatDateTime(iso: string, locale = "en-US", dateFormat = "yyyy-MM-dd"): string {
   const d = new Date(iso);

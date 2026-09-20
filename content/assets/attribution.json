@@ -1,68 +1,625 @@
 {
   "wallpaper.desktop": {
-    "photographer": "GEORGE DESIPRIS",
-    "photographer_url": "https://www.pexels.com/@george-desipris",
-    "pexels_url": "https://www.pexels.com/photo/timelapse-photo-of-city-skyline-920077/",
-    "query": "foggy harbour at night long exposure"
+    "photographer": "13701313",
+    "photographer_url": "https://pixabay.com/users/13701313-13701313/",
+    "source_url": "https://pixabay.com/photos/ship-sea-ocean-landscape-travels-4495313/",
+    "source": "Pixabay",
+    "query": "harbor boats fog"
   },
   "taskbar.searchHighlight": {
-    "photographer": "Karly Barker",
-    "photographer_url": "https://www.pexels.com/@karly-barker-197096531",
-    "pexels_url": "https://www.pexels.com/photo/halifax-skyline-at-night-11503985/",
+    "photographer": "Graham-H",
+    "photographer_url": "https://pixabay.com/users/Graham-H-5475750/",
+    "source_url": "https://pixabay.com/photos/halifax-nova-scotia-waterfront-2370263/",
+    "source": "Pixabay",
     "query": "halifax nova scotia waterfront"
   },
   "chrome.ntpBackground": {
-    "photographer": "Gilles QUERTIER",
-    "photographer_url": "https://www.pexels.com/@gilles",
-    "pexels_url": "https://www.pexels.com/photo/serene-mist-over-rocky-coastline-in-brittany-33401408/",
+    "photographer": "analogicus",
+    "photographer_url": "https://pixabay.com/users/analogicus-8164369/",
+    "source_url": "https://pixabay.com/photos/sea-waves-rock-ocean-splash-foam-3757677/",
+    "source": "Pixabay",
     "query": "atlantic coast fog rocks"
   },
   "start.phoneLinkIllustration": {
-    "photographer": "Vladislav Šmigelski",
-    "photographer_url": "https://www.pexels.com/@vladislavsmigelski",
-    "pexels_url": "https://www.pexels.com/photo/electronic-device-on-a-backpack-11713445/",
+    "photographer": "Pexels",
+    "photographer_url": "https://pixabay.com/users/Pexels-2286921/",
+    "source_url": "https://pixabay.com/photos/mic-headphones-microphone-1867121/",
+    "source": "Pixabay",
     "query": "field recorder microphone"
   },
   "pic.family": {
-    "photographer": "Tobias Penner",
-    "photographer_url": "https://www.pexels.com/@tobias-penner-309253",
-    "pexels_url": "https://www.pexels.com/photo/glass-bottle-on-brown-wooden-table-904503/",
-    "query": "empty kitchen morning light"
+    "photographer": "videaki",
+    "photographer_url": "https://pixabay.com/users/videaki-8617553/",
+    "source_url": "https://pixabay.com/photos/window-kitchen-light-morning-4564161/",
+    "source": "Pixabay",
+    "query": "kitchen interior morning light"
   },
   "wallpaper.harbour": {
-    "photographer": "kin cheung",
-    "photographer_url": "https://www.pexels.com/@kin-cheung-55268",
-    "pexels_url": "https://www.pexels.com/photo/cityscape-view-over-sea-with-lights-turned-on-during-night-194730/",
-    "query": "foggy harbour at night long exposure"
+    "photographer": "3345557",
+    "photographer_url": "https://pixabay.com/users/3345557-3345557/",
+    "source_url": "https://pixabay.com/photos/boats-sea-sunset-pier-dock-harbor-6594506/",
+    "source": "Pixabay",
+    "query": "harbor boats fog"
   },
   "wallpaper.coast": {
-    "photographer": "Philippe Donn",
-    "photographer_url": "https://www.pexels.com/@philippedonn",
-    "pexels_url": "https://www.pexels.com/photo/black-rock-with-fog-1379807/",
+    "photographer": "fietzfotos",
+    "photographer_url": "https://pixabay.com/users/fietzfotos-6795508/",
+    "source_url": "https://pixabay.com/photos/road-coast-cliff-sunset-mountains-5904909/",
+    "source": "Pixabay",
     "query": "atlantic coast fog rocks"
   },
   "wallpaper.spruce": {
-    "photographer": "Bogdan Krupin",
-    "photographer_url": "https://www.pexels.com/@bogdankrupin",
-    "pexels_url": "https://www.pexels.com/photo/foggy-beach-landscape-in-nova-scotia-canada-29976454/",
-    "query": "misty spruce forest nova scotia"
+    "photographer": "jplenio",
+    "photographer_url": "https://pixabay.com/users/jplenio-7645255/",
+    "source_url": "https://pixabay.com/photos/forest-trees-fog-conifers-pine-3622519/",
+    "source": "Pixabay",
+    "query": "spruce forest mist"
   },
   "wallpaper.rain": {
-    "photographer": "Sebastiaan Stam",
-    "photographer_url": "https://www.pexels.com/@sebastiaan9977",
-    "pexels_url": "https://www.pexels.com/photo/selective-focus-photography-of-water-drops-on-glass-1545732/",
+    "photographer": "Pexels",
+    "photographer_url": "https://pixabay.com/users/Pexels-2286921/",
+    "source_url": "https://pixabay.com/photos/window-glass-water-rain-raindrops-1283073/",
+    "source": "Pixabay",
     "query": "rain on window glass bokeh night"
   },
   "wallpaper.dunes": {
-    "photographer": "Roda Agnas",
-    "photographer_url": "https://www.pexels.com/@roda-agnas-1581723",
-    "pexels_url": "https://www.pexels.com/photo/man-is-strolling-on-dune-in-winter-19959946/",
+    "photographer": "Tuttlebuttle",
+    "photographer_url": "https://pixabay.com/users/Tuttlebuttle-1267687/",
+    "source_url": "https://pixabay.com/photos/beach-sand-sea-north-sea-winter-7023446/",
+    "source": "Pixabay",
     "query": "cold beach dunes overcast morning"
   },
   "wallpaper.lighthouse": {
-    "photographer": "Ray Bilcliff",
-    "photographer_url": "https://www.pexels.com/@raybilcliff",
-    "pexels_url": "https://www.pexels.com/photo/ocean-waves-crashing-near-the-lighthouse-7977273/",
+    "photographer": "fiquetdidier1",
+    "photographer_url": "https://pixabay.com/users/fiquetdidier1-25748628/",
+    "source_url": "https://pixabay.com/photos/storm-ocean-waves-storm-clouds-sea-7018311/",
+    "source": "Pixabay",
     "query": "lighthouse storm sea"
+  },
+  "filler-video.phone-walk": {
+    "photographer": "Engin_Akyurt",
+    "photographer_url": "https://pixabay.com/users/Engin_Akyurt-3656355/",
+    "source_url": "https://pixabay.com/videos/id-61298/",
+    "source": "Pixabay",
+    "query": "phone camera walking outside"
+  },
+  "filler-video.kitchen-home": {
+    "photographer": "Life-Of-Vids",
+    "photographer_url": "https://pixabay.com/users/Life-Of-Vids-1282862/",
+    "source_url": "https://pixabay.com/videos/id-267/",
+    "source": "Pixabay",
+    "query": "family kitchen cooking home video"
+  },
+  "filler-video.driving": {
+    "photographer": "VariousPhotography",
+    "photographer_url": "https://pixabay.com/users/VariousPhotography-1860391/",
+    "source_url": "https://pixabay.com/videos/id-2165/",
+    "source": "Pixabay",
+    "query": "driving car window view road"
+  },
+  "filler-video.backyard": {
+    "photographer": "GreenScreenFX",
+    "photographer_url": "https://pixabay.com/users/GreenScreenFX-22748071/",
+    "source_url": "https://pixabay.com/videos/id-132200/",
+    "source": "Pixabay",
+    "query": "kids playing backyard home video"
+  },
+  "filler-video.pet": {
+    "photographer": "Solarselle77",
+    "photographer_url": "https://pixabay.com/users/Solarselle77-52253391/",
+    "source_url": "https://pixabay.com/videos/id-305343/",
+    "source": "Pixabay",
+    "query": "cat pet home video"
+  },
+  "filler-video.party": {
+    "photographer": "Vimeo-Free-Videos",
+    "photographer_url": "https://pixabay.com/users/Vimeo-Free-Videos-1283884/",
+    "source_url": "https://pixabay.com/videos/id-1437/",
+    "source": "Pixabay",
+    "query": "birthday party home video candles"
+  },
+  "widgets.news.1": {
+    "photographer": "Tama66",
+    "photographer_url": "https://pixabay.com/users/Tama66-1032521/",
+    "source_url": "https://pixabay.com/photos/crane-port-shipping-industry-harbor-3109757/",
+    "source": "Pixabay",
+    "query": "container crane harbor tugboat"
+  },
+  "widgets.news.2": {
+    "photographer": "scottwebb",
+    "photographer_url": "https://pixabay.com/users/scottwebb-30630/",
+    "source_url": "https://pixabay.com/photos/toronto-city-hall-new-city-hall-1030718/",
+    "source": "Pixabay",
+    "query": "city hall government building"
+  },
+  "widgets.news.3": {
+    "photographer": "17831348",
+    "photographer_url": "https://pixabay.com/users/17831348-17831348/",
+    "source_url": "https://pixabay.com/photos/fire-hydrant-street-sidewalk-6550190/",
+    "source": "Pixabay",
+    "query": "fire hydrant residential street summer"
+  },
+  "widgets.news.4": {
+    "photographer": "liggraphy",
+    "photographer_url": "https://pixabay.com/users/liggraphy-7165278/",
+    "source_url": "https://pixabay.com/photos/hamburg-speicherstadt-channel-2976711/",
+    "source": "Pixabay",
+    "query": "old brick warehouse harbor"
+  },
+  "filler-photo.travel-skyline": {
+    "photographer": "12019",
+    "photographer_url": "https://pixabay.com/users/12019-12019/",
+    "source_url": "https://pixabay.com/photos/denver-colorado-mountains-city-2228782/",
+    "source": "Pixabay",
+    "query": "denver colorado skyline"
+  },
+  "filler-photo.travel-rockies": {
+    "photographer": "Pexels",
+    "photographer_url": "https://pixabay.com/users/Pexels-2286921/",
+    "source_url": "https://pixabay.com/photos/arches-national-park-van-drive-1846759/",
+    "source": "Pixabay",
+    "query": "rocky mountains colorado landscape"
+  },
+  "filler-photo.travel-roadtrip": {
+    "photographer": "JoshuaWoroniecki",
+    "photographer_url": "https://pixabay.com/users/JoshuaWoroniecki-12734309/",
+    "source_url": "https://pixabay.com/photos/road-highway-journey-asphalt-5089188/",
+    "source": "Pixabay",
+    "query": "mountain road trip highway"
+  },
+  "filler-photo.travel-hiking": {
+    "photographer": "Pexels",
+    "photographer_url": "https://pixabay.com/users/Pexels-2286921/",
+    "source_url": "https://pixabay.com/photos/rocks-steps-mountain-range-clouds-1837129/",
+    "source": "Pixabay",
+    "query": "hiking trail rocky mountains"
+  },
+  "filler-photo.travel-overlook": {
+    "photographer": "ggarnhart",
+    "photographer_url": "https://pixabay.com/users/ggarnhart-3616237/",
+    "source_url": "https://pixabay.com/photos/overlook-view-hike-sky-mountains-3510646/",
+    "source": "Pixabay",
+    "query": "national park scenic overlook"
+  },
+  "filler-photo.travel-downtown": {
+    "photographer": "mrminibike",
+    "photographer_url": "https://pixabay.com/users/mrminibike-568714/",
+    "source_url": "https://pixabay.com/photos/denver-colorado-city-downtown-790472/",
+    "source": "Pixabay",
+    "query": "denver downtown skyscrapers"
+  },
+  "filler-photo.travel-mtntown": {
+    "photographer": "12019",
+    "photographer_url": "https://pixabay.com/users/12019-12019/",
+    "source_url": "https://pixabay.com/photos/telluride-colorado-town-urban-city-2575382/",
+    "source": "Pixabay",
+    "query": "colorado mountain town street"
+  },
+  "filler-photo.travel-aspen": {
+    "photographer": "Abhardphoto",
+    "photographer_url": "https://pixabay.com/users/Abhardphoto-14842099/",
+    "source_url": "https://pixabay.com/photos/colorado-aspen-usa-scenic-5156229/",
+    "source": "Pixabay",
+    "query": "aspen trees autumn colorado"
+  },
+  "filler-photo.travel-redrocks": {
+    "photographer": "nils-art",
+    "photographer_url": "https://pixabay.com/users/nils-art-7103936/",
+    "source_url": "https://pixabay.com/photos/canyon-usa-nature-landscape-9765223/",
+    "source": "Pixabay",
+    "query": "red rocks amphitheater colorado"
+  },
+  "filler-photo.travel-mtnlake": {
+    "photographer": "Hitthetrailjack",
+    "photographer_url": "https://pixabay.com/users/Hitthetrailjack-29915209/",
+    "source_url": "https://pixabay.com/photos/mountains-trees-colorado-trail-7453405/",
+    "source": "Pixabay",
+    "query": "mountain lake reflection colorado"
+  },
+  "filler-photo.lake-dock": {
+    "photographer": "Leolo212",
+    "photographer_url": "https://pixabay.com/users/Leolo212-15013188/",
+    "source_url": "https://pixabay.com/photos/dock-lake-twilight-lagoon-water-5539524/",
+    "source": "Pixabay",
+    "query": "lake dock sunset"
+  },
+  "filler-photo.lake-canoe": {
+    "photographer": "gafen79",
+    "photographer_url": "https://pixabay.com/users/gafen79-7462104/",
+    "source_url": "https://pixabay.com/photos/monolithic-part-of-the-waters-sea-3154106/",
+    "source": "Pixabay",
+    "query": "canoe on calm lake"
+  },
+  "filler-photo.lake-cabin": {
+    "photographer": "TeeFarm",
+    "photographer_url": "https://pixabay.com/users/TeeFarm-199315/",
+    "source_url": "https://pixabay.com/photos/lake-mountains-hut-mountain-lake-1681485/",
+    "source": "Pixabay",
+    "query": "cabin by the lake"
+  },
+  "filler-photo.lake-pier": {
+    "photographer": "Antranias",
+    "photographer_url": "https://pixabay.com/users/Antranias-50356/",
+    "source_url": "https://pixabay.com/photos/boathouse-jetty-lake-fall-autumn-6089674/",
+    "source": "Pixabay",
+    "query": "lake house pier wooden"
+  },
+  "filler-photo.lake-fishing": {
+    "photographer": "Trinh_Nghia",
+    "photographer_url": "https://pixabay.com/users/Trinh_Nghia-45297564/",
+    "source_url": "https://pixabay.com/photos/vietnam-fishing-fisherman-fog-mist-9025183/",
+    "source": "Pixabay",
+    "query": "fishing boat lake morning"
+  },
+  "filler-photo.lake-forestlake": {
+    "photographer": "phgvu307",
+    "photographer_url": "https://pixabay.com/users/phgvu307-24704980/",
+    "source_url": "https://pixabay.com/photos/autumn-forest-lake-nature-7493439/",
+    "source": "Pixabay",
+    "query": "lake surrounded by forest"
+  },
+  "filler-photo.lake-campfire": {
+    "photographer": "12019",
+    "photographer_url": "https://pixabay.com/users/12019-12019/",
+    "source_url": "https://pixabay.com/photos/fire-bonfire-night-evening-burning-123784/",
+    "source": "Pixabay",
+    "query": "campfire lakeside evening"
+  },
+  "filler-photo.lake-kayak": {
+    "photographer": "MikeGoad",
+    "photographer_url": "https://pixabay.com/users/MikeGoad-29415/",
+    "source_url": "https://pixabay.com/photos/kayak-on-string-lake-lake-water-3838739/",
+    "source": "Pixabay",
+    "query": "kayak on lake water"
+  },
+  "filler-photo.saved-cat1": {
+    "photographer": "TeamK",
+    "photographer_url": "https://pixabay.com/users/TeamK-222368/",
+    "source_url": "https://pixabay.com/photos/cat-pet-licking-animal-tabby-cat-323262/",
+    "source": "Pixabay",
+    "query": "cute cat portrait"
+  },
+  "filler-photo.saved-cat2": {
+    "photographer": "ksiazkizszafy",
+    "photographer_url": "https://pixabay.com/users/ksiazkizszafy-22644445/",
+    "source_url": "https://pixabay.com/photos/cat-pet-feline-animal-fur-kitty-6568422/",
+    "source": "Pixabay",
+    "query": "fluffy cat closeup"
+  },
+  "filler-photo.saved-recipe": {
+    "photographer": "sontung57",
+    "photographer_url": "https://pixabay.com/users/sontung57-19733131/",
+    "source_url": "https://pixabay.com/photos/cooking-ingredients-flat-lay-bake-5880136/",
+    "source": "Pixabay",
+    "query": "recipe cooking ingredients flatlay"
+  },
+  "filler-photo.saved-inspo1": {
+    "photographer": "Van3ssa_",
+    "photographer_url": "https://pixabay.com/users/Van3ssa_-13670757/",
+    "source_url": "https://pixabay.com/photos/workspace-home-office-office-desk-4962107/",
+    "source": "Pixabay",
+    "query": "aesthetic home decor inspiration"
+  },
+  "filler-photo.saved-inspo2": {
+    "photographer": "Ylanite",
+    "photographer_url": "https://pixabay.com/users/Ylanite-2218222/",
+    "source_url": "https://pixabay.com/photos/clothing-fashion-summer-woman-3221103/",
+    "source": "Pixabay",
+    "query": "fashion outfit flatlay aesthetic"
+  },
+  "filler-photo.saved-birthday": {
+    "photographer": "BISEEISE",
+    "photographer_url": "https://pixabay.com/users/BISEEISE-31352822/",
+    "source_url": "https://pixabay.com/photos/cake-berries-candle-sponge-cake-8470012/",
+    "source": "Pixabay",
+    "query": "birthday cake celebration candles"
+  },
+  "filler-photo.saved-map1": {
+    "photographer": "Francesco_Foti",
+    "photographer_url": "https://pixabay.com/users/Francesco_Foti-21542105/",
+    "source_url": "https://pixabay.com/photos/continents-map-world-geography-6819704/",
+    "source": "Pixabay",
+    "query": "world map illustration vintage"
+  },
+  "filler-photo.saved-map2": {
+    "photographer": "epicioci",
+    "photographer_url": "https://pixabay.com/users/epicioci-1168802/",
+    "source_url": "https://pixabay.com/photos/map-pencil-navigation-road-gps-5911003/",
+    "source": "Pixabay",
+    "query": "road map navigation gps"
+  },
+  "filler-photo.saved-funnydog": {
+    "photographer": "Maddin_1983",
+    "photographer_url": "https://pixabay.com/users/Maddin_1983-15977351/",
+    "source_url": "https://pixabay.com/photos/dog-hunde-pacifier-art-studio-7205842/",
+    "source": "Pixabay",
+    "query": "funny dog expression"
+  },
+  "filler-photo.saved-art": {
+    "photographer": "Leolo212",
+    "photographer_url": "https://pixabay.com/users/Leolo212-15013188/",
+    "source_url": "https://pixabay.com/photos/mountain-colors-paint-colorful-art-6538890/",
+    "source": "Pixabay",
+    "query": "abstract painting colorful art"
+  },
+  "filler-photo.wallpaper-abstract1": {
+    "photographer": "merlinlightpainting",
+    "photographer_url": "https://pixabay.com/users/merlinlightpainting-19833603/",
+    "source_url": "https://pixabay.com/photos/abstract-painting-feathers-6047465/",
+    "source": "Pixabay",
+    "query": "abstract colorful wallpaper background"
+  },
+  "filler-photo.wallpaper-galaxy": {
+    "photographer": "Hans",
+    "photographer_url": "https://pixabay.com/users/Hans-2/",
+    "source_url": "https://pixabay.com/photos/stars-sky-night-starry-night-sky-1654074/",
+    "source": "Pixabay",
+    "query": "galaxy stars space wallpaper"
+  },
+  "filler-photo.wallpaper-minimal": {
+    "photographer": "danfador",
+    "photographer_url": "https://pixabay.com/users/danfador-55851/",
+    "source_url": "https://pixabay.com/photos/dog-mountain-mombarone-clouds-190056/",
+    "source": "Pixabay",
+    "query": "minimalist mountain landscape wallpaper"
+  },
+  "filler-photo.wallpaper-neon": {
+    "photographer": "merlinlightpainting",
+    "photographer_url": "https://pixabay.com/users/merlinlightpainting-19833603/",
+    "source_url": "https://pixabay.com/photos/space-futuristic-shiny-abstraction-7283103/",
+    "source": "Pixabay",
+    "query": "neon abstract background"
+  },
+  "filler-photo.wallpaper-geometric": {
+    "photographer": "sergiovisor_ph",
+    "photographer_url": "https://pixabay.com/users/sergiovisor_ph-21747664/",
+    "source_url": "https://pixabay.com/photos/origami-papers-japan-background-6275164/",
+    "source": "Pixabay",
+    "query": "geometric pattern wallpaper colorful"
+  },
+  "filler-photo.wallpaper-mistyforest": {
+    "photographer": "ahmetyuksek",
+    "photographer_url": "https://pixabay.com/users/ahmetyuksek-45995253/",
+    "source_url": "https://pixabay.com/photos/trees-forest-hills-misty-enchanted-9429634/",
+    "source": "Pixabay",
+    "query": "misty forest wallpaper landscape"
+  },
+  "filler-photo.car-parked": {
+    "photographer": "Tama66",
+    "photographer_url": "https://pixabay.com/users/Tama66-1032521/",
+    "source_url": "https://pixabay.com/photos/antique-car-automobile-classic-old-2436018/",
+    "source": "Pixabay",
+    "query": "car parked on street"
+  },
+  "filler-photo.life-coffee": {
+    "photographer": "cocoparisienne",
+    "photographer_url": "https://pixabay.com/users/cocoparisienne-127419/",
+    "source_url": "https://pixabay.com/photos/coffee-coffee-cup-cup-drink-beans-2714970/",
+    "source": "Pixabay",
+    "query": "coffee cup wooden table"
+  },
+  "filler-photo.life-sunsetocean": {
+    "photographer": "joneybrain",
+    "photographer_url": "https://pixabay.com/users/joneybrain-5003425/",
+    "source_url": "https://pixabay.com/photos/sunset-sun-evening-ocean-3000797/",
+    "source": "Pixabay",
+    "query": "sunset over ocean water"
+  },
+  "filler-photo.life-retriever": {
+    "photographer": "JACLOU-DL",
+    "photographer_url": "https://pixabay.com/users/JACLOU-DL-5602247/",
+    "source_url": "https://pixabay.com/photos/dog-golden-retriever-beach-pet-7450573/",
+    "source": "Pixabay",
+    "query": "golden retriever dog outside"
+  },
+  "filler-photo.life-citystreet": {
+    "photographer": "12019",
+    "photographer_url": "https://pixabay.com/users/12019-12019/",
+    "source_url": "https://pixabay.com/photos/hong-kong-city-traffic-lights-1990268/",
+    "source": "Pixabay",
+    "query": "city street evening lights"
+  },
+  "filler-photo.life-pasta": {
+    "photographer": "51581",
+    "photographer_url": "https://pixabay.com/users/51581-51581/",
+    "source_url": "https://pixabay.com/photos/food-dishes-meals-cuisine-soup-366875/",
+    "source": "Pixabay",
+    "query": "plate of pasta food"
+  },
+  "filler-photo.life-hikingtrail": {
+    "photographer": "Hermann",
+    "photographer_url": "https://pixabay.com/users/Hermann-130146/",
+    "source_url": "https://pixabay.com/photos/mountaineering-man-trail-path-455338/",
+    "source": "Pixabay",
+    "query": "mountain hiking trail"
+  },
+  "filler-photo.life-catwindow": {
+    "photographer": "Nennieinszweidrei",
+    "photographer_url": "https://pixabay.com/users/Nennieinszweidrei-10084616/",
+    "source_url": "https://pixabay.com/photos/tomcat-cat-domestic-cat-pet-8769861/",
+    "source": "Pixabay",
+    "query": "cat sleeping on windowsill"
+  },
+  "filler-photo.life-autumnpark": {
+    "photographer": "Peggychoucair",
+    "photographer_url": "https://pixabay.com/users/Peggychoucair-1130890/",
+    "source_url": "https://pixabay.com/photos/trees-fall-autumn-leaves-landscape-6855857/",
+    "source": "Pixabay",
+    "query": "autumn leaves in park"
+  },
+  "filler-photo.life-cakecandles": {
+    "photographer": "BISEEISE",
+    "photographer_url": "https://pixabay.com/users/BISEEISE-31352822/",
+    "source_url": "https://pixabay.com/photos/cake-berries-candle-sponge-cake-8470012/",
+    "source": "Pixabay",
+    "query": "birthday cake with candles"
+  },
+  "filler-photo.life-snowstreet": {
+    "photographer": "rmsep4",
+    "photographer_url": "https://pixabay.com/users/rmsep4-12979322/",
+    "source_url": "https://pixabay.com/photos/black-city-car-white-snow-japan-4932530/",
+    "source": "Pixabay",
+    "query": "snow covered street winter"
+  },
+  "filler-photo.life-farmersmkt": {
+    "photographer": "PublicDomainPictures",
+    "photographer_url": "https://pixabay.com/users/PublicDomainPictures-14/",
+    "source_url": "https://pixabay.com/photos/watermelons-fruits-produce-organic-2636/",
+    "source": "Pixabay",
+    "query": "farmers market vegetables"
+  },
+  "filler-photo.life-bicycle": {
+    "photographer": "seoinnovstudio",
+    "photographer_url": "https://pixabay.com/users/seoinnovstudio-20102121/",
+    "source_url": "https://pixabay.com/photos/bikes-wall-graffiti-graffiti-wall-5972672/",
+    "source": "Pixabay",
+    "query": "bicycle parked wall"
+  },
+  "filler-photo.life-bookshelf": {
+    "photographer": "LubosHouska",
+    "photographer_url": "https://pixabay.com/users/LubosHouska-198496/",
+    "source_url": "https://pixabay.com/photos/christmas-background-books-bookstore-1204029/",
+    "source": "Pixabay",
+    "query": "cozy bookshelf reading nook"
+  },
+  "filler-photo.life-rainwindow": {
+    "photographer": "Andrey_and_Olesya",
+    "photographer_url": "https://pixabay.com/users/Andrey_and_Olesya-12345218/",
+    "source_url": "https://pixabay.com/photos/rain-drops-drops-on-the-window-blur-5343297/",
+    "source": "Pixabay",
+    "query": "rain on window bokeh"
+  },
+  "filler-photo.life-campfirenight": {
+    "photographer": "IlonaBurschl",
+    "photographer_url": "https://pixabay.com/users/IlonaBurschl-3558510/",
+    "source_url": "https://pixabay.com/photos/fire-at-night-long-shutter-speed-1752936/",
+    "source": "Pixabay",
+    "query": "campfire at night"
+  },
+  "filler-photo.life-skateboard": {
+    "photographer": "lenahelfinger",
+    "photographer_url": "https://pixabay.com/users/lenahelfinger-15629841/",
+    "source_url": "https://pixabay.com/photos/skater-skateboard-shoes-5360306/",
+    "source": "Pixabay",
+    "query": "skateboard on pavement"
+  },
+  "filler-photo.life-guitar": {
+    "photographer": "coyot",
+    "photographer_url": "https://pixabay.com/users/coyot-2009089/",
+    "source_url": "https://pixabay.com/photos/guitar-musician-music-instrument-2428921/",
+    "source": "Pixabay",
+    "query": "acoustic guitar closeup"
+  },
+  "filler-photo.life-houseplants": {
+    "photographer": "ZenAga",
+    "photographer_url": "https://pixabay.com/users/ZenAga-25514880/",
+    "source_url": "https://pixabay.com/photos/cactus-pink-flower-plant-blossom-7760970/",
+    "source": "Pixabay",
+    "query": "houseplants in sunlight"
+  },
+  "filler-photo.life-laptopcafe": {
+    "photographer": "ejlindstrom",
+    "photographer_url": "https://pixabay.com/users/ejlindstrom-3129449/",
+    "source_url": "https://pixabay.com/photos/coffee-school-homework-coffee-shop-2351440/",
+    "source": "Pixabay",
+    "query": "laptop coffee shop desk"
+  },
+  "filler-photo.life-beachwaves": {
+    "photographer": "Kranich17",
+    "photographer_url": "https://pixabay.com/users/Kranich17-11197573/",
+    "source_url": "https://pixabay.com/photos/water-waves-ocean-sea-beach-6901805/",
+    "source": "Pixabay",
+    "query": "beach ocean waves"
+  },
+  "filler-photo.life-forestpath": {
+    "photographer": "jplenio",
+    "photographer_url": "https://pixabay.com/users/jplenio-7645255/",
+    "source_url": "https://pixabay.com/photos/tree-avenue-path-nature-hike-3092026/",
+    "source": "Pixabay",
+    "query": "forest hiking path"
+  },
+  "filler-photo.life-pizza": {
+    "photographer": "NinaLesley",
+    "photographer_url": "https://pixabay.com/users/NinaLesley-26030320/",
+    "source_url": "https://pixabay.com/photos/pizza-slice-food-dish-meal-7078188/",
+    "source": "Pixabay",
+    "query": "pizza slice closeup"
+  },
+  "filler-photo.life-icecream": {
+    "photographer": "StockSnap",
+    "photographer_url": "https://pixabay.com/users/StockSnap-894430/",
+    "source_url": "https://pixabay.com/photos/ice-cream-cone-chocolate-vanilla-2576622/",
+    "source": "Pixabay",
+    "query": "ice cream cone summer"
+  },
+  "filler-photo.life-flowergarden": {
+    "photographer": "DebbieClarkArt",
+    "photographer_url": "https://pixabay.com/users/DebbieClarkArt-20061221/",
+    "source_url": "https://pixabay.com/photos/iris-flower-plant-petals-5970465/",
+    "source": "Pixabay",
+    "query": "flower garden blooming"
+  },
+  "filler-photo.life-sunrisemtn": {
+    "photographer": "Bluesnap",
+    "photographer_url": "https://pixabay.com/users/Bluesnap-43950/",
+    "source_url": "https://pixabay.com/photos/sunrise-over-lake-lake-water-kivu-2098367/",
+    "source": "Pixabay",
+    "query": "sunrise over mountains"
+  },
+  "filler-photo.life-dogpark": {
+    "photographer": "ValterM",
+    "photographer_url": "https://pixabay.com/users/ValterM-24820004/",
+    "source_url": "https://pixabay.com/photos/dog-park-puppy-animal-running-8637542/",
+    "source": "Pixabay",
+    "query": "dog running in park"
+  },
+  "filler-photo.life-kitten": {
+    "photographer": "congerdesign",
+    "photographer_url": "https://pixabay.com/users/congerdesign-509903/",
+    "source_url": "https://pixabay.com/photos/yarn-wool-handwork-hobby-crochet-7162973/",
+    "source": "Pixabay",
+    "query": "kitten playing with yarn"
+  },
+  "filler-photo.life-dashboard": {
+    "photographer": "StockSnap",
+    "photographer_url": "https://pixabay.com/users/StockSnap-894430/",
+    "source_url": "https://pixabay.com/photos/highway-road-trucks-windshield-car-2606937/",
+    "source": "Pixabay",
+    "query": "car dashboard road trip"
+  },
+  "filler-photo.life-cityskyline": {
+    "photographer": "bulletrain743",
+    "photographer_url": "https://pixabay.com/users/bulletrain743-3598825/",
+    "source_url": "https://pixabay.com/photos/dubai-skyscraper-city-lights-1767540/",
+    "source": "Pixabay",
+    "query": "city skyline night lights"
+  },
+  "filler-photo.life-fruitstall": {
+    "photographer": "Couleur",
+    "photographer_url": "https://pixabay.com/users/Couleur-1195798/",
+    "source_url": "https://pixabay.com/photos/apples-golden-delicious-fruit-3433812/",
+    "source": "Pixabay",
+    "query": "fresh fruit market stall"
+  },
+  "filler-photo.life-typewriter": {
+    "photographer": "Tama66",
+    "photographer_url": "https://pixabay.com/users/Tama66-1032521/",
+    "source_url": "https://pixabay.com/photos/typewriter-write-old-vintage-8622984/",
+    "source": "Pixabay",
+    "query": "old typewriter vintage"
+  },
+  "filler-photo.life-vinyl": {
+    "photographer": "tiburi",
+    "photographer_url": "https://pixabay.com/users/tiburi-2851152/",
+    "source_url": "https://pixabay.com/photos/vinyl-retro-music-disc-record-1595847/",
+    "source": "Pixabay",
+    "query": "vinyl records collection"
+  },
+  "filler-photo.life-succulents": {
+    "photographer": "andriish22",
+    "photographer_url": "https://pixabay.com/users/andriish22-13876440/",
+    "source_url": "https://pixabay.com/photos/cacti-flowerpot-windowsill-cactus-4587783/",
+    "source": "Pixabay",
+    "query": "succulent plants windowsill"
   }
 }

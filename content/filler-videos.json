@@ -1,0 +1,11 @@
+{
+  "_comment": "A small pool of generic, non-story video clips for the junk .mp4/.mov files scattered through the machine (Downloads, Pictures phone backup, etc.) that carry no story significance. Fetched from Pixabay by `npm run fetch:assets` (and on first run, see web/lib/fetchAssets.ts) into generated/filler-video/<id>.mp4. A junk video file picks one clip deterministically from a hash of its own path, the same way lib/synth.ts picks a filler photo scene - nothing here chooses a clip for a particular file on purpose. Until a clip is fetched (no PIXABAY_API_KEY_VIDEOS set), the file falls back to the old silent placeholder.",
+  "clips": [
+    { "id": "phone-walk", "query": "phone camera walking outside" },
+    { "id": "kitchen-home", "query": "family kitchen cooking home video" },
+    { "id": "driving", "query": "driving car window view road" },
+    { "id": "backyard", "query": "kids playing backyard home video" },
+    { "id": "pet", "query": "cat pet home video" },
+    { "id": "party", "query": "birthday party home video candles" }
+  ]
+}

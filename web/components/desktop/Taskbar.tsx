@@ -32,11 +32,11 @@ export const WindowsLogo = ({ size = 16, color = "#0078D4" }: { size?: number; c
   <svg width={size} height={size} viewBox="0 0 16 16" style={{ display: "block" }}><rect x="0" y="0" width="7.4" height="7.4" fill={color} /><rect x="8.6" y="0" width="7.4" height="7.4" fill={color} /><rect x="0" y="8.6" width="7.4" height="7.4" fill={color} /><rect x="8.6" y="8.6" width="7.4" height="7.4" fill={color} /></svg>
 );
 
-function useClock(profile: Profile) {
+function useClock(profile: Profile, time24: boolean) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => { const tick = () => setNow(new Date()); tick(); const id = setInterval(tick, 1000); return () => clearInterval(id); }, []);
   if (!now) return { time: "", date: "" };
-  return { time: formatTime(now, profile.locale), date: formatDate(now, profile.dateFormat, profile.locale) };
+  return { time: formatTime(now, profile.locale, time24), date: formatDate(now, profile.dateFormat, profile.locale) };
 }
 
 export type Panel = "start" | "search" | "taskview" | "notif" | "widgets" | "quick" | null;
@@ -44,8 +44,8 @@ export type Panel = "start" | "search" | "taskview" | "notif" | "widgets" | "qui
 export function Taskbar({ profile, pins, panel, onPanel, onLaunch, onShowDesktop, unreadCount }: { profile: Profile; pins: AppId[]; panel: Panel; onPanel: (p: Panel) => void; onLaunch: (app: AppId) => void; onShowDesktop: () => void; unreadCount: number }) {
   const wm = useWM();
   const menu = useMenu();
-  const clock = useClock(profile);
   const sys = useSystem();
+  const clock = useClock(profile, sys.settings.time24);
   const highlight = useAsset("taskbar.searchHighlight");
   const running = wm.windows.filter((w) => w.app !== "dialog");
   const apps: AppId[] = [...pins];

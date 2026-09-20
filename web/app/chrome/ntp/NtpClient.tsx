@@ -26,6 +26,7 @@ function Tile({ host }: { host: string }) {
 export function NtpClient() {
   const [q, setQ] = useState("");
   const [shortcuts, setShortcuts] = useState<Shortcut[]>([]);
+  const [history, setHistory] = useState<{ url: string; title: string }[]>([]);
   const [custom, setCustom] = useState<Shortcut[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [assets, setAssets] = useState<Record<string, Asset>>({});
@@ -33,6 +34,8 @@ export function NtpClient() {
   const [bgKey, setBgKey] = useState<string | null>(null);
   const [customizing, setCustomizing] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
+  const [ddIndex, setDdIndex] = useState(-1);
 
   const say = (t: string) => { setNote(t); window.setTimeout(() => setNote((n) => (n === t ? null : n)), 4000); };
 
@@ -44,6 +47,7 @@ export function NtpClient() {
     setCustom(readList<Shortcut[]>(CUSTOM_KEY, []));
     setHidden(readList<string[]>(HIDDEN_KEY, []));
     fetch("/api/browser").then((r) => r.json()).then((d) => {
+      setHistory(d.history ?? []);
       const seen = new Set<string>();
       const out: Shortcut[] = [];
       for (const h of d.history ?? []) {
@@ -90,12 +94,42 @@ export function NtpClient() {
     else { const next = [...hidden, s.url]; setHidden(next); writeList(HIDDEN_KEY, next); }
   };
 
+  const toDest = (t: string): string => {
+    const isUrl = /^[a-z]+:\/\//i.test(t) || (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t) && !t.includes(" "));
+    return isUrl ? (/^[a-z]+:\/\//i.test(t) ? t : `https://${t}`) : `https://www.google.com/search?q=${encodeURIComponent(t)}&sourceid=chrome&ie=UTF-8`;
+  };
+
+  // Every real search box suggests from history as you type; this one only searched Google
+  // and never looked at what you had already visited.
+  const suggestions = React.useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t || !focused) return [] as { url: string; title: string }[];
+    const out: { url: string; title: string }[] = [];
+    const seen = new Set<string>();
+    for (const h of history) {
+      if (!h.url.toLowerCase().includes(t) && !h.title.toLowerCase().includes(t)) continue;
+      if (seen.has(h.url)) continue;
+      seen.add(h.url);
+      out.push(h);
+      if (out.length >= 8) break;
+    }
+    return out;
+  }, [q, focused, history]);
+
+  const go = (url: string) => { window.location.href = url; };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (ddIndex >= 0 && suggestions[ddIndex]) { go(suggestions[ddIndex].url); return; }
     const t = q.trim();
     if (!t) return;
-    const isUrl = /^[a-z]+:\/\//i.test(t) || (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t) && !t.includes(" "));
-    window.location.href = isUrl ? (/^[a-z]+:\/\//i.test(t) ? t : `https://${t}`) : `https://www.google.com/search?q=${encodeURIComponent(t)}&sourceid=chrome&ie=UTF-8`;
+    go(toDest(t));
+  };
+
+  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setDdIndex((i) => Math.min(suggestions.length - 1, i + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setDdIndex((i) => Math.max(-1, i - 1)); }
+    else if (e.key === "Escape") { setDdIndex(-1); setFocused(false); }
   };
 
   return (
@@ -109,13 +143,40 @@ export function NtpClient() {
 
       <div className={styles.center}>
         <div className={styles.logo}><GoogleLogo /></div>
-        <form className={styles.searchBox} onSubmit={submit}>
-          <button type="submit" className={styles.searchIconBtn} title="Search"><MdSearch size={22} /></button>
-          <input className={styles.searchInput} placeholder="Search Google or type a URL" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-          <button type="button" className={styles.searchIconBtn} title="Search by voice" onClick={() => say("Voice search needs a microphone. No microphone is attached to this computer.")}><MdMic size={22} /></button>
-          <button type="button" className={styles.searchIconBtn} title="Search by image" onClick={() => say("Search by image needs a camera or a picture to upload, and this copy cannot upload.")}><MdOutlinePhotoCamera size={22} /></button>
-          <button type="button" className={styles.aiChip} onClick={() => { window.location.href = `https://www.google.com/search?q=${encodeURIComponent(q.trim() || "AI Mode")}&udm=50`; }}><MdAutoAwesome size={18} />AI Mode</button>
-        </form>
+        <div className={styles.searchWrap}>
+          <form className={`${styles.searchBox} ${suggestions.length ? styles.searchBoxOpen : ""}`} onSubmit={submit}>
+            <button type="submit" className={styles.searchIconBtn} title="Search"><MdSearch size={22} /></button>
+            <input
+              className={styles.searchInput}
+              placeholder="Search Google or type a URL"
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setDdIndex(-1); }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => window.setTimeout(() => setFocused(false), 150)}
+              onKeyDown={onSearchKey}
+              autoFocus
+            />
+            <button type="button" className={styles.searchIconBtn} title="Search by voice" onClick={() => say("Voice search needs a microphone. No microphone is attached to this computer.")}><MdMic size={22} /></button>
+            <button type="button" className={styles.searchIconBtn} title="Search by image" onClick={() => say("Search by image needs a camera or a picture to upload, and this copy cannot upload.")}><MdOutlinePhotoCamera size={22} /></button>
+            <button type="button" className={styles.aiChip} onClick={() => { window.location.href = `https://www.google.com/search?q=${encodeURIComponent(q.trim() || "AI Mode")}&udm=50`; }}><MdAutoAwesome size={18} />AI Mode</button>
+          </form>
+          {suggestions.length > 0 && (
+            <div className={styles.searchDropdown}>
+              {suggestions.map((s, i) => (
+                <div
+                  key={s.url}
+                  className={`${styles.searchDdRow} ${i === ddIndex ? styles.searchDdRowSel : ""}`}
+                  onMouseDown={(e) => { e.preventDefault(); go(s.url); }}
+                  onMouseEnter={() => setDdIndex(i)}
+                >
+                  <span className={styles.searchDdIcon}><Tile host={(() => { try { return new URL(s.url).hostname; } catch { return ""; } })()} /></span>
+                  <span className={styles.searchDdText}>{s.title || s.url}</span>
+                  <span className={styles.searchDdUrl}>{s.url}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className={styles.shortcuts}>
           {visible.map((s) => (
